@@ -166,7 +166,7 @@ export default function Home() {
                         <div className="h-5 skeleton w-1/2" />
                       </div>
                     ))
-                  : brandCars?.map((car) => (
+                  : (brandCars || []).map((car) => (
                       <CompactCarCard key={car.id} car={car} rates={rates} />
                     ))}
               </div>
@@ -213,7 +213,7 @@ export default function Home() {
             </Link>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {latestCars?.cars.map((car) => (
+            {(latestCars?.cars || []).map((car) => (
               <CompactCarCard key={car.id} car={car} rates={rates} />
             ))}
           </div>
@@ -251,7 +251,7 @@ export default function Home() {
                       <div className="h-5 skeleton w-1/2" />
                     </div>
                   ))
-                : bData?.cars.map((car) => (
+                : (bData?.cars || []).map((car) => (
                     <CompactCarCard key={car.id} car={car} rates={rates} />
                   ))}
             </div>
