@@ -15,7 +15,7 @@ import type {
 
 // Бүх хүсэлт бидний backend-аар дамжина (CORS шийдвэр)
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : '/api',
 })
 
 // Admin token interceptor
@@ -210,7 +210,11 @@ export async function fetchStorageInfo(): Promise<{ fileCount: number; totalSize
 
 // ============ ЗУРАГ PROXY ============
 
+const BASE = import.meta.env.VITE_API_URL || ''
+
 export function getImageUrl(url: string): string {
   if (!url) return ''
-  return `/api/image-proxy?url=${encodeURIComponent(url)}`
+  // Local uploads (manual cars)
+  if (url.startsWith('/uploads')) return `${BASE}${url}`
+  return `${BASE}/api/image-proxy?url=${encodeURIComponent(url)}`
 }
