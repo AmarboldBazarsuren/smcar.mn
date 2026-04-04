@@ -24,14 +24,14 @@ export default function Home() {
     staleTime: 10 * 60 * 1000,
   })
 
-  const models = brandCarsData?.cars
+  const models = brandCarsData?.cars?.length
     ? [...new Set(brandCarsData.cars.map((c) => c.model).filter(Boolean))].sort()
     : []
 
   // Модел сонгосон бол шүүх, сонгоогүй бол эхний 4-г авах
   const brandCars = activeModel
-    ? brandCarsData?.cars.filter((c) => c.model === activeModel).slice(0, 4)
-    : brandCarsData?.cars.slice(0, 4)
+    ? (brandCarsData?.cars || []).filter((c) => c.model === activeModel).slice(0, 4)
+    : (brandCarsData?.cars || []).slice(0, 4)
 
   // Сүүлийн нэмэгдсэн (4 ширхэг)
   const { data: latestCars } = useQuery({
@@ -92,7 +92,7 @@ export default function Home() {
   const { data: rates } = useQuery({ queryKey: ['exchangeRate'], queryFn: fetchExchangeRate })
   const { data: banners } = useQuery({ queryKey: ['banners'], queryFn: fetchBanners })
 
-  const topBanners = banners?.filter((b) => b.position === 'home_top' && b.isActive)
+  const topBanners = banners?.filter((b) => b.position === 'home_top' && b.isActive) || []
 
   const handleBrandClick = (brand: string) => {
     setActiveBrand(brand)
