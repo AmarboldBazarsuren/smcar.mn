@@ -267,7 +267,7 @@ export default function Home() {
               <h2 className="text-[20px] font-bold text-dark">Бидний зарууд</h2>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {manualCars.slice(0, 4).map((car: any) => (
+              {manualCars?.slice(0, 4).map((car: any) => (
                 <Link key={car._id} to={`/manual-cars/${car._id}`} className="group bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow">
                   <div className="relative bg-gray-50 aspect-[4/3] overflow-hidden">
                     {car.images?.[0] && (
