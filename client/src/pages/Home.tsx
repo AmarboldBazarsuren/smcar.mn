@@ -71,16 +71,27 @@ export default function Home() {
 
   const heroCar = heroCarData || fallbackFeatured?.cars?.[0]
 
-  // Брэнд бүрийн машинууд (4 ширхэг)
-  const brandQueries = FEATURED_BRANDS.map((brand) => ({
-    brand,
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    ...useQuery({
-      queryKey: ['featuredBrandCars', brand],
-      queryFn: () => fetchCars({ brand, limit: 4, sortBy: 'scraped_at', sortOrder: 'desc' }),
-      staleTime: 10 * 60 * 1000,
-    }),
-  }))
+  // Брэнд бүрийн машинууд (тусдаа query)
+  const { data: mercedesData, isLoading: mercedesLoading } = useQuery({
+    queryKey: ['featuredBrandCars', 'Mercedes'],
+    queryFn: () => fetchCars({ brand: 'Mercedes', limit: 4, sortBy: 'scraped_at', sortOrder: 'desc' }),
+    staleTime: 10 * 60 * 1000,
+  })
+  const { data: bmwData, isLoading: bmwLoading } = useQuery({
+    queryKey: ['featuredBrandCars', 'BMW'],
+    queryFn: () => fetchCars({ brand: 'BMW', limit: 4, sortBy: 'scraped_at', sortOrder: 'desc' }),
+    staleTime: 10 * 60 * 1000,
+  })
+  const { data: jeepData, isLoading: jeepLoading } = useQuery({
+    queryKey: ['featuredBrandCars', 'Jeep'],
+    queryFn: () => fetchCars({ brand: 'Jeep', limit: 4, sortBy: 'scraped_at', sortOrder: 'desc' }),
+    staleTime: 10 * 60 * 1000,
+  })
+  const brandQueries = [
+    { brand: 'Mercedes', data: mercedesData, isLoading: mercedesLoading },
+    { brand: 'BMW', data: bmwData, isLoading: bmwLoading },
+    { brand: 'Jeep', data: jeepData, isLoading: jeepLoading },
+  ]
 
   // Гараар оруулсан машинууд
   const { data: manualCars } = useQuery({
