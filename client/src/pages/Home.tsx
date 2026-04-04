@@ -11,7 +11,6 @@ const BRANDS = [
   'Toyota', 'Honda', 'Audi', 'Volkswagen', 'Nissan', 'Jeep',
 ]
 
-const FEATURED_BRANDS = ['Mercedes', 'BMW', 'Jeep']
 
 export default function Home() {
   const [activeBrand, setActiveBrand] = useState('Kia')
