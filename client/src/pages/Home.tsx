@@ -81,15 +81,9 @@ export default function Home() {
     queryFn: () => fetchCars({ brand: 'BMW', limit: 4, sortBy: 'scraped_at', sortOrder: 'desc' }),
     staleTime: 10 * 60 * 1000,
   })
-  const { data: jeepData, isLoading: jeepLoading } = useQuery({
-    queryKey: ['featuredBrandCars', 'Jeep'],
-    queryFn: () => fetchCars({ brand: 'Jeep', limit: 4, sortBy: 'scraped_at', sortOrder: 'desc' }),
-    staleTime: 10 * 60 * 1000,
-  })
   const brandQueries = [
     { brand: 'Mercedes', data: mercedesData, isLoading: mercedesLoading },
     { brand: 'BMW', data: bmwData, isLoading: bmwLoading },
-    { brand: 'Jeep', data: jeepData, isLoading: jeepLoading },
   ]
 
   // Гараар оруулсан машинууд
