@@ -5,21 +5,31 @@ const router = express.Router()
 const APICARS_URL = process.env.APICARS_BASE_URL || 'https://apicars.info'
 const API_KEY = process.env.APICARS_API_KEY || ''
 
-// apicars.info руу proxy хийх helper
-async function proxyGet(apiPath, query = {}) {
+// Retry бүхий proxy helper
+async function proxyGet(apiPath, query = {}, retries = 2) {
   const url = new URL(apiPath, APICARS_URL)
   Object.entries(query).forEach(([key, value]) => {
     if (value !== undefined && value !== '') {
       url.searchParams.set(key, String(value))
     }
   })
-  const response = await fetch(url.toString(), {
-    headers: { 'x-api-key': API_KEY },
-  })
-  if (!response.ok) {
-    throw new Error(`apicars API алдаа: ${response.status}`)
+
+  for (let i = 0; i <= retries; i++) {
+    try {
+      const response = await fetch(url.toString(), {
+        headers: { 'x-api-key': API_KEY },
+        signal: AbortSignal.timeout(15000),
+      })
+      if (!response.ok) {
+        if (i < retries) { await new Promise(r => setTimeout(r, 500 * (i + 1))); continue }
+        throw new Error(`apicars API алдаа: ${response.status}`)
+      }
+      return response.json()
+    } catch (err) {
+      if (i < retries) { await new Promise(r => setTimeout(r, 500 * (i + 1))); continue }
+      throw err
+    }
   }
-  return response.json()
 }
 
 async function proxyPost(apiPath, body) {
@@ -31,6 +41,7 @@ async function proxyPost(apiPath, body) {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(body),
+    signal: AbortSignal.timeout(15000),
   })
   if (!response.ok) {
     throw new Error(`apicars API алдаа: ${response.status}`)
@@ -42,7 +53,6 @@ async function proxyPost(apiPath, body) {
 router.get('/', async (req, res) => {
   try {
     const raw = await proxyGet('/api/cars', req.query)
-    // API хариу: { success, data: { cars, pagination } }
     const result = raw.data || raw
     const pagination = result.pagination || {}
     res.json({
