@@ -31,11 +31,15 @@ api.interceptors.request.use((config) => {
 
 // Машин жагсаалт авах
 export async function fetchCars(filters: CarFilters = {}): Promise<CarsResponse> {
-  const params = Object.fromEntries(
-    Object.entries(filters).filter(([, v]) => v !== undefined && v !== '')
-  )
-  const { data } = await api.get('/cars', { params })
-  return data
+  try {
+    const params = Object.fromEntries(
+      Object.entries(filters).filter(([, v]) => v !== undefined && v !== '')
+    )
+    const { data } = await api.get('/cars', { params })
+    return { cars: data?.cars || [], total: data?.total || 0, page: data?.page || 1, totalPages: data?.totalPages || 1 }
+  } catch {
+    return { cars: [], total: 0, page: 1, totalPages: 1 }
+  }
 }
 
 // Нэг машин авах
@@ -78,8 +82,12 @@ export async function submitReservation(reservation: Reservation): Promise<void>
 // ============ БАННЕР (бидний backend) ============
 
 export async function fetchBanners(): Promise<Banner[]> {
-  const { data } = await api.get('/banners')
-  return data
+  try {
+    const { data } = await api.get('/banners')
+    return Array.isArray(data) ? data : []
+  } catch {
+    return []
+  }
 }
 
 export async function createBanner(formData: FormData): Promise<Banner> {
@@ -158,8 +166,12 @@ export async function updateFeeSettings(fees: Partial<FeeSettings>): Promise<Fee
 // ============ ОНЦЛОХ ЗАР ============
 
 export async function fetchFeaturedCars(): Promise<FeaturedCar[]> {
-  const { data } = await api.get('/featured-car')
-  return data
+  try {
+    const { data } = await api.get('/featured-car')
+    return Array.isArray(data) ? data : []
+  } catch {
+    return []
+  }
 }
 
 export async function setFeaturedCar(carId: string, position: string): Promise<FeaturedCar> {
@@ -185,8 +197,12 @@ export async function fetchEncarInfo(encarId: string): Promise<{ cc: number | nu
 // ============ ГАРААР ОРУУЛСАН МАШИН ============
 
 export async function fetchManualCars(): Promise<any[]> {
-  const { data } = await api.get('/manual-cars')
-  return data
+  try {
+    const { data } = await api.get('/manual-cars')
+    return Array.isArray(data) ? data : []
+  } catch {
+    return []
+  }
 }
 
 export async function createManualCar(formData: FormData): Promise<any> {
