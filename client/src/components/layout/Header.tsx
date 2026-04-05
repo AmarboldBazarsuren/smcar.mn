@@ -23,7 +23,7 @@ export default function Header() {
         <div className="flex items-center justify-between h-[60px]">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2">
-            <img src="/logo.png" alt="SMCar.mn" className="h-14" />
+            <img src="/logo.png" alt="SMCar.mn" className="h-24" />
           </Link>
 
           {/* Desktop nav */}
