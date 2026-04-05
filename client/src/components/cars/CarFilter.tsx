@@ -27,14 +27,14 @@ export default function CarFilter({ filters, onFilterChange }: Props) {
     ? [...new Set(modelData.cars.map((c) => c.model).filter(Boolean))].sort()
     : []
 
-  const selectClass = "w-full text-[13px] text-gray-700 border border-gray-200 rounded-lg px-3 py-2.5 bg-white focus:outline-none focus:border-gray-400 transition"
-  const inputClass = "w-full text-[13px] text-gray-700 border border-gray-200 rounded-lg px-3 py-2.5 bg-white focus:outline-none focus:border-gray-400 transition placeholder-gray-400"
+  const selectClass = "w-full text-[18px] text-gray-700 border border-gray-200 rounded-lg px-3 py-2.5 bg-white focus:outline-none focus:border-gray-400 transition"
+  const inputClass = "w-full text-[18px] text-gray-700 border border-gray-200 rounded-lg px-3 py-2.5 bg-white focus:outline-none focus:border-gray-400 transition placeholder-gray-400"
 
   return (
     <div className="space-y-5">
       {/* Brand */}
       <div>
-        <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Брэнд</label>
+        <label className="block text-[14px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Брэнд</label>
         <select
           value={filters.brand || ''}
           onChange={(e) => onFilterChange({ brand: e.target.value, model: undefined })}
@@ -48,7 +48,7 @@ export default function CarFilter({ filters, onFilterChange }: Props) {
       {/* Model (dynamic based on brand) */}
       {filters.brand && models.length > 0 && (
         <div>
-          <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Загвар</label>
+          <label className="block text-[14px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Загвар</label>
           <select
             value={filters.model || ''}
             onChange={(e) => onFilterChange({ model: e.target.value })}
@@ -62,7 +62,7 @@ export default function CarFilter({ filters, onFilterChange }: Props) {
 
       {/* Year range */}
       <div>
-        <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Он</label>
+        <label className="block text-[14px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Он</label>
         <div className="flex gap-2">
           <input
             type="number"
@@ -84,7 +84,7 @@ export default function CarFilter({ filters, onFilterChange }: Props) {
 
       {/* Price range (MNT) */}
       <div>
-        <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Үнэ (сая ₮)</label>
+        <label className="block text-[14px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Үнэ (сая ₮)</label>
         <div className="flex gap-2">
           <input
             type="number"
@@ -102,12 +102,12 @@ export default function CarFilter({ filters, onFilterChange }: Props) {
             className={inputClass}
           />
         </div>
-        <p className="text-[10px] text-gray-400 mt-1">Жишээ: 50 = 50 сая ₮</p>
+        <p className="text-[14px] text-gray-400 mt-1">Жишээ: 50 = 50 сая ₮</p>
       </div>
 
       {/* Fuel type */}
       <div>
-        <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Түлш</label>
+        <label className="block text-[14px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Түлш</label>
         <div className="space-y-1.5">
           {FUEL_TYPES.map((f) => (
             <label key={f.value} className="flex items-center gap-2.5 cursor-pointer group">
@@ -118,7 +118,7 @@ export default function CarFilter({ filters, onFilterChange }: Props) {
                 onChange={() => onFilterChange({ fuelType: filters.fuelType === f.value ? '' : f.value })}
                 className="w-3.5 h-3.5 accent-primary"
               />
-              <span className="text-[13px] text-gray-600 group-hover:text-dark transition">{f.label}</span>
+              <span className="text-[18px] text-gray-600 group-hover:text-dark transition">{f.label}</span>
             </label>
           ))}
         </div>
@@ -126,13 +126,13 @@ export default function CarFilter({ filters, onFilterChange }: Props) {
 
       {/* Transmission */}
       <div>
-        <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Хурдны хайрцаг</label>
+        <label className="block text-[14px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Хурдны хайрцаг</label>
         <div className="flex gap-2">
           {['Auto', 'Manual'].map((t) => (
             <button
               key={t}
               onClick={() => onFilterChange({ transmission: filters.transmission === t ? '' : t })}
-              className={`flex-1 py-2 text-[12px] font-medium rounded-lg border transition ${
+              className={`flex-1 py-2 text-[16px] font-medium rounded-lg border transition ${
                 filters.transmission === t
                   ? 'bg-dark text-white border-dark'
                   : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
@@ -146,7 +146,7 @@ export default function CarFilter({ filters, onFilterChange }: Props) {
 
       {/* Mileage */}
       <div>
-        <label className="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Макс гүйлт</label>
+        <label className="block text-[14px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Макс гүйлт</label>
         <input
           type="number"
           placeholder="км"
@@ -171,7 +171,7 @@ export default function CarFilter({ filters, onFilterChange }: Props) {
             maxMileage: undefined,
           })
         }
-        className="w-full text-[12px] font-medium text-gray-500 hover:text-primary underline underline-offset-2 transition py-1"
+        className="w-full text-[16px] font-medium text-gray-500 hover:text-primary underline underline-offset-2 transition py-1"
       >
         Шүүлтүүр цэвэрлэх
       </button>

@@ -22,14 +22,14 @@ export default function ReservationModal({ carId, carTitle, onClose }: Props) {
       <div className="relative bg-white rounded-xl w-full max-w-sm shadow-2xl fade-in" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-          <h2 className="text-[16px] font-bold text-dark">Захиалга өгөх</h2>
+          <h2 className="text-[24px] font-bold text-dark">Захиалга өгөх</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-dark transition">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
           </button>
         </div>
 
         <div className="p-5 space-y-3">
-          <p className="text-[13px] text-gray-600 mb-4">
+          <p className="text-[18px] text-gray-600 mb-4">
             Доорх сувгуудаар бидэнтэй холбогдоно уу. Машины мэдээлэл автоматаар илгээгдэнэ.
           </p>
 
@@ -46,8 +46,8 @@ export default function ReservationModal({ carId, carTitle, onClose }: Props) {
               </svg>
             </div>
             <div>
-              <p className="text-[14px] font-semibold text-dark group-hover:text-blue-600 transition">Messenger</p>
-              <p className="text-[11px] text-gray-400">Facebook Messenger-ээр бичих</p>
+              <p className="text-[20px] font-semibold text-dark group-hover:text-blue-600 transition">Messenger</p>
+              <p className="text-[14px] text-gray-400">Facebook Messenger-ээр бичих</p>
             </div>
           </a>
 
@@ -64,8 +64,8 @@ export default function ReservationModal({ carId, carTitle, onClose }: Props) {
               </svg>
             </div>
             <div>
-              <p className="text-[14px] font-semibold text-dark group-hover:text-blue-600 transition">Facebook</p>
-              <p className="text-[11px] text-gray-400">Facebook хуудас руу очих</p>
+              <p className="text-[20px] font-semibold text-dark group-hover:text-blue-600 transition">Facebook</p>
+              <p className="text-[14px] text-gray-400">Facebook хуудас руу очих</p>
             </div>
           </a>
 
@@ -80,8 +80,8 @@ export default function ReservationModal({ carId, carTitle, onClose }: Props) {
               </svg>
             </div>
             <div>
-              <p className="text-[14px] font-semibold text-dark group-hover:text-gray-700 transition">+976 7722-0707</p>
-              <p className="text-[11px] text-gray-400">Утсаар холбогдох</p>
+              <p className="text-[20px] font-semibold text-dark group-hover:text-gray-700 transition">+976 7722-0707</p>
+              <p className="text-[14px] text-gray-400">Утсаар холбогдох</p>
             </div>
           </a>
         </div>

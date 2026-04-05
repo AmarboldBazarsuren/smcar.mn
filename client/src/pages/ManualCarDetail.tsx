@@ -38,8 +38,8 @@ export default function ManualCarDetail() {
     return (
       <main className="bg-gray-50 min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <p className="text-[18px] font-semibold text-gray-700 mb-1">Машин олдсонгүй</p>
-          <Link to="/" className="inline-flex items-center gap-2 bg-dark text-white text-[13px] font-semibold px-5 py-2.5 rounded-lg hover:bg-gray-800 transition mt-4">
+          <p className="text-[26px] font-semibold text-gray-700 mb-1">Машин олдсонгүй</p>
+          <Link to="/" className="inline-flex items-center gap-2 bg-dark text-white text-[18px] font-semibold px-5 py-2.5 rounded-lg hover:bg-gray-800 transition mt-4">
             Нүүр руу буцах
           </Link>
         </div>
@@ -65,7 +65,7 @@ export default function ManualCarDetail() {
       {/* Breadcrumb */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-[1400px] mx-auto px-4 lg:px-8 py-3">
-          <nav className="flex items-center gap-1.5 text-[12px] text-gray-400">
+          <nav className="flex items-center gap-1.5 text-[16px] text-gray-400">
             <Link to="/" className="hover:text-dark transition">Нүүр</Link>
             <span>/</span>
             <span className="text-gray-600 truncate max-w-[200px]">{car.title}</span>
@@ -101,7 +101,7 @@ export default function ManualCarDetail() {
                 </>
               )}
               {imgs.length > 0 && (
-                <div className="absolute bottom-3 right-3 bg-black/70 text-white text-[11px] font-medium px-3 py-1.5 rounded-full">
+                <div className="absolute bottom-3 right-3 bg-black/70 text-white text-[14px] font-medium px-3 py-1.5 rounded-full">
                   {selectedImg + 1} / {imgs.length}
                 </div>
               )}
@@ -122,13 +122,13 @@ export default function ManualCarDetail() {
             {/* Specs */}
             <div className="bg-white rounded-xl border border-gray-200 mt-6 overflow-hidden">
               <div className="px-6 py-4 border-b border-gray-100">
-                <h3 className="text-[16px] font-bold text-dark">Техникийн үзүүлэлт</h3>
+                <h3 className="text-[24px] font-bold text-dark">Техникийн үзүүлэлт</h3>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2">
                 {filteredSpecs.map(([label, value]) => (
                   <div key={label} className="flex items-center justify-between px-6 py-3.5 border-b border-gray-50">
-                    <span className="text-[13px] text-gray-400">{label}</span>
-                    <span className="text-[13px] font-semibold text-dark">{value}</span>
+                    <span className="text-[18px] text-gray-400">{label}</span>
+                    <span className="text-[18px] font-semibold text-dark">{value}</span>
                   </div>
                 ))}
               </div>
@@ -137,8 +137,8 @@ export default function ManualCarDetail() {
             {/* Description */}
             {car.description && (
               <div className="bg-white rounded-xl border border-gray-200 mt-4 p-6">
-                <h3 className="text-[16px] font-bold text-dark mb-3">Тайлбар</h3>
-                <p className="text-[13px] text-gray-600 leading-relaxed whitespace-pre-wrap">{car.description}</p>
+                <h3 className="text-[24px] font-bold text-dark mb-3">Тайлбар</h3>
+                <p className="text-[18px] text-gray-600 leading-relaxed whitespace-pre-wrap">{car.description}</p>
               </div>
             )}
           </div>
@@ -147,8 +147,8 @@ export default function ManualCarDetail() {
           <div className="lg:col-span-4">
             <div className="lg:sticky lg:top-[76px] space-y-4">
               <div className="bg-white rounded-xl border border-gray-200 p-5">
-                <h1 className="text-[20px] font-bold text-dark leading-snug">{car.title}</h1>
-                <div className="flex flex-wrap items-center gap-2 mt-3 text-[12px] text-gray-400">
+                <h1 className="text-[28px] font-bold text-dark leading-snug">{car.title}</h1>
+                <div className="flex flex-wrap items-center gap-2 mt-3 text-[16px] text-gray-400">
                   <span className="bg-gray-100 px-2.5 py-1 rounded-full">{car.year}он</span>
                   {car.mileage > 0 && <span className="bg-gray-100 px-2.5 py-1 rounded-full">{formatNumber(car.mileage)} км</span>}
                   <span className="bg-gray-100 px-2.5 py-1 rounded-full">{fuelLabel(car.fuelType)}</span>
@@ -159,20 +159,20 @@ export default function ManualCarDetail() {
               {/* Price — шууд MNT, татваргүй */}
               <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
                 <div className="px-5 py-5 bg-primary/5">
-                  <p className="text-[11px] text-gray-500 uppercase tracking-wider font-medium mb-1">Нийт үнэ</p>
-                  <p className="text-[26px] font-extrabold text-primary">
+                  <p className="text-[14px] text-gray-500 uppercase tracking-wider font-medium mb-1">Нийт үнэ</p>
+                  <p className="text-[34px] font-extrabold text-primary">
                     {formatNumber(car.price)}₮
                   </p>
                 </div>
               </div>
 
               <button onClick={() => setShowModal(true)}
-                className="w-full bg-primary hover:bg-red-700 text-white py-4 rounded-xl text-[15px] font-bold transition-colors shadow-lg shadow-primary/20">
+                className="w-full bg-primary hover:bg-red-700 text-white py-4 rounded-xl text-[22px] font-bold transition-colors shadow-lg shadow-primary/20">
                 Захиалга өгөх
               </button>
 
               <a href="tel:+97699001122"
-                className="flex items-center justify-center gap-2.5 w-full bg-white border border-gray-200 text-dark py-3.5 rounded-xl text-[14px] font-semibold hover:bg-gray-50 transition">
+                className="flex items-center justify-center gap-2.5 w-full bg-white border border-gray-200 text-dark py-3.5 rounded-xl text-[20px] font-semibold hover:bg-gray-50 transition">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
                 </svg>

@@ -31,23 +31,23 @@ export default function Dashboard() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-sm text-gray-500 mt-1">Ерөнхий тойм</p>
+        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+        <p className="text-lg text-gray-500 mt-1">Ерөнхий тойм</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-10">
         {cards.map((card) => (
           <div key={card.label} className={`bg-gradient-to-br ${card.color} rounded-2xl p-6 text-white shadow-lg`}>
             <div className="flex items-center justify-between mb-4">
-              <span className="text-sm font-medium text-white/70">{card.label}</span>
+              <span className="text-lg font-medium text-white/70">{card.label}</span>
               <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center">{card.icon}</div>
             </div>
-            <p className="text-3xl font-extrabold">{card.value}</p>
+            <p className="text-4xl font-extrabold">{card.value}</p>
           </div>
         ))}
       </div>
 
-      <h2 className="text-lg font-bold text-gray-900 mb-4">Хурдан үйлдлүүд</h2>
+      <h2 className="text-xl font-bold text-gray-900 mb-4">Хурдан үйлдлүүд</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           { to: '/smcaradmin/cars', label: 'Машин удирдах', desc: 'Жагсаалт, хайлт' },
@@ -63,7 +63,7 @@ export default function Dashboard() {
             className="bg-white rounded-2xl border border-gray-200 p-5 hover:border-blue-300 hover:shadow-md transition-all group"
           >
             <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 transition">{action.label}</h3>
-            <p className="text-xs text-gray-500 mt-1">{action.desc}</p>
+            <p className="text-base text-gray-500 mt-1">{action.desc}</p>
           </Link>
         ))}
       </div>

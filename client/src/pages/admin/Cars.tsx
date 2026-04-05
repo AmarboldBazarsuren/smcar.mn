@@ -18,8 +18,8 @@ export default function Cars() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Машинууд</h1>
-          <p className="text-sm text-gray-500 mt-1">apicars.info-аас татсан машинууд</p>
+          <h1 className="text-3xl font-bold text-gray-900">Машинууд</h1>
+          <p className="text-lg text-gray-500 mt-1">apicars.info-аас татсан машинууд</p>
         </div>
       </div>
 
@@ -32,7 +32,7 @@ export default function Cars() {
             placeholder="Брэндээр хайх..."
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1) }}
-            className="w-full bg-white border border-gray-200 rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition"
+            className="w-full bg-white border border-gray-200 rounded-xl pl-10 pr-4 py-2.5 text-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition"
           />
         </div>
       </div>
@@ -42,11 +42,11 @@ export default function Cars() {
         <table className="w-full">
           <thead>
             <tr className="border-b border-gray-200 bg-gray-50">
-              <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider p-4">Зураг</th>
-              <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider p-4">Нэр</th>
-              <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider p-4 hidden md:table-cell">Брэнд</th>
-              <th className="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider p-4 hidden md:table-cell">Он</th>
-              <th className="text-right text-xs font-semibold text-gray-500 uppercase tracking-wider p-4">Үнэ</th>
+              <th className="text-left text-base font-semibold text-gray-500 uppercase tracking-wider p-4">Зураг</th>
+              <th className="text-left text-base font-semibold text-gray-500 uppercase tracking-wider p-4">Нэр</th>
+              <th className="text-left text-base font-semibold text-gray-500 uppercase tracking-wider p-4 hidden md:table-cell">Брэнд</th>
+              <th className="text-left text-base font-semibold text-gray-500 uppercase tracking-wider p-4 hidden md:table-cell">Он</th>
+              <th className="text-right text-base font-semibold text-gray-500 uppercase tracking-wider p-4">Үнэ</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
@@ -67,14 +67,14 @@ export default function Cars() {
                     <img src={getImageUrl(car.image)} alt="" className="w-16 h-12 object-cover rounded-lg" />
                   </td>
                   <td className="p-4">
-                    <p className="text-sm font-medium text-gray-900 truncate max-w-[250px]">{car.title}</p>
+                    <p className="text-lg font-medium text-gray-900 truncate max-w-[250px]">{car.title}</p>
                   </td>
                   <td className="p-4 hidden md:table-cell">
-                    <span className="text-xs font-medium bg-gray-50 px-2.5 py-1 rounded-lg text-gray-600">{car.brand}</span>
+                    <span className="text-base font-medium bg-gray-50 px-2.5 py-1 rounded-lg text-gray-600">{car.brand}</span>
                   </td>
-                  <td className="p-4 hidden md:table-cell text-sm text-gray-600">{car.year}</td>
+                  <td className="p-4 hidden md:table-cell text-lg text-gray-600">{car.year}</td>
                   <td className="p-4 text-right">
-                    <p className="text-sm font-bold text-blue-600">
+                    <p className="text-lg font-bold text-blue-600">
                       {rates ? toMnt(car.price, car.currency, rates) : `${car.price} ${car.currency}`}
                     </p>
                   </td>
@@ -88,9 +88,9 @@ export default function Cars() {
       {/* Pagination */}
       {data && data.totalPages > 1 && (
         <div className="flex items-center justify-center gap-2 mt-6">
-          <button disabled={page <= 1} onClick={() => setPage(page - 1)} className="px-4 py-2 rounded-xl border border-gray-200 bg-white text-sm disabled:opacity-40 hover:border-blue-300 transition">Өмнөх</button>
-          <span className="px-4 py-2 text-sm text-gray-500">{page} / {data.totalPages}</span>
-          <button disabled={page >= data.totalPages} onClick={() => setPage(page + 1)} className="px-4 py-2 rounded-xl border border-gray-200 bg-white text-sm disabled:opacity-40 hover:border-blue-300 transition">Дараах</button>
+          <button disabled={page <= 1} onClick={() => setPage(page - 1)} className="px-4 py-2 rounded-xl border border-gray-200 bg-white text-lg disabled:opacity-40 hover:border-blue-300 transition">Өмнөх</button>
+          <span className="px-4 py-2 text-lg text-gray-500">{page} / {data.totalPages}</span>
+          <button disabled={page >= data.totalPages} onClick={() => setPage(page + 1)} className="px-4 py-2 rounded-xl border border-gray-200 bg-white text-lg disabled:opacity-40 hover:border-blue-300 transition">Дараах</button>
         </div>
       )}
     </div>

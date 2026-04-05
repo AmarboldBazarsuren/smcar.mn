@@ -37,17 +37,17 @@ export default function ManualCarsPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Машин нэмэх</h1>
-          <p className="text-sm text-gray-500 mt-1">Монголд байгаа машины зар оруулах</p>
+          <h1 className="text-3xl font-bold text-gray-900">Машин нэмэх</h1>
+          <p className="text-lg text-gray-500 mt-1">Монголд байгаа машины зар оруулах</p>
         </div>
         <div className="flex items-center gap-4">
           {storage && (
-            <div className="text-right text-xs text-gray-500">
+            <div className="text-right text-base text-gray-500">
               <p>{storage.fileCount} зураг</p>
               <p className="font-semibold">{storage.totalSizeMB} MB</p>
             </div>
           )}
-          <button onClick={showForm ? closeForm : openNew} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition">
+          <button onClick={showForm ? closeForm : openNew} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-lg font-semibold transition">
             {showForm ? 'Хаах' : '+ Машин нэмэх'}
           </button>
         </div>
@@ -71,12 +71,12 @@ export default function ManualCarsPage() {
               </div>
             )}
             <div className="p-4">
-              <p className="font-semibold text-sm truncate">{car.title}</p>
-              <p className="text-xs text-gray-500 mt-1">{car.brand} · {car.year}</p>
-              <p className="text-sm font-bold text-blue-600 mt-1">{formatNumber(car.price)}₮</p>
+              <p className="font-semibold text-lg truncate">{car.title}</p>
+              <p className="text-base text-gray-500 mt-1">{car.brand} · {car.year}</p>
+              <p className="text-lg font-bold text-blue-600 mt-1">{formatNumber(car.price)}₮</p>
               <div className="flex items-center gap-3 mt-3">
-                <button onClick={() => openEdit(car)} className="text-xs text-blue-600 hover:text-blue-800 font-medium">Засах</button>
-                <button onClick={() => { if (confirm('Устгах уу?')) deleteMut.mutate(car._id) }} className="text-xs text-red-500 hover:text-red-700 font-medium">Устгах</button>
+                <button onClick={() => openEdit(car)} className="text-base text-blue-600 hover:text-blue-800 font-medium">Засах</button>
+                <button onClick={() => { if (confirm('Устгах уу?')) deleteMut.mutate(car._id) }} className="text-base text-red-500 hover:text-red-700 font-medium">Устгах</button>
               </div>
             </div>
           </div>
@@ -136,72 +136,72 @@ function CarFormComponent({ car, onSuccess }: { car: any; onSuccess: () => void 
     }
   }
 
-  const inputClass = "w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition"
+  const inputClass = "w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition"
   const allImages = [...existingImages.map((src) => ({ type: 'existing' as const, src })), ...newPreviews.map((src, i) => ({ type: 'new' as const, src, idx: i }))]
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-6">
-      <h3 className="text-lg font-bold text-gray-900 mb-4">{isEdit ? 'Зар засах' : 'Шинэ зар нэмэх'}</h3>
+      <h3 className="text-xl font-bold text-gray-900 mb-4">{isEdit ? 'Зар засах' : 'Шинэ зар нэмэх'}</h3>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Гарчиг *</label>
+            <label className="block text-base font-semibold text-gray-600 mb-1">Гарчиг *</label>
             <input required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className={inputClass} placeholder="2024 BMW X5 M Sport" />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Брэнд *</label>
+            <label className="block text-base font-semibold text-gray-600 mb-1">Брэнд *</label>
             <input required value={form.brand} onChange={(e) => setForm({ ...form, brand: e.target.value })} className={inputClass} placeholder="BMW" />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Загвар</label>
+            <label className="block text-base font-semibold text-gray-600 mb-1">Загвар</label>
             <input value={form.model} onChange={(e) => setForm({ ...form, model: e.target.value })} className={inputClass} placeholder="X5" />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Он *</label>
+            <label className="block text-base font-semibold text-gray-600 mb-1">Он *</label>
             <input type="number" required value={form.year} onChange={(e) => setForm({ ...form, year: Number(e.target.value) })} className={inputClass} />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Үнэ (₮) *</label>
+            <label className="block text-base font-semibold text-gray-600 mb-1">Үнэ (₮) *</label>
             <input type="number" required value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className={inputClass} placeholder="65000000" />
-            <p className="text-[10px] text-gray-400 mt-0.5">Монгол төгрөгөөр оруулна</p>
+            <p className="text-[14px] text-gray-400 mt-0.5">Монгол төгрөгөөр оруулна</p>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Гүйлт (км)</label>
+            <label className="block text-base font-semibold text-gray-600 mb-1">Гүйлт (км)</label>
             <input type="number" value={form.mileage} onChange={(e) => setForm({ ...form, mileage: e.target.value })} className={inputClass} placeholder="50000" />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">CC</label>
+            <label className="block text-base font-semibold text-gray-600 mb-1">CC</label>
             <input type="number" value={form.cc} onChange={(e) => setForm({ ...form, cc: e.target.value })} className={inputClass} placeholder="2000" />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Түлш</label>
+            <label className="block text-base font-semibold text-gray-600 mb-1">Түлш</label>
             <select value={form.fuelType} onChange={(e) => setForm({ ...form, fuelType: e.target.value })} className={inputClass}>
               <option value="Gasoline">Бензин</option><option value="Diesel">Дизель</option><option value="Electric">Цахилгаан</option><option value="Hybrid">Хайбрид</option><option value="LPG">Газ</option>
             </select>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Хурдны хайрцаг</label>
+            <label className="block text-base font-semibold text-gray-600 mb-1">Хурдны хайрцаг</label>
             <select value={form.transmission} onChange={(e) => setForm({ ...form, transmission: e.target.value })} className={inputClass}>
               <option value="Auto">Автомат</option><option value="Manual">Механик</option>
             </select>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Өнгө</label>
+            <label className="block text-base font-semibold text-gray-600 mb-1">Өнгө</label>
             <input value={form.color} onChange={(e) => setForm({ ...form, color: e.target.value })} className={inputClass} placeholder="Black" />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1">Төрөл</label>
+            <label className="block text-base font-semibold text-gray-600 mb-1">Төрөл</label>
             <input value={form.body_type} onChange={(e) => setForm({ ...form, body_type: e.target.value })} className={inputClass} placeholder="SUV" />
           </div>
         </div>
         <div>
-          <label className="block text-xs font-semibold text-gray-600 mb-1">Тайлбар</label>
+          <label className="block text-base font-semibold text-gray-600 mb-1">Тайлбар</label>
           <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className={inputClass} rows={3} />
         </div>
 
         {/* Image upload area */}
         <div>
-          <label className="block text-xs font-semibold text-gray-600 mb-2">Зурагнууд</label>
+          <label className="block text-base font-semibold text-gray-600 mb-2">Зурагнууд</label>
 
           {/* Preview grid */}
           {allImages.length > 0 && (
@@ -212,7 +212,7 @@ function CarFormComponent({ car, onSuccess }: { car: any; onSuccess: () => void 
                   <button
                     type="button"
                     onClick={() => img.type === 'existing' ? removeExisting(img.src) : removeNew(img.idx!)}
-                    className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition"
+                    className="absolute top-1 right-1 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center text-[14px] opacity-0 group-hover:opacity-100 transition"
                   >
                     ✕
                   </button>
@@ -228,14 +228,14 @@ function CarFormComponent({ car, onSuccess }: { car: any; onSuccess: () => void 
               <circle cx="9" cy="9" r="2" />
               <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
             </svg>
-            <span className="text-xs text-gray-500 mt-2">Зураг сонгох (10 хүртэл)</span>
-            <span className="text-[10px] text-gray-400">JPG, PNG, WebP</span>
+            <span className="text-base text-gray-500 mt-2">Зураг сонгох (10 хүртэл)</span>
+            <span className="text-[14px] text-gray-400">JPG, PNG, WebP</span>
             <input type="file" multiple accept="image/*" onChange={handleFileChange} className="hidden" />
           </label>
         </div>
 
         <div className="flex items-center gap-3 pt-2">
-          <button type="submit" disabled={loading} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl text-sm font-semibold disabled:opacity-50 transition">
+          <button type="submit" disabled={loading} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl text-lg font-semibold disabled:opacity-50 transition">
             {loading ? 'Хадгалж байна...' : isEdit ? 'Өөрчлөлт хадгалах' : 'Хадгалах'}
           </button>
         </div>

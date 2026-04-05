@@ -38,46 +38,46 @@ export default function AdminLogin() {
               <path d="M9 17h6" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold" style={{ color: '#fff' }}>SMCar Admin</h1>
-          <p className="text-sm mt-1" style={{ color: '#64748b' }}>Админ панел руу нэвтрэх</p>
+          <h1 className="text-3xl font-bold" style={{ color: '#fff' }}>SMCar Admin</h1>
+          <p className="text-lg mt-1" style={{ color: '#64748b' }}>Админ панел руу нэвтрэх</p>
         </div>
 
         {/* Login form */}
         <div className="rounded-2xl p-6" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)' }}>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: '#94a3b8' }}>Нэвтрэх нэр</label>
+              <label className="block text-base font-semibold uppercase tracking-wider mb-1.5" style={{ color: '#94a3b8' }}>Нэвтрэх нэр</label>
               <input
                 type="text"
                 required
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition"
+                className="w-full rounded-xl px-4 py-3 text-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition"
                 style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: '#fff' }}
                 placeholder="Username"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: '#94a3b8' }}>Нууц үг</label>
+              <label className="block text-base font-semibold uppercase tracking-wider mb-1.5" style={{ color: '#94a3b8' }}>Нууц үг</label>
               <input
                 type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition"
+                className="w-full rounded-xl px-4 py-3 text-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition"
                 style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: '#fff' }}
                 placeholder="Password"
               />
             </div>
             {error && (
-              <div className="text-sm px-4 py-3 rounded-xl" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171' }}>
+              <div className="text-lg px-4 py-3 rounded-xl" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171' }}>
                 {error}
               </div>
             )}
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-700 py-3.5 rounded-xl text-sm font-semibold transition-all disabled:opacity-50"
+              className="w-full bg-blue-600 hover:bg-blue-700 py-3.5 rounded-xl text-lg font-semibold transition-all disabled:opacity-50"
               style={{ color: '#fff' }}
             >
               {loading ? 'Нэвтэрч байна...' : 'Нэвтрэх'}

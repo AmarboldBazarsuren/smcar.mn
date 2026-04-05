@@ -19,12 +19,12 @@ export default function Banners() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Баннер удирдах</h1>
-          <p className="text-sm text-gray-500 mt-1">Сайтын баннер зургууд</p>
+          <h1 className="text-3xl font-bold text-gray-900">Баннер удирдах</h1>
+          <p className="text-lg text-gray-500 mt-1">Сайтын баннер зургууд</p>
         </div>
         <button
           onClick={() => { setEditingBanner(null); setShowForm(true) }}
-          className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition shadow-lg shadow-blue-500/20 flex items-center gap-2"
+          className="bg-blue-600 hover:bg-blue-700 text-white text-lg font-semibold px-5 py-2.5 rounded-xl transition shadow-lg shadow-blue-500/20 flex items-center gap-2"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" x2="12" y1="5" y2="19" /><line x1="5" x2="19" y1="12" y2="12" /></svg>
           Баннер нэмэх
@@ -41,11 +41,11 @@ export default function Banners() {
             <div key={banner._id} className="bg-white rounded-2xl border border-gray-200 p-4 flex items-center gap-5">
               <img src={banner.imageUrl} alt={banner.title} className="w-28 h-20 object-cover rounded-xl shrink-0" />
               <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-gray-900 text-sm">{banner.title}</h3>
+                <h3 className="font-semibold text-gray-900 text-lg">{banner.title}</h3>
                 <div className="flex items-center gap-2 mt-1.5">
-                  <span className="text-xs bg-gray-50 px-2.5 py-1 rounded-lg text-gray-500">{banner.position}</span>
-                  <span className="text-xs text-gray-500">#{banner.order}</span>
-                  <span className={`text-xs px-2.5 py-1 rounded-lg font-medium ${banner.isActive ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-100 text-gray-500'}`}>
+                  <span className="text-base bg-gray-50 px-2.5 py-1 rounded-lg text-gray-500">{banner.position}</span>
+                  <span className="text-base text-gray-500">#{banner.order}</span>
+                  <span className={`text-base px-2.5 py-1 rounded-lg font-medium ${banner.isActive ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-100 text-gray-500'}`}>
                     {banner.isActive ? 'Идэвхтэй' : 'Идэвхгүй'}
                   </span>
                 </div>
@@ -101,43 +101,43 @@ function BannerForm({ banner, onClose }: { banner: Banner | null; onClose: () =>
       <div className="absolute inset-0 bg-gray-950/60 backdrop-blur-sm" />
       <div className="relative bg-white rounded-2xl w-full max-w-md shadow-2xl animate-fade-in-up" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between px-6 py-5 border-b border-gray-200">
-          <h2 className="text-lg font-bold">{banner ? 'Баннер засах' : 'Баннер нэмэх'}</h2>
+          <h2 className="text-xl font-bold">{banner ? 'Баннер засах' : 'Баннер нэмэх'}</h2>
           <button onClick={onClose} className="w-9 h-9 rounded-xl bg-gray-50 flex items-center justify-center text-gray-500 hover:text-gray-900 transition">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
           </button>
         </div>
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">Гарчиг</label>
-            <input type="text" required value={title} onChange={(e) => setTitle(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition" />
+            <label className="block text-base font-semibold text-gray-600 uppercase tracking-wider mb-1.5">Гарчиг</label>
+            <input type="text" required value={title} onChange={(e) => setTitle(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition" />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">Зураг</label>
-            <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-50 file:text-blue-600 file:font-medium file:text-sm hover:file:bg-blue-100" />
+            <label className="block text-base font-semibold text-gray-600 uppercase tracking-wider mb-1.5">Зураг</label>
+            <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="w-full text-lg file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-50 file:text-blue-600 file:font-medium file:text-lg hover:file:bg-blue-100" />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">Холбоос</label>
-            <input type="url" value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition" />
+            <label className="block text-base font-semibold text-gray-600 uppercase tracking-wider mb-1.5">Холбоос</label>
+            <input type="url" value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition" />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">Позиц</label>
-              <select value={position} onChange={(e) => setPosition(e.target.value as Banner['position'])} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30">
+              <label className="block text-base font-semibold text-gray-600 uppercase tracking-wider mb-1.5">Позиц</label>
+              <select value={position} onChange={(e) => setPosition(e.target.value as Banner['position'])} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30">
                 <option value="home_top">Нүүр дээр</option>
                 <option value="home_middle">Нүүр дунд</option>
                 <option value="sidebar">Sidebar</option>
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-1.5">Дараалал</label>
-              <input type="number" value={order} onChange={(e) => setOrder(Number(e.target.value))} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition" />
+              <label className="block text-base font-semibold text-gray-600 uppercase tracking-wider mb-1.5">Дараалал</label>
+              <input type="number" value={order} onChange={(e) => setOrder(Number(e.target.value))} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-lg focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition" />
             </div>
           </div>
           <div className="flex gap-3 pt-2">
-            <button type="submit" disabled={submitting} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl text-sm font-semibold transition disabled:opacity-50">
+            <button type="submit" disabled={submitting} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl text-lg font-semibold transition disabled:opacity-50">
               {submitting ? 'Хадгалж байна...' : 'Хадгалах'}
             </button>
-            <button type="button" onClick={onClose} className="flex-1 border border-gray-200 py-3 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition">
+            <button type="button" onClick={onClose} className="flex-1 border border-gray-200 py-3 rounded-xl text-lg font-medium text-gray-600 hover:bg-gray-50 transition">
               Болих
             </button>
           </div>

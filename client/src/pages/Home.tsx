@@ -6,14 +6,14 @@ import { toMnt, formatNumber, fuelLabel } from '../lib/utils'
 import type { Car, ExchangeRate } from '../types'
 
 const BRANDS = [
+  'Mercedes', 'BMW', 'Audi', 'Porsche', 'Land Rover',
   'Kia', 'Hyundai', 'Genesis', 'Chevrolet', 'Renault',
-  'Mercedes', 'BMW', 'Porsche', 'Mini', 'Land Rover',
-  'Toyota', 'Honda', 'Audi', 'Volkswagen', 'Nissan', 'Jeep',
+  'Toyota', 'Honda', 'Volkswagen', 'Nissan', 'Mini',
 ]
 
 
 export default function Home() {
-  const [activeBrand, setActiveBrand] = useState('Kia')
+  const [activeBrand, setActiveBrand] = useState('Mercedes')
   const [activeModel, setActiveModel] = useState<string | null>(null)
 
   // Сонгосон брэндийн машинууд (12 ширхэг авч модел + 4 машин гаргана)
@@ -108,7 +108,7 @@ export default function Home() {
       {/* ===== HERO: Featured car + brand tabs + models ===== */}
       <section className="bg-white">
         <div className="max-w-[1400px] mx-auto px-4 lg:px-8 py-6">
-          <h1 className="text-[20px] font-bold text-dark mb-5">
+          <h1 className="text-[28px] font-bold text-dark mb-5">
             Солонгос улсаас автомашин захиалга
           </h1>
 
@@ -118,7 +118,7 @@ export default function Home() {
               <button
                 key={brand}
                 onClick={() => handleBrandClick(brand)}
-                className={`shrink-0 px-4 py-2 text-[13px] font-medium rounded-full border transition-all ${
+                className={`shrink-0 px-4 py-2 text-[18px] font-medium rounded-full border transition-all ${
                   activeBrand === brand
                     ? 'bg-dark text-white border-dark'
                     : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
@@ -134,7 +134,7 @@ export default function Home() {
             <div className="flex items-center gap-1.5 overflow-x-auto pb-4 scrollbar-hide">
               <button
                 onClick={() => setActiveModel(null)}
-                className={`shrink-0 px-3 py-1.5 text-[12px] font-medium rounded-full border transition-all ${
+                className={`shrink-0 px-3 py-1.5 text-[16px] font-medium rounded-full border transition-all ${
                   !activeModel
                     ? 'bg-primary text-white border-primary'
                     : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
@@ -146,7 +146,7 @@ export default function Home() {
                 <button
                   key={model}
                   onClick={() => setActiveModel(model)}
-                  className={`shrink-0 px-3 py-1.5 text-[12px] font-medium rounded-full border transition-all ${
+                  className={`shrink-0 px-3 py-1.5 text-[16px] font-medium rounded-full border transition-all ${
                     activeModel === model
                       ? 'bg-primary text-white border-primary'
                       : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
@@ -176,7 +176,7 @@ export default function Home() {
               </div>
               <Link
                 to={`/cars?brand=${activeBrand}${activeModel ? `&model=${activeModel}` : ''}`}
-                className="inline-flex items-center gap-1 mt-4 text-[13px] font-semibold text-dark hover:text-primary transition"
+                className="inline-flex items-center gap-1 mt-4 text-[18px] font-semibold text-dark hover:text-primary transition"
               >
                 {activeBrand} {activeModel || ''} бүх машин харах →
               </Link>
@@ -211,8 +211,8 @@ export default function Home() {
       <section className="bg-gray-50 border-t border-gray-200">
         <div className="max-w-[1400px] mx-auto px-4 lg:px-8 py-10">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-[20px] font-bold text-dark">Сүүлд нэмэгдсэн</h2>
-            <Link to="/cars?sortBy=scraped_at&sortOrder=desc" className="text-[13px] font-semibold text-gray-500 hover:text-dark transition">
+            <h2 className="text-[28px] font-bold text-dark">Сүүлд нэмэгдсэн</h2>
+            <Link to="/cars?sortBy=scraped_at&sortOrder=desc" className="text-[18px] font-semibold text-gray-500 hover:text-dark transition">
               Бүгдийг харах →
             </Link>
           </div>
@@ -238,10 +238,10 @@ export default function Home() {
         <section key={brand} className="bg-white border-t border-gray-100">
           <div className="max-w-[1400px] mx-auto px-4 lg:px-8 py-10">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-[20px] font-bold text-dark">{brand}</h2>
+              <h2 className="text-[28px] font-bold text-dark">{brand}</h2>
               <Link
                 to={`/cars?brand=${brand}`}
-                className="text-[13px] font-semibold text-gray-500 hover:text-dark transition"
+                className="text-[18px] font-semibold text-gray-500 hover:text-dark transition"
               >
                 Бүгдийг харах →
               </Link>
@@ -268,7 +268,7 @@ export default function Home() {
         <section className="bg-gray-50 border-t border-gray-200">
           <div className="max-w-[1400px] mx-auto px-4 lg:px-8 py-10">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-[20px] font-bold text-dark">Бидний зарууд</h2>
+              <h2 className="text-[28px] font-bold text-dark">Бидний зарууд</h2>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {manualCars?.slice(0, 4).map((car: any) => (
@@ -279,15 +279,15 @@ export default function Home() {
                     )}
                   </div>
                   <div className="p-3">
-                    <p className="text-[13px] font-medium text-dark leading-snug truncate">{car.title}</p>
-                    <div className="flex items-center gap-1.5 mt-1 text-[11px] text-gray-400">
+                    <p className="text-[18px] font-medium text-dark leading-snug truncate">{car.title}</p>
+                    <div className="flex items-center gap-1.5 mt-1 text-[14px] text-gray-400">
                       <span>{car.year}</span>
                       <span>·</span>
                       <span>{formatNumber(car.mileage || 0)}км</span>
                       <span>·</span>
                       <span>{fuelLabel(car.fuelType)}</span>
                     </div>
-                    <p className="text-[15px] font-bold text-dark mt-2">
+                    <p className="text-[22px] font-bold text-dark mt-2">
                       {formatNumber(car.price)}₮
                     </p>
                   </div>
@@ -301,7 +301,7 @@ export default function Home() {
       {/* ===== BRAND GRID ===== */}
       <section className="bg-white border-t border-gray-200">
         <div className="max-w-[1400px] mx-auto px-4 lg:px-8 py-10">
-          <h2 className="text-[20px] font-bold text-dark mb-6">Брэнд</h2>
+          <h2 className="text-[28px] font-bold text-dark mb-6">Брэнд</h2>
           <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
             {BRANDS.map((brand) => (
               <Link
@@ -309,10 +309,10 @@ export default function Home() {
                 to={`/cars?brand=${brand}`}
                 className="flex flex-col items-center gap-1.5 p-3 rounded-lg hover:bg-gray-50 transition group"
               >
-                <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-[12px] font-bold text-gray-600 group-hover:bg-primary group-hover:text-white transition">
+                <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-[16px] font-bold text-gray-600 group-hover:bg-primary group-hover:text-white transition">
                   {brand.charAt(0)}
                 </div>
-                <span className="text-[11px] font-medium text-gray-600 group-hover:text-dark transition text-center">
+                <span className="text-[14px] font-medium text-gray-600 group-hover:text-dark transition text-center">
                   {brand}
                 </span>
               </Link>
@@ -351,19 +351,19 @@ function HeroFeaturedCard({ car, rates }: { car: Car; rates?: ExchangeRate }) {
         />
       )}
       <div className="relative z-10 flex flex-col justify-end h-full p-6 bg-gradient-to-t from-black/80 via-black/30 to-transparent min-h-[400px]">
-        <span className="inline-block bg-primary text-white text-[11px] font-bold px-2.5 py-1 rounded mb-3 w-fit uppercase tracking-wide">
+        <span className="inline-block bg-primary text-white text-[14px] font-bold px-2.5 py-1 rounded mb-3 w-fit uppercase tracking-wide">
           Онцлох зар
         </span>
-        <h2 className="text-white text-[22px] font-bold leading-snug mb-2">
+        <h2 className="text-white text-[30px] font-bold leading-snug mb-2">
           {car.title}
         </h2>
-        <div className="flex items-center gap-3 text-gray-300 text-[13px] mb-3">
+        <div className="flex items-center gap-3 text-gray-300 text-[18px] mb-3">
           <span>{car.year}</span>
           <span>·</span>
           <span>{formatNumber(car.mileage)} км</span>
         </div>
         {rates && (
-          <p className="text-white text-[24px] font-extrabold">
+          <p className="text-white text-[32px] font-extrabold">
             {toMnt(car.price, car.currency, rates)}
           </p>
         )}
@@ -380,7 +380,7 @@ function HeroFeaturedCard({ car, rates }: { car: Car; rates?: ExchangeRate }) {
             ))}
           </div>
         )}
-        <span className="mt-4 inline-flex items-center gap-1.5 bg-primary hover:bg-primary-dark text-white text-[13px] font-semibold px-5 py-2.5 rounded-lg w-fit transition">
+        <span className="mt-4 inline-flex items-center gap-1.5 bg-primary hover:bg-primary-dark text-white text-[18px] font-semibold px-5 py-2.5 rounded-lg w-fit transition">
           Дэлгэрэнгүй үзэх
         </span>
       </div>
@@ -433,13 +433,13 @@ function MiddleFeaturedCard({ car, rates }: { car: Car; rates?: ExchangeRate }) 
 
         {/* Info side */}
         <div className="p-6 lg:p-8 flex flex-col justify-center">
-          <span className="inline-block bg-yellow-500 text-black text-[11px] font-bold px-2.5 py-1 rounded mb-4 w-fit uppercase tracking-wide">
+          <span className="inline-block bg-yellow-500 text-black text-[14px] font-bold px-2.5 py-1 rounded mb-4 w-fit uppercase tracking-wide">
             Онцлох зар
           </span>
-          <h3 className="text-white text-[24px] font-bold leading-snug mb-3">
+          <h3 className="text-white text-[32px] font-bold leading-snug mb-3">
             {car.title}
           </h3>
-          <div className="flex flex-wrap items-center gap-3 text-gray-400 text-[13px] mb-4">
+          <div className="flex flex-wrap items-center gap-3 text-gray-400 text-[18px] mb-4">
             <span>{car.year}он</span>
             <span>·</span>
             <span>{formatNumber(car.mileage)} км</span>
@@ -453,11 +453,11 @@ function MiddleFeaturedCard({ car, rates }: { car: Car; rates?: ExchangeRate }) 
             )}
           </div>
           {rates && (
-            <p className="text-white text-[28px] font-extrabold mb-4">
+            <p className="text-white text-[36px] font-extrabold mb-4">
               {toMnt(car.price, car.currency, rates)}
             </p>
           )}
-          <span className="inline-flex items-center gap-1.5 bg-primary hover:bg-blue-700 text-white text-[14px] font-semibold px-6 py-3 rounded-lg w-fit transition">
+          <span className="inline-flex items-center gap-1.5 bg-primary hover:bg-blue-700 text-white text-[20px] font-semibold px-6 py-3 rounded-lg w-fit transition">
             Дэлгэрэнгүй үзэх →
           </span>
         </div>
@@ -479,17 +479,17 @@ function CompactCarCard({ car, rates }: { car: Car; rates?: ExchangeRate }) {
         />
       </div>
       <div className="p-3">
-        <p className="text-[13px] font-medium text-dark leading-snug truncate">
+        <p className="text-[18px] font-medium text-dark leading-snug truncate">
           {car.title}
         </p>
-        <div className="flex items-center gap-1.5 mt-1 text-[11px] text-gray-400">
+        <div className="flex items-center gap-1.5 mt-1 text-[14px] text-gray-400">
           <span>{car.year}</span>
           <span>·</span>
           <span>{formatNumber(car.mileage)}км</span>
           <span>·</span>
           <span>{fuelLabel(car.fuelType)}</span>
         </div>
-        <p className="text-[15px] font-bold text-dark mt-2">
+        <p className="text-[22px] font-bold text-dark mt-2">
           {rates ? toMnt(car.price, car.currency, rates) : `${formatNumber(car.price)} ${car.currency}`}
         </p>
       </div>

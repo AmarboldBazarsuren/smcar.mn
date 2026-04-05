@@ -31,20 +31,20 @@ export default function FeeSettingsPage() {
 
   if (isLoading) return <div className="flex justify-center py-20"><div className="w-8 h-8 border-3 border-blue-500 border-t-transparent rounded-full animate-spin" /></div>
 
-  const inputClass = "w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3.5 text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition"
+  const inputClass = "w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3.5 text-xl font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition"
 
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Татвар / Шимтгэл тохиргоо</h1>
-        <p className="text-sm text-gray-500 mt-1">Машины үнэ дээр нэмэгдэх татвар, шимтгэлийн тохиргоо</p>
+        <h1 className="text-3xl font-bold text-gray-900">Татвар / Шимтгэл тохиргоо</h1>
+        <p className="text-lg text-gray-500 mt-1">Машины үнэ дээр нэмэгдэх татвар, шимтгэлийн тохиргоо</p>
       </div>
 
       <div className="bg-white rounded-2xl border border-gray-200 p-6 max-w-lg">
         <form onSubmit={(e) => { e.preventDefault(); mutation.mutate() }} className="space-y-5">
           <div>
-            <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-2">
-              Үйлчилгээний шимтгэл (₩)
+            <label className="block text-base font-semibold text-gray-600 uppercase tracking-wider mb-2">
+              Солонгос дахь зардал (₩)
             </label>
             <input
               type="number"
@@ -52,24 +52,11 @@ export default function FeeSettingsPage() {
               onChange={(e) => setForm({ ...form, serviceFee: Number(e.target.value) })}
               className={inputClass}
             />
-            <p className="text-xs text-gray-500 mt-1.5">Жишээ: 700,000₩</p>
+            <p className="text-base text-gray-500 mt-1.5">Жишээ: 700,000₩ — Солонгос дахь оношилгоо, ачилт зэрэг зардал</p>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-2">
-              Тээврийн зардал (₩)
-            </label>
-            <input
-              type="number"
-              value={form.transportFee}
-              onChange={(e) => setForm({ ...form, transportFee: Number(e.target.value) })}
-              className={inputClass}
-            />
-            <p className="text-xs text-gray-500 mt-1.5">Солонгосоос Монгол хүртэлх тээврийн зардал</p>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-2">
+            <label className="block text-base font-semibold text-gray-600 uppercase tracking-wider mb-2">
               Онцгой албан татвар (%)
             </label>
             <input
@@ -79,11 +66,11 @@ export default function FeeSettingsPage() {
               onChange={(e) => setForm({ ...form, specialTax: Number(e.target.value) })}
               className={inputClass}
             />
-            <p className="text-xs text-gray-500 mt-1.5">Жишээ: 5%</p>
+            <p className="text-base text-gray-500 mt-1.5">Жишээ: 5%</p>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider mb-2">
+            <label className="block text-base font-semibold text-gray-600 uppercase tracking-wider mb-2">
               Гаалийн татвар / НӨАТ (%)
             </label>
             <input
@@ -93,11 +80,11 @@ export default function FeeSettingsPage() {
               onChange={(e) => setForm({ ...form, customsVat: Number(e.target.value) })}
               className={inputClass}
             />
-            <p className="text-xs text-gray-500 mt-1.5">Жишээ: 13%</p>
+            <p className="text-base text-gray-500 mt-1.5">Жишээ: 13%</p>
           </div>
 
           {fees?.updatedAt && (
-            <p className="text-xs text-gray-500">
+            <p className="text-base text-gray-500">
               Сүүлд: {new Date(fees.updatedAt).toLocaleString('mn-MN')}
             </p>
           )}
@@ -106,11 +93,11 @@ export default function FeeSettingsPage() {
             <button
               type="submit"
               disabled={mutation.isPending}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl text-sm font-semibold transition-all shadow-lg shadow-blue-500/20 disabled:opacity-50"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl text-lg font-semibold transition-all shadow-lg shadow-blue-500/20 disabled:opacity-50"
             >
               {mutation.isPending ? 'Хадгалж байна...' : 'Хадгалах'}
             </button>
-            {saved && <span className="text-sm text-green-500 font-medium animate-fade-in-up">Амжилттай!</span>}
+            {saved && <span className="text-lg text-green-500 font-medium animate-fade-in-up">Амжилттай!</span>}
           </div>
         </form>
       </div>

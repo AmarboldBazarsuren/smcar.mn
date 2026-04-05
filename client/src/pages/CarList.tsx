@@ -72,7 +72,7 @@ export default function CarList() {
       <div className="border-b border-gray-200 bg-gray-50">
         <div className="max-w-[1400px] mx-auto px-4 lg:px-8 py-4">
           {/* Breadcrumb */}
-          <nav className="flex items-center gap-1.5 text-[12px] text-gray-400 mb-3">
+          <nav className="flex items-center gap-1.5 text-[16px] text-gray-400 mb-3">
             <Link to="/" className="hover:text-dark transition">Нүүр</Link>
             <span>/</span>
             <span className="text-dark font-medium">Бүх машин</span>
@@ -92,10 +92,10 @@ export default function CarList() {
 
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-[22px] font-bold text-dark">
+              <h1 className="text-[30px] font-bold text-dark">
                 {filters.brand ? `${filters.brand}${filters.model ? ` ${filters.model}` : ''}` : 'Бүх машин'}
               </h1>
-              <p className="text-[13px] text-gray-500 mt-0.5">
+              <p className="text-[18px] text-gray-500 mt-0.5">
                 {data ? `${formatNumber(data.total)} үр дүн` : 'Хайж байна...'}
               </p>
             </div>
@@ -108,7 +108,7 @@ export default function CarList() {
                   const [sortBy, sortOrder] = e.target.value.split('_')
                   handleFilterChange({ sortBy: sortBy as CarFilters['sortBy'], sortOrder: sortOrder as CarFilters['sortOrder'] })
                 }}
-                className="hidden sm:block text-[13px] text-gray-600 border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:border-gray-400"
+                className="hidden sm:block text-[18px] text-gray-600 border border-gray-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:border-gray-400"
               >
                 <option value="scraped_at_desc">Шинэ нэмэгдсэн</option>
                 <option value="price_asc">Үнэ: Бага → Их</option>
@@ -120,12 +120,12 @@ export default function CarList() {
               {/* Mobile filter button */}
               <button
                 onClick={() => setMobileFilter(true)}
-                className="lg:hidden flex items-center gap-1.5 text-[13px] font-medium border border-gray-200 rounded-lg px-3 py-2 bg-white"
+                className="lg:hidden flex items-center gap-1.5 text-[18px] font-medium border border-gray-200 rounded-lg px-3 py-2 bg-white"
               >
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="21" x2="14" y1="4" y2="4" /><line x1="10" x2="3" y1="4" y2="4" /><line x1="21" x2="12" y1="12" y2="12" /><line x1="8" x2="3" y1="12" y2="12" /></svg>
                 Шүүх
                 {activeCount > 0 && (
-                  <span className="w-4.5 h-4.5 bg-primary text-white text-[10px] rounded-full flex items-center justify-center">{activeCount}</span>
+                  <span className="w-4.5 h-4.5 bg-primary text-white text-[14px] rounded-full flex items-center justify-center">{activeCount}</span>
                 )}
               </button>
             </div>
@@ -148,7 +148,7 @@ export default function CarList() {
               <div className="absolute inset-0 bg-black/40" onClick={() => setMobileFilter(false)} />
               <div className="absolute left-0 top-0 bottom-0 w-[300px] bg-white overflow-y-auto p-4 shadow-xl fade-in">
                 <div className="flex items-center justify-between mb-4">
-                  <span className="text-[15px] font-bold">Шүүлтүүр</span>
+                  <span className="text-[22px] font-bold">Шүүлтүүр</span>
                   <button onClick={() => setMobileFilter(false)} className="p-1 text-gray-400 hover:text-dark">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
                   </button>
@@ -183,7 +183,7 @@ export default function CarList() {
                     <button
                       key={page}
                       onClick={() => handlePageChange(page)}
-                      className={`w-9 h-9 rounded-lg text-[13px] font-medium transition ${
+                      className={`w-9 h-9 rounded-lg text-[18px] font-medium transition ${
                         page === cur
                           ? 'bg-dark text-white'
                           : 'border border-gray-200 text-gray-600 hover:border-gray-400'

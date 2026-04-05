@@ -33,8 +33,8 @@ export default function CarGrid({ cars, loading, rates }: CarGridProps) {
         <svg className="w-12 h-12 mx-auto mb-3 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
           <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
         </svg>
-        <p className="text-[15px] font-medium text-gray-600">Машин олдсонгүй</p>
-        <p className="text-[13px] text-gray-400 mt-1">Шүүлтээ өөрчилж дахин хайна уу</p>
+        <p className="text-[22px] font-medium text-gray-600">Машин олдсонгүй</p>
+        <p className="text-[18px] text-gray-400 mt-1">Шүүлтээ өөрчилж дахин хайна уу</p>
       </div>
     )
   }

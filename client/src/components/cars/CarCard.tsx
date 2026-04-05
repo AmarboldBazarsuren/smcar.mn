@@ -25,19 +25,19 @@ export default function CarCard({ car, rates }: CarCardProps) {
         {/* Badges */}
         <div className="absolute top-2.5 left-2.5 flex gap-1.5">
           {car.fuelType === 'Electric' && (
-            <span className="bg-green-600 text-white text-[10px] font-bold px-2 py-0.5 rounded">EV</span>
+            <span className="bg-green-600 text-white text-[14px] font-bold px-2 py-0.5 rounded">EV</span>
           )}
         </div>
       </div>
 
       {/* Content */}
       <div className="p-3.5">
-        <h3 className="text-[14px] font-semibold text-dark leading-snug line-clamp-2 min-h-[40px]">
+        <h3 className="text-[20px] font-semibold text-dark leading-snug line-clamp-2 min-h-[40px]">
           {car.title}
         </h3>
 
         {/* Specs row */}
-        <div className="flex items-center gap-1.5 mt-2 text-[11px] text-gray-400 flex-wrap">
+        <div className="flex items-center gap-1.5 mt-2 text-[14px] text-gray-400 flex-wrap">
           <span>{car.year}년</span>
           <span className="text-gray-300">|</span>
           <span>{formatNumber(car.mileage)}km</span>
@@ -51,15 +51,15 @@ export default function CarCard({ car, rates }: CarCardProps) {
         <div className="mt-3 pt-3 border-t border-gray-100">
           {rates ? (
             <>
-              <p className="text-[17px] font-extrabold text-dark">
+              <p className="text-[24px] font-extrabold text-dark">
                 {toMnt(car.price, car.currency, rates)}
               </p>
-              <p className="text-[11px] text-gray-400 mt-0.5">
+              <p className="text-[14px] text-gray-400 mt-0.5">
                 {formatNumber(car.price)} {car.currency}
               </p>
             </>
           ) : (
-            <p className="text-[17px] font-extrabold text-dark">
+            <p className="text-[24px] font-extrabold text-dark">
               {formatNumber(car.price)} {car.currency}
             </p>
           )}
