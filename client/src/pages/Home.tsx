@@ -116,13 +116,13 @@ export default function Home() {
             <span className="inline-block bg-red-600 text-white text-[16px] font-bold px-3 py-1 rounded-lg ml-3 align-middle">Somang Trading</span>
           </h1>
 
-          {/* Brand tabs - horizontal scroll */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-3 border-b border-gray-200" style={{ scrollbarWidth: 'thin' }}>
+          {/* Brand grid - 4-5 rows */}
+          <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-7 lg:grid-cols-9 gap-2 pb-4 mb-3 border-b border-gray-200">
             {BRANDS.map((brand) => (
               <button
                 key={brand}
                 onClick={() => handleBrandClick(brand)}
-                className={`shrink-0 px-4 py-2 text-[18px] font-medium rounded-full border transition-all whitespace-nowrap ${
+                className={`px-2 py-2 text-[15px] font-medium rounded-lg border transition-all text-center truncate ${
                   activeBrand === brand
                     ? 'bg-dark text-white border-dark'
                     : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
