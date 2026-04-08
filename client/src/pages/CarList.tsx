@@ -43,53 +43,57 @@ export default function CarList() {
     }
   }
 
-  // Тусгай ангилал: API type filter дэмждэггүй тул client-side шүүнэ
+  // Тусгай ангилал (화물•특장•버스): model-аар API-аас шууд авна
   const vehicleType = searchParams.get('vehicleType') || undefined
   const isVehicleTypeFilter = !!vehicleType
 
-  // Тусгай ангилал бол brand/бусад шүүлтгүйгээр бүгдийг авна, client-side дээр шүүнэ
-  const vehicleTypeApiFilters = isVehicleTypeFilter
-    ? { sortBy: apiFilters.sortBy, sortOrder: apiFilters.sortOrder, limit: 1000 }
-    : apiFilters
+  const SPECIAL_MODELS = ['Porter', 'Bongo', 'County', 'Mighty', 'Starex', 'Staria', 'Solati', 'Colorado', 'Master', 'Truck', 'Xcient', 'Universe']
 
-  const { data: rawData, isLoading } = useQuery({
-    queryKey: ['cars', vehicleTypeApiFilters, vehicleType],
-    queryFn: () => fetchCars(vehicleTypeApiFilters as any),
+  // Тусгай ангилал бол олон model-аар fetch хийж нэгтгэнэ
+  const { data: specialData, isLoading: specialLoading } = useQuery({
+    queryKey: ['specialVehicles', filters.brand, filters.sortBy, filters.sortOrder],
+    queryFn: async () => {
+      const results = await Promise.all(
+        SPECIAL_MODELS.map((model) =>
+          fetchCars({ model, brand: filters.brand || undefined, limit: 200, sortBy: filters.sortBy, sortOrder: filters.sortOrder })
+        )
+      )
+      // Нэгтгэж давхардлыг хасна
+      const seen = new Set<string>()
+      const allCars = results.flatMap((r) => r.cars).filter((c) => {
+        if (seen.has(c.id)) return false
+        seen.add(c.id)
+        return true
+      })
+      return allCars
+    },
+    enabled: isVehicleTypeFilter,
+    staleTime: 10 * 60 * 1000,
   })
 
-  // encar 화물•특장•버스 ангилал
-  const SPECIAL_TYPES = ['Minivan', '화물차']
-  const SPECIAL_KEYWORDS = ['porter', 'bongo', 'county', 'mighty', 'starex', 'staria', 'solati', 'renault master', 'renault-koreasam master', 'cargo', 'school bus', 'truck', 'dump', 'crane', 'tractor', 'trailer', 'camper', 'wing body']
-
-  const isSpecialCar = (c: { type?: string; title?: string }) => {
-    if (SPECIAL_TYPES.includes(c.type || '')) return true
-    const t = c.title?.toLowerCase() || ''
-    return SPECIAL_KEYWORDS.some((kw) => t.includes(kw))
-  }
-
-  // Бүх тусгай машинуудаас брэнд жагсаалт (brand шүүлтээс хамааралгүй)
-  const allSpecialCars = isVehicleTypeFilter && rawData?.cars
-    ? rawData.cars.filter(isSpecialCar)
-    : []
-
-  const specialBrands = isVehicleTypeFilter
-    ? [...new Set(allSpecialCars.map((c) => c.brand).filter(Boolean))].sort()
+  const specialBrands = isVehicleTypeFilter && specialData
+    ? [...new Set(specialData.map((c) => c.brand).filter(Boolean))].sort()
     : undefined
 
-  // Тусгай ангилал дээр brand + бусад шүүлтийг client-side хийнэ
-  const data = isVehicleTypeFilter && rawData
+  const { data: normalData, isLoading: normalLoading } = useQuery({
+    queryKey: ['cars', apiFilters],
+    queryFn: () => fetchCars(apiFilters),
+    enabled: !isVehicleTypeFilter,
+  })
+
+  const isLoading = isVehicleTypeFilter ? specialLoading : normalLoading
+
+  const data = isVehicleTypeFilter
     ? (() => {
-        let filtered = allSpecialCars
-        if (filters.brand) filtered = filtered.filter((c) => c.brand === filters.brand)
-        if (filters.model) filtered = filtered.filter((c) => c.model === filters.model)
-        if (filters.fuelType) filtered = filtered.filter((c) => c.fuelType === filters.fuelType)
-        if (filters.transmission) filtered = filtered.filter((c) => c.transmission === filters.transmission)
-        if (filters.yearFrom) filtered = filtered.filter((c) => c.year >= filters.yearFrom!)
-        if (filters.yearTo) filtered = filtered.filter((c) => c.year <= filters.yearTo!)
-        if (filters.maxMileage) filtered = filtered.filter((c) => c.mileage <= filters.maxMileage!)
-        return { ...rawData, cars: filtered, total: filtered.length, totalPages: 1 }
+        let cars = specialData || []
+        if (filters.fuelType) cars = cars.filter((c) => c.fuelType === filters.fuelType)
+        if (filters.transmission) cars = cars.filter((c) => c.transmission === filters.transmission)
+        if (filters.yearFrom) cars = cars.filter((c) => c.year >= filters.yearFrom!)
+        if (filters.yearTo) cars = cars.filter((c) => c.year <= filters.yearTo!)
+        if (filters.maxMileage) cars = cars.filter((c) => c.mileage <= filters.maxMileage!)
+        return { cars, total: cars.length, page: 1, totalPages: 1 }
       })()
-    : rawData
+    : normalData
 
   const handleFilterChange = (newFilters: Partial<CarFilters>) => {
     const params = new URLSearchParams(searchParams)
