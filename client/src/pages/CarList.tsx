@@ -164,6 +164,29 @@ export default function CarList() {
               <p className="text-[18px] text-gray-500 mt-0.5">
                 {data ? `${formatNumber(data.total)} үр дүн` : 'Хайж байна...'}
               </p>
+              {isVehicleTypeFilter && (
+                <div className="flex flex-wrap gap-2 mt-3">
+                  <button
+                    onClick={() => handleFilterChange({ model: undefined })}
+                    className={`px-3 py-1.5 text-[16px] font-medium rounded-full border transition-all ${
+                      !filters.model ? 'bg-dark text-white border-dark' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
+                    }`}
+                  >
+                    Бүгд
+                  </button>
+                  {SPECIAL_MODELS.map((m) => (
+                    <button
+                      key={m}
+                      onClick={() => handleFilterChange({ model: filters.model === m ? undefined : m })}
+                      className={`px-3 py-1.5 text-[16px] font-medium rounded-full border transition-all ${
+                        filters.model === m ? 'bg-dark text-white border-dark' : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
+                      }`}
+                    >
+                      {m}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="flex items-center gap-2.5">
