@@ -20,9 +20,10 @@ const FUEL_TYPES = [
 interface Props {
   filters: CarFilters
   onFilterChange: (f: Partial<CarFilters>) => void
+  availableBrands?: string[]
 }
 
-export default function CarFilter({ filters, onFilterChange }: Props) {
+export default function CarFilter({ filters, onFilterChange, availableBrands }: Props) {
   // Брэнд сонгогдсон бол тухайн брэндийн загваруудыг авах
   const { data: modelData } = useQuery({
     queryKey: ['brandModels', filters.brand],
@@ -48,7 +49,7 @@ export default function CarFilter({ filters, onFilterChange }: Props) {
           className={selectClass}
         >
           <option value="">Бүгд</option>
-          {BRANDS.map((b) => <option key={b} value={b}>{b}</option>)}
+          {(availableBrands || BRANDS).map((b) => <option key={b} value={b}>{b}</option>)}
         </select>
       </div>
 

@@ -70,6 +70,11 @@ export default function CarList() {
       })()
     : rawData
 
+  // Тусгай ангилал дээр зөвхөн байгаа брэндүүдийг харуулах
+  const specialBrands = isVehicleTypeFilter && data?.cars
+    ? [...new Set(data.cars.map((c) => c.brand).filter(Boolean))].sort()
+    : undefined
+
   const handleFilterChange = (newFilters: Partial<CarFilters>) => {
     const params = new URLSearchParams(searchParams)
     Object.entries(newFilters).forEach(([key, value]) => {
@@ -161,7 +166,7 @@ export default function CarList() {
           {/* Desktop sidebar */}
           <aside className="hidden lg:block w-[240px] shrink-0">
             <div className="sticky top-[76px]">
-              <CarFilter filters={filters} onFilterChange={handleFilterChange} />
+              <CarFilter filters={filters} onFilterChange={handleFilterChange} availableBrands={specialBrands} />
             </div>
           </aside>
 
@@ -176,7 +181,7 @@ export default function CarList() {
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
                   </button>
                 </div>
-                <CarFilter filters={filters} onFilterChange={handleFilterChange} />
+                <CarFilter filters={filters} onFilterChange={handleFilterChange} availableBrands={specialBrands} />
               </div>
             </div>
           )}
