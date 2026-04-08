@@ -110,6 +110,7 @@ export default function Home() {
         <div className="max-w-[1400px] mx-auto px-4 lg:px-8 py-6">
           <h1 className="text-[28px] font-bold text-dark mb-5">
             Солонгос улсаас автомашин захиалга
+            <span className="inline-block bg-red-600 text-white text-[16px] font-bold px-3 py-1 rounded-lg ml-3 align-middle">Somang Trading</span>
           </h1>
 
           {/* Brand tabs */}
