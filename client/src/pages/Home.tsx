@@ -96,6 +96,25 @@ export default function Home() {
     staleTime: 10 * 60 * 1000,
   })
 
+  // Брэнд grid-д брэнд бүрт нэг машин харуулахын тулд олон машин авна
+  const { data: brandGridData } = useQuery({
+    queryKey: ['brandGridCars'],
+    queryFn: () => fetchCars({ limit: 1000, sortBy: 'scraped_at', sortOrder: 'desc' }),
+    staleTime: 10 * 60 * 1000,
+  })
+  const brandGridMap = new Map<string, Car>()
+  if (brandGridData?.cars) {
+    for (const car of brandGridData.cars) {
+      const b = car.brand
+      if (b && BRANDS.some((br) => b.toLowerCase().includes(br.toLowerCase()) || br.toLowerCase().includes(b.toLowerCase())) && !brandGridMap.has(b)) {
+        const matchedBrand = BRANDS.find((br) => b.toLowerCase().includes(br.toLowerCase()) || br.toLowerCase().includes(b.toLowerCase()))
+        if (matchedBrand && !brandGridMap.has(matchedBrand)) {
+          brandGridMap.set(matchedBrand, car)
+        }
+      }
+    }
+  }
+
   const { data: rates } = useQuery({ queryKey: ['exchangeRate'], queryFn: fetchExchangeRate })
   const { data: banners } = useQuery({ queryKey: ['banners'], queryFn: fetchBanners })
 
@@ -302,25 +321,44 @@ export default function Home() {
         </section>
       )}
 
-      {/* ===== BRAND GRID ===== */}
+      {/* ===== BRAND GRID (car card style) ===== */}
       <section className="bg-white border-t border-gray-200">
         <div className="max-w-[1400px] mx-auto px-4 lg:px-8 py-10">
           <h2 className="text-[28px] font-bold text-dark mb-6">Брэнд</h2>
-          <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7 gap-2">
-            {BRANDS.map((brand) => (
-              <Link
-                key={brand}
-                to={`/cars?brand=${brand}`}
-                className="flex flex-col items-center gap-1.5 p-3 rounded-lg hover:bg-gray-50 transition group"
-              >
-                <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-[16px] font-bold text-gray-600 group-hover:bg-primary group-hover:text-white transition">
-                  {brand.charAt(0)}
-                </div>
-                <span className="text-[14px] font-medium text-gray-600 group-hover:text-dark transition text-center">
-                  {brand}
-                </span>
-              </Link>
-            ))}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {BRANDS.map((brand) => {
+              const car = brandGridMap.get(brand)
+              return (
+                <Link
+                  key={brand}
+                  to={`/cars?brand=${brand}`}
+                  className="group bg-white rounded-lg overflow-hidden border border-gray-100 hover:shadow-md transition-shadow"
+                >
+                  <div className="relative bg-gray-50 aspect-[4/3] overflow-hidden">
+                    {car ? (
+                      <img
+                        src={getImageUrl(car.image)}
+                        alt={brand}
+                        className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-[40px] font-bold text-gray-300">
+                        {brand.charAt(0)}
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-3">
+                    <p className="text-[18px] font-semibold text-dark truncate">{brand}</p>
+                    {car && rates && (
+                      <p className="text-[14px] text-gray-400 mt-0.5">
+                        {toMnt(car.price, car.currency, rates)} ~
+                      </p>
+                    )}
+                  </div>
+                </Link>
+              )
+            })}
           </div>
         </div>
       </section>
