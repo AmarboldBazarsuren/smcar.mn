@@ -43,37 +43,53 @@ export default function CarList() {
     }
   }
 
-  // Автобус шүүлт: API дэмждэггүй тул client-side шүүнэ
+  // Тусгай ангилал: API type filter дэмждэггүй тул client-side шүүнэ
   const vehicleType = searchParams.get('vehicleType') || undefined
   const isVehicleTypeFilter = !!vehicleType
+
+  // Тусгай ангилал бол brand/бусад шүүлтгүйгээр бүгдийг авна, client-side дээр шүүнэ
   const vehicleTypeApiFilters = isVehicleTypeFilter
-    ? { ...apiFilters, body_type: undefined, limit: 1000 }
+    ? { sortBy: apiFilters.sortBy, sortOrder: apiFilters.sortOrder, limit: 1000 }
     : apiFilters
 
   const { data: rawData, isLoading } = useQuery({
     queryKey: ['cars', vehicleTypeApiFilters, vehicleType],
-    queryFn: () => fetchCars(vehicleTypeApiFilters),
+    queryFn: () => fetchCars(vehicleTypeApiFilters as any),
   })
 
   // encar 화물•특장•버스 ангилал
   const SPECIAL_TYPES = ['Minivan', '화물차']
   const SPECIAL_KEYWORDS = ['porter', 'bongo', 'county', 'mighty', 'starex', 'staria', 'solati', 'master', 'cargo', 'bus', 'truck', 'dump', 'crane', 'tractor', 'trailer', 'camper', 'wing']
 
+  const isSpecialCar = (c: { type?: string; title?: string }) => {
+    if (SPECIAL_TYPES.includes(c.type || '')) return true
+    const t = c.title?.toLowerCase() || ''
+    return SPECIAL_KEYWORDS.some((kw) => t.includes(kw))
+  }
+
+  // Бүх тусгай машинуудаас брэнд жагсаалт (brand шүүлтээс хамааралгүй)
+  const allSpecialCars = isVehicleTypeFilter && rawData?.cars
+    ? rawData.cars.filter(isSpecialCar)
+    : []
+
+  const specialBrands = isVehicleTypeFilter
+    ? [...new Set(allSpecialCars.map((c) => c.brand).filter(Boolean))].sort()
+    : undefined
+
+  // Тусгай ангилал дээр brand + бусад шүүлтийг client-side хийнэ
   const data = isVehicleTypeFilter && rawData
     ? (() => {
-        const filtered = rawData.cars.filter((c) => {
-          if (SPECIAL_TYPES.includes(c.type)) return true
-          const t = c.title?.toLowerCase() || ''
-          return SPECIAL_KEYWORDS.some((kw) => t.includes(kw))
-        })
+        let filtered = allSpecialCars
+        if (filters.brand) filtered = filtered.filter((c) => c.brand === filters.brand)
+        if (filters.model) filtered = filtered.filter((c) => c.model === filters.model)
+        if (filters.fuelType) filtered = filtered.filter((c) => c.fuelType === filters.fuelType)
+        if (filters.transmission) filtered = filtered.filter((c) => c.transmission === filters.transmission)
+        if (filters.yearFrom) filtered = filtered.filter((c) => c.year >= filters.yearFrom!)
+        if (filters.yearTo) filtered = filtered.filter((c) => c.year <= filters.yearTo!)
+        if (filters.maxMileage) filtered = filtered.filter((c) => c.mileage <= filters.maxMileage!)
         return { ...rawData, cars: filtered, total: filtered.length, totalPages: 1 }
       })()
     : rawData
-
-  // Тусгай ангилал дээр зөвхөн байгаа брэндүүдийг харуулах
-  const specialBrands = isVehicleTypeFilter && data?.cars
-    ? [...new Set(data.cars.map((c) => c.brand).filter(Boolean))].sort()
-    : undefined
 
   const handleFilterChange = (newFilters: Partial<CarFilters>) => {
     const params = new URLSearchParams(searchParams)
