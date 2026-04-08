@@ -45,9 +45,9 @@ export default function Header() {
               Бүх машин
             </Link>
             <Link
-              to="/cars?body_type=Bus"
+              to="/cars?vehicleType=bus"
               className={`text-[20px] font-medium py-[18px] border-b-2 transition-colors ${
-                isActive('/cars', 'body_type=Bus') ? 'border-primary text-dark' : 'border-transparent text-gray-500 hover:text-dark'
+                isActive('/cars', 'vehicleType=bus') ? 'border-primary text-dark' : 'border-transparent text-gray-500 hover:text-dark'
               }`}
             >
               Автобус
@@ -101,7 +101,7 @@ export default function Header() {
             {[
               { to: '/', label: 'Нүүр' },
               { to: '/cars', label: 'Бүх машин' },
-              { to: '/cars?body_type=Bus', label: 'Автобус' },
+              { to: '/cars?vehicleType=bus', label: 'Автобус' },
             ].map((link) => (
               <Link
                 key={link.label}

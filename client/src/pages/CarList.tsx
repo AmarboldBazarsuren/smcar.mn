@@ -43,10 +43,29 @@ export default function CarList() {
     }
   }
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['cars', apiFilters],
-    queryFn: () => fetchCars(apiFilters),
+  // Автобус шүүлт: API дэмждэггүй тул client-side шүүнэ
+  const vehicleType = searchParams.get('vehicleType') || undefined
+  const isVehicleTypeFilter = !!vehicleType
+  const vehicleTypeApiFilters = isVehicleTypeFilter
+    ? { ...apiFilters, body_type: undefined, limit: 1000 }
+    : apiFilters
+
+  const { data: rawData, isLoading } = useQuery({
+    queryKey: ['cars', vehicleTypeApiFilters, vehicleType],
+    queryFn: () => fetchCars(vehicleTypeApiFilters),
   })
+
+  const VEHICLE_TYPE_MAP: Record<string, string[]> = {
+    bus: ['RV', 'Minivan'],
+  }
+
+  const data = isVehicleTypeFilter && rawData
+    ? (() => {
+        const types = VEHICLE_TYPE_MAP[vehicleType!] || []
+        const filtered = rawData.cars.filter((c) => types.includes(c.type))
+        return { ...rawData, cars: filtered, total: filtered.length, totalPages: 1 }
+      })()
+    : rawData
 
   const handleFilterChange = (newFilters: Partial<CarFilters>) => {
     const params = new URLSearchParams(searchParams)
@@ -94,7 +113,7 @@ export default function CarList() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-[30px] font-bold text-dark">
-                {filters.brand ? `${filters.brand}${filters.model ? ` ${filters.model}` : ''}` : 'Бүх машин'}
+                {vehicleType === 'bus' ? 'Автобус' : filters.brand ? `${filters.brand}${filters.model ? ` ${filters.model}` : ''}` : 'Бүх машин'}
               </h1>
               <p className="text-[18px] text-gray-500 mt-0.5">
                 {data ? `${formatNumber(data.total)} үр дүн` : 'Хайж байна...'}
