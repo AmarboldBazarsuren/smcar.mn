@@ -223,12 +223,12 @@ export default function CarDetail() {
               {/* Title card */}
               <div className="bg-white rounded-xl border border-gray-200 p-5">
                 <h1 className="text-[28px] font-bold text-dark leading-snug">{car.title}</h1>
-                <div className="flex flex-wrap items-center gap-2 mt-3 text-[16px] text-gray-400">
-                  <span className="bg-gray-100 px-2.5 py-1 rounded-full">{car.year}он</span>
-                  {car.mileage > 0 && <span className="bg-gray-100 px-2.5 py-1 rounded-full">{formatNumber(car.mileage)} км</span>}
-                  <span className="bg-gray-100 px-2.5 py-1 rounded-full">{fuelLabel(car.fuelType)}</span>
-                  {car.transmission && <span className="bg-gray-100 px-2.5 py-1 rounded-full">{car.transmission === 'Auto' ? 'Автомат' : car.transmission}</span>}
-                  {cc && <span className="bg-gray-100 px-2.5 py-1 rounded-full">{formatNumber(cc)} cc</span>}
+                <div className="flex flex-wrap items-center gap-2 mt-3 text-[16px]">
+                  <span className="bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full">{car.year}он</span>
+                  {car.mileage > 0 && <span className="bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full">{formatNumber(car.mileage)} км</span>}
+                  <span className="bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full">{fuelLabel(car.fuelType)}</span>
+                  {car.transmission && <span className="bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full">{car.transmission === 'Auto' ? 'Автомат' : car.transmission}</span>}
+                  {cc && <span className="bg-blue-50 text-blue-600 px-2.5 py-1 rounded-full">{formatNumber(cc)} cc</span>}
                 </div>
               </div>
 
@@ -254,7 +254,7 @@ export default function CarDetail() {
                       {/* Тээврийн зардал — сонголттой */}
                       <div>
                         <div className="flex justify-between text-[18px] mb-2">
-                          <span className="text-gray-500">Тээврийн зардал</span>
+                          <span className="text-blue-600">Тээврийн зардал</span>
                         </div>
                         <div className="flex flex-wrap gap-1.5">
                           {TRANSPORT_OPTIONS.map((opt) => {
@@ -350,7 +350,7 @@ function FeeRow({ label, amountKrw, amountMnt, wonToMnt }: { label: string; amou
   const mnt = amountMnt ?? (amountKrw && wonToMnt ? Math.round(amountKrw * wonToMnt) : 0)
   return (
     <div className="flex justify-between text-[18px]">
-      <span className="text-gray-500">{label}</span>
+      <span className="text-blue-600">{label}</span>
       <span className="font-medium">{formatNumber(mnt)}₮</span>
     </div>
   )

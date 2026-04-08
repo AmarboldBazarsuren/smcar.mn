@@ -45,12 +45,12 @@ export default function Header() {
               Бүх машин
             </Link>
             <Link
-              to="/cars?fuelType=Electric"
+              to="/cars?body_type=Bus"
               className={`text-[20px] font-medium py-[18px] border-b-2 transition-colors ${
-                isActive('/cars', 'fuelType=Electric') ? 'border-primary text-dark' : 'border-transparent text-gray-500 hover:text-dark'
+                isActive('/cars', 'body_type=Bus') ? 'border-primary text-dark' : 'border-transparent text-gray-500 hover:text-dark'
               }`}
             >
-              Цахилгаан
+              Автобус
             </Link>
           </nav>
 
@@ -101,7 +101,7 @@ export default function Header() {
             {[
               { to: '/', label: 'Нүүр' },
               { to: '/cars', label: 'Бүх машин' },
-              { to: '/cars?fuelType=Electric', label: 'Цахилгаан' },
+              { to: '/cars?body_type=Bus', label: 'Автобус' },
             ].map((link) => (
               <Link
                 key={link.label}

@@ -306,7 +306,7 @@ export default function Home() {
       <section className="bg-white border-t border-gray-200">
         <div className="max-w-[1400px] mx-auto px-4 lg:px-8 py-10">
           <h2 className="text-[28px] font-bold text-dark mb-6">Брэнд</h2>
-          <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
+          <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7 gap-2">
             {BRANDS.map((brand) => (
               <Link
                 key={brand}
