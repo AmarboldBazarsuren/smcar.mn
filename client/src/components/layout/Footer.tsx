@@ -8,7 +8,7 @@ export default function Footer() {
           {/* Brand */}
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <img src="/logo.png" alt="SMCar.mn" className="h-12" />
+              <img src="/logo2.png" alt="SMCar.mn" className="h-12" />
             </div>
             <p className="text-[16px] text-gray-400 leading-relaxed">
               Солонгосоос шууд автомашин захиалах Монголын платформ
