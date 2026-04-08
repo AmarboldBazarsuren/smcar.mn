@@ -320,22 +320,30 @@ export default function CarDetail() {
                 Захиалга өгөх
               </button>
 
-              <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-2">
                 <a
                   href="tel:+97677220707"
-                  className="flex items-center justify-center gap-2.5 w-full bg-white border border-gray-200 text-dark py-3.5 rounded-xl text-[20px] font-semibold hover:bg-gray-50 transition"
+                  className="flex items-center justify-center gap-2 bg-white border border-gray-200 text-dark py-3.5 rounded-xl text-[18px] font-semibold hover:bg-gray-50 transition"
                 >
-                  <span className="text-[20px]">🇲🇳</span>
-                  +976 7722-0707
+                  <span className="text-[18px]">🇲🇳</span>
+                  7722-0707
                 </a>
                 <a
-                  href="tel:+8272105633"
-                  className="flex items-center justify-center gap-2.5 w-full bg-white border border-gray-200 text-dark py-3.5 rounded-xl text-[20px] font-semibold hover:bg-gray-50 transition"
+                  href="tel:+97672105633"
+                  className="flex items-center justify-center gap-2 bg-white border border-gray-200 text-dark py-3.5 rounded-xl text-[18px] font-semibold hover:bg-gray-50 transition"
                 >
-                  <span className="text-[20px]">🇰🇷</span>
-                  +82 72105633
+                  <span className="text-[18px]">🇰🇷</span>
+                  7210-5633
                 </a>
               </div>
+
+              <button
+                onClick={() => { navigator.clipboard.writeText(window.location.href) }}
+                className="flex items-center justify-center gap-2 w-full bg-white border border-gray-200 text-dark py-3.5 rounded-xl text-[18px] font-semibold hover:bg-gray-50 transition"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
+                Холбоос хуулах
+              </button>
 
               {/* Info card */}
               <div className="bg-blue-50 rounded-xl p-4 text-[16px] text-blue-700 leading-relaxed">
