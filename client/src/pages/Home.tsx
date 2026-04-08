@@ -30,10 +30,10 @@ export default function Home() {
     ? [...new Set(brandCarsData.cars.map((c) => c.model).filter(Boolean))].sort()
     : []
 
-  // Модел сонгосон бол шүүх, сонгоогүй бол эхний 20-г авах (4-5 эгнээ)
+  // Модел сонгосон бол шүүх, сонгоогүй бол эхний 4-г авах
   const brandCars = activeModel
-    ? (brandCarsData?.cars || []).filter((c) => c.model === activeModel).slice(0, 20)
-    : (brandCarsData?.cars || []).slice(0, 20)
+    ? (brandCarsData?.cars || []).filter((c) => c.model === activeModel).slice(0, 4)
+    : (brandCarsData?.cars || []).slice(0, 4)
 
   // Сүүлийн нэмэгдсэн (4 ширхэг)
   const { data: latestCars } = useQuery({
@@ -162,26 +162,39 @@ export default function Home() {
             </div>
           )}
 
-          {/* Brand cars grid - encar style */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            {brandLoading
-              ? Array.from({ length: 20 }).map((_, i) => (
-                  <div key={i} className="bg-gray-50 rounded-lg p-4">
-                    <div className="aspect-[4/3] skeleton rounded-lg mb-3" />
-                    <div className="h-4 skeleton w-3/4 mb-2" />
-                    <div className="h-5 skeleton w-1/2" />
-                  </div>
-                ))
-              : (brandCars || []).map((car) => (
-                  <CompactCarCard key={car.id} car={car} rates={rates} />
-                ))}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Left: Brand cars grid (2x2) */}
+            <div className="lg:col-span-7">
+              <div className="grid grid-cols-2 gap-4">
+                {brandLoading
+                  ? Array.from({ length: 4 }).map((_, i) => (
+                      <div key={i} className="bg-gray-50 rounded-lg p-4">
+                        <div className="aspect-[4/3] skeleton rounded-lg mb-3" />
+                        <div className="h-4 skeleton w-3/4 mb-2" />
+                        <div className="h-5 skeleton w-1/2" />
+                      </div>
+                    ))
+                  : (brandCars || []).map((car) => (
+                      <CompactCarCard key={car.id} car={car} rates={rates} />
+                    ))}
+              </div>
+              <Link
+                to={`/cars?brand=${activeBrand}${activeModel ? `&model=${activeModel}` : ''}`}
+                className="inline-flex items-center gap-1 mt-4 text-[18px] font-semibold text-dark hover:text-primary transition"
+              >
+                {activeBrand} {activeModel || ''} бүх машин харах →
+              </Link>
+            </div>
+
+            {/* Right: Featured car with image slideshow */}
+            <div className="lg:col-span-5">
+              {heroCar ? (
+                <HeroFeaturedCard car={heroCar} rates={rates} />
+              ) : (
+                <div className="bg-gray-100 rounded-xl h-full min-h-[400px] skeleton" />
+              )}
+            </div>
           </div>
-          <Link
-            to={`/cars?brand=${activeBrand}${activeModel ? `&model=${activeModel}` : ''}`}
-            className="inline-flex items-center gap-1 mt-5 text-[18px] font-semibold text-dark hover:text-primary transition"
-          >
-            {activeBrand} {activeModel || ''} бүх машин харах →
-          </Link>
         </div>
       </section>
 
