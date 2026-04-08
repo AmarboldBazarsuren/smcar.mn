@@ -2,7 +2,14 @@ import { useQuery } from '@tanstack/react-query'
 import { fetchCars } from '../../lib/api'
 import type { CarFilters } from '../../types'
 
-const BRANDS = ['Toyota', 'BMW', 'Hyundai', 'Kia', 'Mercedes', 'Honda', 'Audi', 'Volkswagen', 'Nissan', 'Chevrolet', 'Genesis', 'Porsche', 'Jeep', 'Land Rover', 'Mini', 'Renault']
+const BRANDS = [
+  'Kia', 'Genesis', 'Porsche', 'Jeep', 'Lexus', 'Honda', 'Bentley',
+  'Lamborghini', 'McLaren', 'Mazda', 'Hyundai', 'Chevrolet', 'Mini',
+  'Volkswagen', 'Toyota', 'Cadillac', 'Infiniti', 'Aston Martin',
+  'Mercedes-Benz', 'Renault', 'Land Rover', 'Ford', 'Lincoln', 'Peugeot',
+  'Nissan', 'Suzuki', 'BMW', 'Audi', 'Volvo', 'Tesla', 'Maserati',
+  'Jaguar', 'Rolls-Royce', 'GMC', 'BYD', 'Fiat',
+]
 const FUEL_TYPES = [
   { value: 'Gasoline', label: 'Бензин' },
   { value: 'Diesel', label: 'Дизель' },

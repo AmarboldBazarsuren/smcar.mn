@@ -71,3 +71,9 @@ body {
   background-size: 800px 100%;
   animation: shimmer 1.2s ease-in-out infinite;
 }
+
+/* Brand marquee */
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}

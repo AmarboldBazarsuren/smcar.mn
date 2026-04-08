@@ -6,14 +6,17 @@ import { toMnt, formatNumber, fuelLabel } from '../lib/utils'
 import type { Car, ExchangeRate } from '../types'
 
 const BRANDS = [
-  'Mercedes', 'BMW', 'Audi', 'Porsche', 'Land Rover',
-  'Kia', 'Hyundai', 'Genesis', 'Chevrolet', 'Renault',
-  'Toyota', 'Honda', 'Volkswagen', 'Nissan', 'Mini',
+  'Kia', 'Genesis', 'Porsche', 'Jeep', 'Lexus', 'Honda', 'Bentley',
+  'Lamborghini', 'McLaren', 'Mazda', 'Hyundai', 'Chevrolet', 'Mini',
+  'Volkswagen', 'Toyota', 'Cadillac', 'Infiniti', 'Aston Martin',
+  'Mercedes-Benz', 'Renault', 'Land Rover', 'Ford', 'Lincoln', 'Peugeot',
+  'Nissan', 'Suzuki', 'BMW', 'Audi', 'Volvo', 'Tesla', 'Maserati',
+  'Jaguar', 'Rolls-Royce', 'GMC', 'BYD', 'Fiat',
 ]
 
 
 export default function Home() {
-  const [activeBrand, setActiveBrand] = useState('Mercedes')
+  const [activeBrand, setActiveBrand] = useState('Kia')
   const [activeModel, setActiveModel] = useState<string | null>(null)
 
   // Сонгосон брэндийн машинууд (12 ширхэг авч модел + 4 машин гаргана)
@@ -113,13 +116,13 @@ export default function Home() {
             <span className="inline-block bg-red-600 text-white text-[16px] font-bold px-3 py-1 rounded-lg ml-3 align-middle">Somang Trading</span>
           </h1>
 
-          {/* Brand tabs */}
-          <div className="flex items-center gap-1 overflow-x-auto pb-3 mb-3 border-b border-gray-200 scrollbar-hide">
+          {/* Brand tabs - horizontal scroll */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-3 mb-3 border-b border-gray-200" style={{ scrollbarWidth: 'thin' }}>
             {BRANDS.map((brand) => (
               <button
                 key={brand}
                 onClick={() => handleBrandClick(brand)}
-                className={`shrink-0 px-4 py-2 text-[18px] font-medium rounded-full border transition-all ${
+                className={`shrink-0 px-4 py-2 text-[18px] font-medium rounded-full border transition-all whitespace-nowrap ${
                   activeBrand === brand
                     ? 'bg-dark text-white border-dark'
                     : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
