@@ -55,14 +55,15 @@ export default function CarList() {
     queryFn: () => fetchCars(vehicleTypeApiFilters),
   })
 
-  const VEHICLE_TYPE_MAP: Record<string, string[]> = {
-    special: ['RV', 'Minivan', '화물차'],
-  }
+  const SPECIAL_TYPES = ['RV', 'Minivan', '화물차']
+  const SPECIAL_KEYWORDS = ['porter', 'Porter', 'bus', 'Bus', 'truck', 'Truck', 'cargo', 'Cargo', 'bongo', 'Bongo', 'county', 'County', 'mighty', 'Mighty', 'starex', 'Starex', 'staria', 'Staria', 'carnival', 'Carnival', 'solati', 'Solati']
 
   const data = isVehicleTypeFilter && rawData
     ? (() => {
-        const types = VEHICLE_TYPE_MAP[vehicleType!] || []
-        const filtered = rawData.cars.filter((c) => types.includes(c.type))
+        const filtered = rawData.cars.filter((c) =>
+          SPECIAL_TYPES.includes(c.type) ||
+          SPECIAL_KEYWORDS.some((kw) => c.title?.toLowerCase().includes(kw.toLowerCase()))
+        )
         return { ...rawData, cars: filtered, total: filtered.length, totalPages: 1 }
       })()
     : rawData
