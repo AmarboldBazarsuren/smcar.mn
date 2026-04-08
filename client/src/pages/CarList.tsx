@@ -55,15 +55,17 @@ export default function CarList() {
     queryFn: () => fetchCars(vehicleTypeApiFilters),
   })
 
-  const SPECIAL_TYPES = ['RV', 'Minivan', '화물차']
-  const SPECIAL_KEYWORDS = ['porter', 'Porter', 'bus', 'Bus', 'truck', 'Truck', 'cargo', 'Cargo', 'bongo', 'Bongo', 'county', 'County', 'mighty', 'Mighty', 'starex', 'Starex', 'staria', 'Staria', 'carnival', 'Carnival', 'solati', 'Solati']
+  // encar 화물•특장•버스 ангилал
+  const SPECIAL_TYPES = ['Minivan', '화물차']
+  const SPECIAL_KEYWORDS = ['porter', 'bongo', 'county', 'mighty', 'starex', 'staria', 'solati', 'master', 'cargo', 'bus', 'truck', 'dump', 'crane', 'tractor', 'trailer', 'camper', 'wing']
 
   const data = isVehicleTypeFilter && rawData
     ? (() => {
-        const filtered = rawData.cars.filter((c) =>
-          SPECIAL_TYPES.includes(c.type) ||
-          SPECIAL_KEYWORDS.some((kw) => c.title?.toLowerCase().includes(kw.toLowerCase()))
-        )
+        const filtered = rawData.cars.filter((c) => {
+          if (SPECIAL_TYPES.includes(c.type)) return true
+          const t = c.title?.toLowerCase() || ''
+          return SPECIAL_KEYWORDS.some((kw) => t.includes(kw))
+        })
         return { ...rawData, cars: filtered, total: filtered.length, totalPages: 1 }
       })()
     : rawData
