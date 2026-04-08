@@ -21,9 +21,10 @@ interface Props {
   filters: CarFilters
   onFilterChange: (f: Partial<CarFilters>) => void
   availableBrands?: string[]
+  availableModels?: string[]
 }
 
-export default function CarFilter({ filters, onFilterChange, availableBrands }: Props) {
+export default function CarFilter({ filters, onFilterChange, availableBrands, availableModels }: Props) {
   // Брэнд сонгогдсон бол тухайн брэндийн загваруудыг авах
   const { data: modelData } = useQuery({
     queryKey: ['brandModels', filters.brand],
@@ -53,8 +54,8 @@ export default function CarFilter({ filters, onFilterChange, availableBrands }: 
         </select>
       </div>
 
-      {/* Model (dynamic based on brand) */}
-      {filters.brand && models.length > 0 && (
+      {/* Model (dynamic based on brand, or fixed list for special vehicles) */}
+      {(availableModels || (filters.brand && models.length > 0)) && (
         <div>
           <label className="block text-[14px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Загвар</label>
           <select
@@ -63,7 +64,7 @@ export default function CarFilter({ filters, onFilterChange, availableBrands }: 
             className={selectClass}
           >
             <option value="">Бүгд</option>
-            {models.map((m) => <option key={m} value={m}>{m}</option>)}
+            {(availableModels || models).map((m) => <option key={m} value={m}>{m}</option>)}
           </select>
         </div>
       )}

@@ -49,30 +49,48 @@ export default function CarList() {
 
   const SPECIAL_MODELS = ['Porter', 'Bongo', 'County', 'Mighty', 'Starex', 'Staria', 'Solati', 'Colorado', 'Master', 'Truck', 'Xcient', 'Universe']
 
-  // Тусгай ангилал бол олон model-аар fetch хийж нэгтгэнэ
+  // Тусгай ангилал: model сонгосон бол зөвхөн тэр model, бүгд бол бүх model-аар fetch
+  const specialModelFilter = isVehicleTypeFilter && filters.model ? [filters.model] : SPECIAL_MODELS
+
   const { data: specialData, isLoading: specialLoading } = useQuery({
-    queryKey: ['specialVehicles', filters.brand, filters.sortBy, filters.sortOrder],
+    queryKey: ['specialVehicles', filters.brand, filters.model, filters.sortBy, filters.sortOrder],
     queryFn: async () => {
       const results = await Promise.all(
-        SPECIAL_MODELS.map((model) =>
+        specialModelFilter.map((model) =>
           fetchCars({ model, brand: filters.brand || undefined, limit: 200, sortBy: filters.sortBy, sortOrder: filters.sortOrder })
         )
       )
-      // Нэгтгэж давхардлыг хасна
       const seen = new Set<string>()
-      const allCars = results.flatMap((r) => r.cars).filter((c) => {
+      return results.flatMap((r) => r.cars).filter((c) => {
         if (seen.has(c.id)) return false
         seen.add(c.id)
         return true
       })
-      return allCars
     },
     enabled: isVehicleTypeFilter,
     staleTime: 10 * 60 * 1000,
   })
 
-  const specialBrands = isVehicleTypeFilter && specialData
-    ? [...new Set(specialData.map((c) => c.brand).filter(Boolean))].sort()
+  // Брэнд жагсаалтын хувьд бүх model-ийн өгөгдлөөс авна (model шүүлтээс хамааралгүй)
+  const { data: allSpecialData } = useQuery({
+    queryKey: ['specialVehiclesAll'],
+    queryFn: async () => {
+      const results = await Promise.all(
+        SPECIAL_MODELS.map((model) => fetchCars({ model, limit: 200 }))
+      )
+      const seen = new Set<string>()
+      return results.flatMap((r) => r.cars).filter((c) => {
+        if (seen.has(c.id)) return false
+        seen.add(c.id)
+        return true
+      })
+    },
+    enabled: isVehicleTypeFilter,
+    staleTime: 10 * 60 * 1000,
+  })
+
+  const specialBrands = isVehicleTypeFilter && allSpecialData
+    ? [...new Set(allSpecialData.map((c) => c.brand).filter(Boolean))].sort()
     : undefined
 
   const { data: normalData, isLoading: normalLoading } = useQuery({
@@ -186,7 +204,7 @@ export default function CarList() {
           {/* Desktop sidebar */}
           <aside className="hidden lg:block w-[240px] shrink-0">
             <div className="sticky top-[76px]">
-              <CarFilter filters={filters} onFilterChange={handleFilterChange} availableBrands={specialBrands} />
+              <CarFilter filters={filters} onFilterChange={handleFilterChange} availableBrands={specialBrands} availableModels={isVehicleTypeFilter ? SPECIAL_MODELS : undefined} />
             </div>
           </aside>
 
@@ -201,7 +219,7 @@ export default function CarList() {
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
                   </button>
                 </div>
-                <CarFilter filters={filters} onFilterChange={handleFilterChange} availableBrands={specialBrands} />
+                <CarFilter filters={filters} onFilterChange={handleFilterChange} availableBrands={specialBrands} availableModels={isVehicleTypeFilter ? SPECIAL_MODELS : undefined} />
               </div>
             </div>
           )}
