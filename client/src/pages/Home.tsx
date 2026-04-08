@@ -30,10 +30,10 @@ export default function Home() {
     ? [...new Set(brandCarsData.cars.map((c) => c.model).filter(Boolean))].sort()
     : []
 
-  // Модел сонгосон бол шүүх, сонгоогүй бол эхний 4-г авах
+  // Модел сонгосон бол шүүх, сонгоогүй бол эхний 20-г авах (4-5 эгнээ)
   const brandCars = activeModel
-    ? (brandCarsData?.cars || []).filter((c) => c.model === activeModel).slice(0, 4)
-    : (brandCarsData?.cars || []).slice(0, 4)
+    ? (brandCarsData?.cars || []).filter((c) => c.model === activeModel).slice(0, 20)
+    : (brandCarsData?.cars || []).slice(0, 20)
 
   // Сүүлийн нэмэгдсэн (4 ширхэг)
   const { data: latestCars } = useQuery({
@@ -95,25 +95,6 @@ export default function Home() {
     queryFn: fetchManualCars,
     staleTime: 10 * 60 * 1000,
   })
-
-  // Брэнд grid-д брэнд бүрт нэг машин харуулахын тулд олон машин авна
-  const { data: brandGridData } = useQuery({
-    queryKey: ['brandGridCars'],
-    queryFn: () => fetchCars({ limit: 1000, sortBy: 'scraped_at', sortOrder: 'desc' }),
-    staleTime: 10 * 60 * 1000,
-  })
-  const brandGridMap = new Map<string, Car>()
-  if (brandGridData?.cars) {
-    for (const car of brandGridData.cars) {
-      const b = car.brand
-      if (b && BRANDS.some((br) => b.toLowerCase().includes(br.toLowerCase()) || br.toLowerCase().includes(b.toLowerCase())) && !brandGridMap.has(b)) {
-        const matchedBrand = BRANDS.find((br) => b.toLowerCase().includes(br.toLowerCase()) || br.toLowerCase().includes(b.toLowerCase()))
-        if (matchedBrand && !brandGridMap.has(matchedBrand)) {
-          brandGridMap.set(matchedBrand, car)
-        }
-      }
-    }
-  }
 
   const { data: rates } = useQuery({ queryKey: ['exchangeRate'], queryFn: fetchExchangeRate })
   const { data: banners } = useQuery({ queryKey: ['banners'], queryFn: fetchBanners })
@@ -181,39 +162,26 @@ export default function Home() {
             </div>
           )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Left: Brand cars grid */}
-            <div className="lg:col-span-7">
-              <div className="grid grid-cols-2 gap-4">
-                {brandLoading
-                  ? Array.from({ length: 4 }).map((_, i) => (
-                      <div key={i} className="bg-gray-50 rounded-lg p-4">
-                        <div className="aspect-[4/3] skeleton rounded-lg mb-3" />
-                        <div className="h-4 skeleton w-3/4 mb-2" />
-                        <div className="h-5 skeleton w-1/2" />
-                      </div>
-                    ))
-                  : (brandCars || []).map((car) => (
-                      <CompactCarCard key={car.id} car={car} rates={rates} />
-                    ))}
-              </div>
-              <Link
-                to={`/cars?brand=${activeBrand}${activeModel ? `&model=${activeModel}` : ''}`}
-                className="inline-flex items-center gap-1 mt-4 text-[18px] font-semibold text-dark hover:text-primary transition"
-              >
-                {activeBrand} {activeModel || ''} бүх машин харах →
-              </Link>
-            </div>
-
-            {/* Right: Featured car with image slideshow */}
-            <div className="lg:col-span-5">
-              {heroCar ? (
-                <HeroFeaturedCard car={heroCar} rates={rates} />
-              ) : (
-                <div className="bg-gray-100 rounded-xl h-full min-h-[400px] skeleton" />
-              )}
-            </div>
+          {/* Brand cars grid - encar style */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            {brandLoading
+              ? Array.from({ length: 20 }).map((_, i) => (
+                  <div key={i} className="bg-gray-50 rounded-lg p-4">
+                    <div className="aspect-[4/3] skeleton rounded-lg mb-3" />
+                    <div className="h-4 skeleton w-3/4 mb-2" />
+                    <div className="h-5 skeleton w-1/2" />
+                  </div>
+                ))
+              : (brandCars || []).map((car) => (
+                  <CompactCarCard key={car.id} car={car} rates={rates} />
+                ))}
           </div>
+          <Link
+            to={`/cars?brand=${activeBrand}${activeModel ? `&model=${activeModel}` : ''}`}
+            className="inline-flex items-center gap-1 mt-5 text-[18px] font-semibold text-dark hover:text-primary transition"
+          >
+            {activeBrand} {activeModel || ''} бүх машин харах →
+          </Link>
         </div>
       </section>
 
@@ -321,47 +289,6 @@ export default function Home() {
         </section>
       )}
 
-      {/* ===== BRAND GRID (car card style) ===== */}
-      <section className="bg-white border-t border-gray-200">
-        <div className="max-w-[1400px] mx-auto px-4 lg:px-8 py-10">
-          <h2 className="text-[28px] font-bold text-dark mb-6">Брэнд</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {BRANDS.map((brand) => {
-              const car = brandGridMap.get(brand)
-              return (
-                <Link
-                  key={brand}
-                  to={`/cars?brand=${brand}`}
-                  className="group bg-white rounded-lg overflow-hidden border border-gray-100 hover:shadow-md transition-shadow"
-                >
-                  <div className="relative bg-gray-50 aspect-[4/3] overflow-hidden">
-                    {car ? (
-                      <img
-                        src={getImageUrl(car.image)}
-                        alt={brand}
-                        className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-[40px] font-bold text-gray-300">
-                        {brand.charAt(0)}
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-3">
-                    <p className="text-[18px] font-semibold text-dark truncate">{brand}</p>
-                    {car && rates && (
-                      <p className="text-[14px] text-gray-400 mt-0.5">
-                        {toMnt(car.price, car.currency, rates)} ~
-                      </p>
-                    )}
-                  </div>
-                </Link>
-              )
-            })}
-          </div>
-        </div>
-      </section>
     </main>
   )
 }
