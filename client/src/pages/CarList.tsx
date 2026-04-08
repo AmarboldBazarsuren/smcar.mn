@@ -21,6 +21,7 @@ export default function CarList() {
     fuelType: searchParams.get('fuelType') || undefined,
     transmission: searchParams.get('transmission') || undefined,
     maxMileage: searchParams.get('maxMileage') ? Number(searchParams.get('maxMileage')) : undefined,
+    body_type: searchParams.get('body_type') || undefined,
     sortBy: (searchParams.get('sortBy') as CarFilters['sortBy']) || 'scraped_at',
     sortOrder: (searchParams.get('sortOrder') as CarFilters['sortOrder']) || 'desc',
     page: Number(searchParams.get('page')) || 1,

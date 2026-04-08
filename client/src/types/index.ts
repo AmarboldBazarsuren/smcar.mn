@@ -92,6 +92,7 @@ export interface CarFilters {
   transmission?: string
   color?: string
   maxMileage?: number
+  body_type?: string
   sortBy?: 'price' | 'year' | 'mileage' | 'scraped_at'
   sortOrder?: 'asc' | 'desc'
   page?: number
