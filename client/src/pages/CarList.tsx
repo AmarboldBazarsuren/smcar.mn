@@ -56,7 +56,7 @@ export default function CarList() {
   })
 
   const VEHICLE_TYPE_MAP: Record<string, string[]> = {
-    bus: ['RV', 'Minivan'],
+    special: ['RV', 'Minivan', '화물차'],
   }
 
   const data = isVehicleTypeFilter && rawData
@@ -113,7 +113,7 @@ export default function CarList() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-[30px] font-bold text-dark">
-                {vehicleType === 'bus' ? 'Автобус' : filters.brand ? `${filters.brand}${filters.model ? ` ${filters.model}` : ''}` : 'Бүх машин'}
+                {vehicleType === 'special' ? 'Тусгай ангилалын машин' : filters.brand ? `${filters.brand}${filters.model ? ` ${filters.model}` : ''}` : 'Бүх машин'}
               </h1>
               <p className="text-[18px] text-gray-500 mt-0.5">
                 {data ? `${formatNumber(data.total)} үр дүн` : 'Хайж байна...'}

@@ -31,7 +31,7 @@ export default function Header() {
             <Link
               to="/"
               className={`text-[20px] font-medium py-[18px] border-b-2 transition-colors ${
-                isActive('/') ? 'border-primary text-dark' : 'border-transparent text-gray-500 hover:text-dark'
+                isActive('/') ? 'border-blue-500 text-blue-600' : 'border-transparent text-blue-500 hover:text-blue-700'
               }`}
             >
               Нүүр
@@ -39,18 +39,18 @@ export default function Header() {
             <Link
               to="/cars"
               className={`text-[20px] font-medium py-[18px] border-b-2 transition-colors ${
-                isActive('/cars') ? 'border-primary text-dark' : 'border-transparent text-gray-500 hover:text-dark'
+                isActive('/cars') ? 'border-blue-500 text-blue-600' : 'border-transparent text-blue-500 hover:text-blue-700'
               }`}
             >
               Бүх машин
             </Link>
             <Link
-              to="/cars?vehicleType=bus"
+              to="/cars?vehicleType=special"
               className={`text-[20px] font-medium py-[18px] border-b-2 transition-colors ${
-                isActive('/cars', 'vehicleType=bus') ? 'border-primary text-dark' : 'border-transparent text-gray-500 hover:text-dark'
+                isActive('/cars', 'vehicleType=special') ? 'border-blue-500 text-blue-600' : 'border-transparent text-blue-500 hover:text-blue-700'
               }`}
             >
-              Автобус
+              Тусгай ангилал
             </Link>
           </nav>
 
@@ -101,7 +101,7 @@ export default function Header() {
             {[
               { to: '/', label: 'Нүүр' },
               { to: '/cars', label: 'Бүх машин' },
-              { to: '/cars?vehicleType=bus', label: 'Автобус' },
+              { to: '/cars?vehicleType=special', label: 'Тусгай ангилал' },
             ].map((link) => (
               <Link
                 key={link.label}
