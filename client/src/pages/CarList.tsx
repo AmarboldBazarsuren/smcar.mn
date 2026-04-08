@@ -59,7 +59,7 @@ export default function CarList() {
 
   // encar 화물•특장•버스 ангилал
   const SPECIAL_TYPES = ['Minivan', '화물차']
-  const SPECIAL_KEYWORDS = ['porter', 'bongo', 'county', 'mighty', 'starex', 'staria', 'solati', 'master', 'cargo', 'bus', 'truck', 'dump', 'crane', 'tractor', 'trailer', 'camper', 'wing']
+  const SPECIAL_KEYWORDS = ['porter', 'bongo', 'county', 'mighty', 'starex', 'staria', 'solati', 'renault master', 'renault-koreasam master', 'cargo', 'school bus', 'truck', 'dump', 'crane', 'tractor', 'trailer', 'camper', 'wing body']
 
   const isSpecialCar = (c: { type?: string; title?: string }) => {
     if (SPECIAL_TYPES.includes(c.type || '')) return true
