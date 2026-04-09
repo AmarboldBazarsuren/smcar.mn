@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, Fragment } from 'react'
 import { Link } from 'react-router-dom'
 import { fetchCars, fetchExchangeRate, fetchBanners, fetchFeaturedCars, fetchCarFull, fetchManualCars, getImageUrl } from '../lib/api'
 import { toMnt, formatNumber, fuelLabel } from '../lib/utils'
@@ -101,6 +101,24 @@ export default function Home() {
 
   const topBanners = banners?.filter((b) => b.position === 'home_top' && b.isActive) || []
 
+  // Grid column count detection for dropdown row insertion
+  const brandGridRef = useRef<HTMLDivElement>(null)
+  const [gridCols, setGridCols] = useState(9)
+
+  useEffect(() => {
+    const el = brandGridRef.current
+    if (!el) return
+    const updateCols = () => {
+      const c = getComputedStyle(el).gridTemplateColumns.split(' ').length
+      setGridCols(c)
+    }
+    updateCols()
+    window.addEventListener('resize', updateCols)
+    return () => window.removeEventListener('resize', updateCols)
+  }, [])
+
+  const activeRowIdx = Math.floor(BRANDS.indexOf(activeBrand) / gridCols)
+
   const handleBrandClick = (brand: string) => {
     setActiveBrand(brand)
     setActiveModel(null)
@@ -116,13 +134,13 @@ export default function Home() {
             <span className="inline-block bg-red-600 text-white text-[16px] font-bold px-3 py-1 rounded-lg ml-3 align-middle">Somang Trading</span>
           </h1>
 
-          {/* Brand grid - brands never move */}
-          <div className="relative grid grid-cols-4 sm:grid-cols-6 md:grid-cols-7 lg:grid-cols-9 gap-2 pb-4 mb-3 border-b border-gray-200">
-            {BRANDS.map((brand) => (
-              <div key={brand} className="relative">
+          {/* Brand grid - brands stay in their rows, dropdown inserts between rows */}
+          <div ref={brandGridRef} className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-7 lg:grid-cols-9 gap-2 pb-4 mb-3 border-b border-gray-200">
+            {BRANDS.map((brand, i) => (
+              <Fragment key={brand}>
                 <button
                   onClick={() => handleBrandClick(brand)}
-                  className={`w-full px-2 py-2 text-[15px] font-medium rounded-lg border transition-all text-center truncate ${
+                  className={`px-2 py-2 text-[15px] font-medium rounded-lg border transition-all text-center truncate ${
                     activeBrand === brand
                       ? 'bg-dark text-white border-dark'
                       : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
@@ -130,37 +148,35 @@ export default function Home() {
                 >
                   {brand}
                 </button>
-                {/* Model dropdown - absolute overlay below the brand */}
-                {activeBrand === brand && models.length > 0 && (
-                  <div className="absolute top-full left-0 mt-1 z-30 bg-white shadow-xl border border-gray-200 rounded-xl p-2.5 min-w-[280px] max-w-[90vw] w-max">
-                    <div className="flex flex-wrap items-center gap-1.5 max-h-[200px] overflow-y-auto">
+                {/* Insert model dropdown after the last brand in the active row */}
+                {models.length > 0 && Math.floor(i / gridCols) === activeRowIdx && (i + 1 === BRANDS.length || Math.floor((i + 1) / gridCols) !== activeRowIdx) && (
+                  <div className="col-span-full flex flex-wrap items-center gap-1.5 py-2 px-2 bg-gray-50 rounded-lg">
+                    <button
+                      onClick={() => setActiveModel(null)}
+                      className={`shrink-0 px-3 py-1.5 text-[13px] font-medium rounded-full border transition-all ${
+                        !activeModel
+                          ? 'bg-primary text-white border-primary'
+                          : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
+                      }`}
+                    >
+                      Бүгд
+                    </button>
+                    {models.map((model) => (
                       <button
-                        onClick={() => setActiveModel(null)}
+                        key={model}
+                        onClick={() => setActiveModel(model)}
                         className={`shrink-0 px-3 py-1.5 text-[13px] font-medium rounded-full border transition-all ${
-                          !activeModel
+                          activeModel === model
                             ? 'bg-primary text-white border-primary'
                             : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
                         }`}
                       >
-                        Бүгд
+                        {model}
                       </button>
-                      {models.map((model) => (
-                        <button
-                          key={model}
-                          onClick={() => setActiveModel(model)}
-                          className={`shrink-0 px-3 py-1.5 text-[13px] font-medium rounded-full border transition-all ${
-                            activeModel === model
-                              ? 'bg-primary text-white border-primary'
-                              : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
-                          }`}
-                        >
-                          {model}
-                        </button>
-                      ))}
-                    </div>
+                    ))}
                   </div>
                 )}
-              </div>
+              </Fragment>
             ))}
           </div>
 
