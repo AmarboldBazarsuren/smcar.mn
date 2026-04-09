@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { useState, useEffect, useRef, Fragment } from 'react'
+import { useState, useEffect, useRef, useMemo, Fragment } from 'react'
 import { Link } from 'react-router-dom'
 import { fetchCars, fetchExchangeRate, fetchBanners, fetchFeaturedCars, fetchCarFull, fetchManualCars, getImageUrl } from '../lib/api'
 import { toMnt, formatNumber, fuelLabel } from '../lib/utils'
@@ -19,21 +19,28 @@ export default function Home() {
   const [activeBrand, setActiveBrand] = useState('Kia')
   const [activeModel, setActiveModel] = useState<string | null>(null)
 
-  // Сонгосон брэндийн машинууд (12 ширхэг авч модел + 4 машин гаргана)
-  const { data: brandCarsData, isLoading: brandLoading } = useQuery({
-    queryKey: ['brandCars', activeBrand],
-    queryFn: () => fetchCars({ brand: activeBrand, limit: 500, sortBy: 'scraped_at', sortOrder: 'desc' }),
+  // Бүх машинуудыг нэг удаа татах - brand солиход дахин fetch хийхгүй
+  const { data: allCarsData, isLoading: allCarsLoading } = useQuery({
+    queryKey: ['allCarsHome'],
+    queryFn: () => fetchCars({ limit: 1000, sortBy: 'scraped_at', sortOrder: 'desc' }),
     staleTime: 10 * 60 * 1000,
   })
 
-  const models = brandCarsData?.cars?.length
-    ? [...new Set(brandCarsData.cars.map((c) => c.model).filter(Boolean))].sort()
-    : []
+  // Сонгосон брэндийн загварууд - шууд memory-с авна, fetch хийхгүй
+  const models = useMemo(() => {
+    if (!allCarsData?.cars) return []
+    return [...new Set(allCarsData.cars.filter((c) => c.brand === activeBrand).map((c) => c.model).filter(Boolean))].sort()
+  }, [allCarsData, activeBrand])
 
-  // Модел сонгосон бол шүүх, сонгоогүй бол эхний 4-г авах
-  const brandCars = activeModel
-    ? (brandCarsData?.cars || []).filter((c) => c.model === activeModel).slice(0, 4)
-    : (brandCarsData?.cars || []).slice(0, 4)
+  // Сонгосон брэнд + загварын машинууд (4 ширхэг)
+  const brandCars = useMemo(() => {
+    if (!allCarsData?.cars) return []
+    let filtered = allCarsData.cars.filter((c) => c.brand === activeBrand)
+    if (activeModel) filtered = filtered.filter((c) => c.model === activeModel)
+    return filtered.slice(0, 4)
+  }, [allCarsData, activeBrand, activeModel])
+
+  const brandLoading = allCarsLoading
 
   // Сүүлийн нэмэгдсэн (4 ширхэг)
   const { data: latestCars } = useQuery({
@@ -149,39 +156,31 @@ export default function Home() {
                   {brand}
                 </button>
                 {/* Insert model dropdown after the last brand in the active row */}
-                {Math.floor(i / gridCols) === activeRowIdx && (i + 1 === BRANDS.length || Math.floor((i + 1) / gridCols) !== activeRowIdx) && (
+                {models.length > 0 && Math.floor(i / gridCols) === activeRowIdx && (i + 1 === BRANDS.length || Math.floor((i + 1) / gridCols) !== activeRowIdx) && (
                   <div className="col-span-full flex flex-wrap items-center gap-1.5 py-2 px-2 bg-gray-50 rounded-lg">
-                    {brandLoading ? (
-                      <span className="text-[13px] text-gray-400 px-2">Ачааллаж байна...</span>
-                    ) : models.length > 0 ? (
-                      <>
-                        <button
-                          onClick={() => setActiveModel(null)}
-                          className={`shrink-0 px-3 py-1.5 text-[13px] font-medium rounded-full border transition-all ${
-                            !activeModel
-                              ? 'bg-primary text-white border-primary'
-                              : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
-                          }`}
-                        >
-                          Бүгд
-                        </button>
-                        {models.map((model) => (
-                          <button
-                            key={model}
-                            onClick={() => setActiveModel(model)}
-                            className={`shrink-0 px-3 py-1.5 text-[13px] font-medium rounded-full border transition-all ${
-                              activeModel === model
-                                ? 'bg-primary text-white border-primary'
-                                : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
-                            }`}
-                          >
-                            {model}
-                          </button>
-                        ))}
-                      </>
-                    ) : (
-                      <span className="text-[13px] text-gray-400 px-2">Загвар олдсонгүй</span>
-                    )}
+                    <button
+                      onClick={() => setActiveModel(null)}
+                      className={`shrink-0 px-3 py-1.5 text-[13px] font-medium rounded-full border transition-all ${
+                        !activeModel
+                          ? 'bg-primary text-white border-primary'
+                          : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
+                      }`}
+                    >
+                      Бүгд
+                    </button>
+                    {models.map((model) => (
+                      <button
+                        key={model}
+                        onClick={() => setActiveModel(model)}
+                        className={`shrink-0 px-3 py-1.5 text-[13px] font-medium rounded-full border transition-all ${
+                          activeModel === model
+                            ? 'bg-primary text-white border-primary'
+                            : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
+                        }`}
+                      >
+                        {model}
+                      </button>
+                    ))}
                   </div>
                 )}
               </Fragment>
