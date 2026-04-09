@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Fragment } from 'react'
 import { Link } from 'react-router-dom'
 import { fetchCars, fetchExchangeRate, fetchBanners, fetchFeaturedCars, fetchCarFull, fetchManualCars, getImageUrl } from '../lib/api'
 import { toMnt, formatNumber, fuelLabel } from '../lib/utils'
@@ -22,7 +22,7 @@ export default function Home() {
   // Сонгосон брэндийн машинууд (12 ширхэг авч модел + 4 машин гаргана)
   const { data: brandCarsData, isLoading: brandLoading } = useQuery({
     queryKey: ['brandCars', activeBrand],
-    queryFn: () => fetchCars({ brand: activeBrand, limit: 50, sortBy: 'scraped_at', sortOrder: 'desc' }),
+    queryFn: () => fetchCars({ brand: activeBrand, limit: 500, sortBy: 'scraped_at', sortOrder: 'desc' }),
     staleTime: 10 * 60 * 1000,
   })
 
@@ -116,51 +116,50 @@ export default function Home() {
             <span className="inline-block bg-red-600 text-white text-[16px] font-bold px-3 py-1 rounded-lg ml-3 align-middle">Somang Trading</span>
           </h1>
 
-          {/* Brand grid - 4-5 rows */}
+          {/* Brand grid with inline model dropdown */}
           <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-7 lg:grid-cols-9 gap-2 pb-4 mb-3 border-b border-gray-200">
             {BRANDS.map((brand) => (
-              <button
-                key={brand}
-                onClick={() => handleBrandClick(brand)}
-                className={`px-2 py-2 text-[15px] font-medium rounded-lg border transition-all text-center truncate ${
-                  activeBrand === brand
-                    ? 'bg-dark text-white border-dark'
-                    : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
-                }`}
-              >
-                {brand}
-              </button>
-            ))}
-          </div>
-
-          {/* Model pills */}
-          {models.length > 0 && (
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-4 scrollbar-hide">
-              <button
-                onClick={() => setActiveModel(null)}
-                className={`shrink-0 px-3 py-1.5 text-[16px] font-medium rounded-full border transition-all ${
-                  !activeModel
-                    ? 'bg-primary text-white border-primary'
-                    : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
-                }`}
-              >
-                Бүгд
-              </button>
-              {models.map((model) => (
+              <Fragment key={brand}>
                 <button
-                  key={model}
-                  onClick={() => setActiveModel(model)}
-                  className={`shrink-0 px-3 py-1.5 text-[16px] font-medium rounded-full border transition-all ${
-                    activeModel === model
-                      ? 'bg-primary text-white border-primary'
-                      : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
+                  onClick={() => handleBrandClick(brand)}
+                  className={`px-2 py-2 text-[15px] font-medium rounded-lg border transition-all text-center truncate ${
+                    activeBrand === brand
+                      ? 'bg-dark text-white border-dark'
+                      : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
                   }`}
                 >
-                  {model}
+                  {brand}
                 </button>
-              ))}
-            </div>
-          )}
+                {activeBrand === brand && models.length > 0 && (
+                  <div className="col-span-full flex items-center gap-1.5 overflow-x-auto py-2 my-1 px-2 bg-gray-50 rounded-lg scrollbar-hide">
+                    <button
+                      onClick={() => setActiveModel(null)}
+                      className={`shrink-0 px-3 py-1.5 text-[14px] font-medium rounded-full border transition-all ${
+                        !activeModel
+                          ? 'bg-primary text-white border-primary'
+                          : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
+                      }`}
+                    >
+                      Бүгд
+                    </button>
+                    {models.map((model) => (
+                      <button
+                        key={model}
+                        onClick={() => setActiveModel(model)}
+                        className={`shrink-0 px-3 py-1.5 text-[14px] font-medium rounded-full border transition-all ${
+                          activeModel === model
+                            ? 'bg-primary text-white border-primary'
+                            : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
+                        }`}
+                      >
+                        {model}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </Fragment>
+            ))}
+          </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* Left: Brand cars grid (2x2) */}
