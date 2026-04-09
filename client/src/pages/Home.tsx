@@ -149,31 +149,39 @@ export default function Home() {
                   {brand}
                 </button>
                 {/* Insert model dropdown after the last brand in the active row */}
-                {models.length > 0 && Math.floor(i / gridCols) === activeRowIdx && (i + 1 === BRANDS.length || Math.floor((i + 1) / gridCols) !== activeRowIdx) && (
+                {Math.floor(i / gridCols) === activeRowIdx && (i + 1 === BRANDS.length || Math.floor((i + 1) / gridCols) !== activeRowIdx) && (
                   <div className="col-span-full flex flex-wrap items-center gap-1.5 py-2 px-2 bg-gray-50 rounded-lg">
-                    <button
-                      onClick={() => setActiveModel(null)}
-                      className={`shrink-0 px-3 py-1.5 text-[13px] font-medium rounded-full border transition-all ${
-                        !activeModel
-                          ? 'bg-primary text-white border-primary'
-                          : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
-                      }`}
-                    >
-                      Бүгд
-                    </button>
-                    {models.map((model) => (
-                      <button
-                        key={model}
-                        onClick={() => setActiveModel(model)}
-                        className={`shrink-0 px-3 py-1.5 text-[13px] font-medium rounded-full border transition-all ${
-                          activeModel === model
-                            ? 'bg-primary text-white border-primary'
-                            : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
-                        }`}
-                      >
-                        {model}
-                      </button>
-                    ))}
+                    {brandLoading ? (
+                      <span className="text-[13px] text-gray-400 px-2">Ачааллаж байна...</span>
+                    ) : models.length > 0 ? (
+                      <>
+                        <button
+                          onClick={() => setActiveModel(null)}
+                          className={`shrink-0 px-3 py-1.5 text-[13px] font-medium rounded-full border transition-all ${
+                            !activeModel
+                              ? 'bg-primary text-white border-primary'
+                              : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
+                          }`}
+                        >
+                          Бүгд
+                        </button>
+                        {models.map((model) => (
+                          <button
+                            key={model}
+                            onClick={() => setActiveModel(model)}
+                            className={`shrink-0 px-3 py-1.5 text-[13px] font-medium rounded-full border transition-all ${
+                              activeModel === model
+                                ? 'bg-primary text-white border-primary'
+                                : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
+                            }`}
+                          >
+                            {model}
+                          </button>
+                        ))}
+                      </>
+                    ) : (
+                      <span className="text-[13px] text-gray-400 px-2">Загвар олдсонгүй</span>
+                    )}
                   </div>
                 )}
               </Fragment>
