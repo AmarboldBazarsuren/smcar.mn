@@ -73,21 +73,27 @@ export default function CarFilter({ filters, onFilterChange, availableBrands, av
       <div>
         <label className="block text-[14px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Он</label>
         <div className="flex gap-2">
-          <input
-            type="number"
-            placeholder="Эхлэл"
+          <select
             value={filters.yearFrom || ''}
             onChange={(e) => onFilterChange({ yearFrom: e.target.value ? Number(e.target.value) : undefined })}
-            className={inputClass}
-          />
+            className={selectClass}
+          >
+            <option value="">Эхлэл</option>
+            {Array.from({ length: 2026 - 2010 + 1 }, (_, i) => 2026 - i).map((y) => (
+              <option key={y} value={y}>{y}</option>
+            ))}
+          </select>
           <span className="text-gray-300 self-center">—</span>
-          <input
-            type="number"
-            placeholder="Төгсгөл"
+          <select
             value={filters.yearTo || ''}
             onChange={(e) => onFilterChange({ yearTo: e.target.value ? Number(e.target.value) : undefined })}
-            className={inputClass}
-          />
+            className={selectClass}
+          >
+            <option value="">Төгсгөл</option>
+            {Array.from({ length: 2026 - 2010 + 1 }, (_, i) => 2026 - i).map((y) => (
+              <option key={y} value={y}>{y}</option>
+            ))}
+          </select>
         </div>
       </div>
 
