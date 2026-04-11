@@ -252,11 +252,9 @@ export default function CarDetail() {
 
                       {/* Тээврийн зардал — сонголттой */}
                       <div>
-                        <div className="flex justify-between text-[18px] mb-2">
-                          <span className="text-blue-600">Тээврийн зардал</span>
-                        </div>
-                        <div className="bg-gray-100 rounded-lg px-3 py-2 mb-2">
-                          <p className="text-[13px] text-gray-500">Машины овор хэмжээнээс хамааран тээврийн зардал өөрчлөгдөхийг анхаарна уу</p>
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-blue-600 text-[18px]">Тээврийн зардал</span>
+                          <span className="bg-gray-100 rounded-lg px-2.5 py-1 text-[14px] text-gray-500">Машины овор хэмжээнээс хамааран тээврийн зардал өөрчлөгдөхийг анхаарна уу</span>
                         </div>
                         <div className="flex flex-wrap gap-1.5">
                           {TRANSPORT_OPTIONS.map((opt) => {
