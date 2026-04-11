@@ -255,6 +255,7 @@ export default function CarDetail() {
                         <div className="flex justify-between text-[18px] mb-2">
                           <span className="text-blue-600">Тээврийн зардал</span>
                         </div>
+                        <p className="text-[13px] text-gray-400 mb-2">Машины овор хэмжээнээс хамааран тээврийн зардал өөрчлөгдөхийг анхаарна уу</p>
                         <div className="flex flex-wrap gap-1.5">
                           {TRANSPORT_OPTIONS.map((opt) => {
                             const mnt = Math.round(opt * rates.usdToMnt)
