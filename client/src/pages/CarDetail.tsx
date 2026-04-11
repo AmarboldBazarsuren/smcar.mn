@@ -251,11 +251,11 @@ export default function CarDetail() {
                       <FeeRow label="Солонгос дахь зардал" amountKrw={fees.serviceFee} wonToMnt={rates.wonToMnt} />
 
                       {/* Тээврийн зардал — сонголттой */}
-                      <div>
-                        <div className="flex justify-between text-[18px] mb-2">
-                          <span className="text-blue-600">Тээврийн зардал</span>
+                      <div className="bg-gray-50 rounded-xl p-4">
+                        <div className="flex justify-between text-[20px] mb-1">
+                          <span className="text-blue-600 font-semibold">Тээврийн зардал</span>
                         </div>
-                        <p className="text-[13px] text-gray-400 mb-2">Машины овор хэмжээнээс хамааран тээврийн зардал өөрчлөгдөхийг анхаарна уу</p>
+                        <p className="text-[13px] text-gray-400 mb-3">Машины овор хэмжээнээс хамааран тээврийн зардал өөрчлөгдөхийг анхаарна уу</p>
                         <div className="flex flex-wrap gap-1.5">
                           {TRANSPORT_OPTIONS.map((opt) => {
                             const mnt = Math.round(opt * rates.usdToMnt)
