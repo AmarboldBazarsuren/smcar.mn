@@ -87,8 +87,6 @@ export default function CarDetail() {
 
   // Price calculations — encar бодит үнэ + CC + он ашиглана
   const priceInfo = calcPrice(car.price, car.currency, rates, fees, car.original_price_krw, encarPrice, cc, car.year, car.fuelType, transportFeeUsd)
-  const encarUrl = car.encar_id ? `https://www.encar.com/dc/dc_cardetailview.do?carid=${car.encar_id}` : null
-
   const specs: [string, string | undefined][] = [
     ['Брэнд', car.brand],
     ['Загвар', car.model],
