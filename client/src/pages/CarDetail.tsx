@@ -297,22 +297,6 @@ export default function CarDetail() {
               </div>
 
               {/* Encar link */}
-              {encarUrl && (
-                <a
-                  href={encarUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2.5 w-full bg-yellow-400 border-2 border-yellow-500 text-dark py-3.5 rounded-xl text-[18px] font-bold hover:bg-yellow-300 transition shadow-sm"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                    <polyline points="15 3 21 3 21 9" />
-                    <line x1="10" x2="21" y1="14" y2="3" />
-                  </svg>
-                  encar.com дээр харах
-                </a>
-              )}
-
               {/* CTA buttons */}
               <button
                 onClick={() => setShowModal(true)}

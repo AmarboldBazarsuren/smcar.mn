@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useState, useEffect, useRef, useMemo, Fragment } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { fetchCars, fetchExchangeRate, fetchBanners, fetchFeaturedCars, fetchCarFull, fetchManualCars, getImageUrl } from '../lib/api'
 import { toMnt, formatNumber, fuelLabel } from '../lib/utils'
 import type { Car, ExchangeRate } from '../types'
@@ -193,8 +193,9 @@ const BRAND_MODELS: Record<string, string[]> = {
 
 
 export default function Home() {
-  const [activeBrand, setActiveBrand] = useState('Kia')
-  const [activeModel, setActiveModel] = useState<string | null>(null)
+  const navigate = useNavigate()
+  const [activeBrand, setActiveBrand] = useState<string | null>(null)
+  const [showAllBrands, setShowAllBrands] = useState(false)
 
   // Бүх машинуудыг нэг удаа татах - brand солиход дахин fetch хийхгүй
   const { data: allCarsData, isLoading: allCarsLoading } = useQuery({
@@ -205,6 +206,7 @@ export default function Home() {
 
   // Hardcoded загварууд + API-с ирсэн загваруудыг нэгтгэнэ
   const models = useMemo(() => {
+    if (!activeBrand) return []
     const hardcoded = BRAND_MODELS[activeBrand] || []
     const fromApi = allCarsData?.cars
       ? allCarsData.cars.filter((c) => c.brand === activeBrand).map((c) => c.model).filter(Boolean)
@@ -212,15 +214,20 @@ export default function Home() {
     return [...new Set([...hardcoded, ...fromApi])].sort()
   }, [allCarsData, activeBrand])
 
-  // Сонгосон брэнд + загварын машинууд (4 ширхэг)
-  const brandCars = useMemo(() => {
+  // Онцлох машинууд - 4 өөр brand-ийн машин
+  const featuredBrandCars = useMemo(() => {
     if (!allCarsData?.cars) return []
-    let filtered = allCarsData.cars.filter((c) => c.brand === activeBrand)
-    if (activeModel) filtered = filtered.filter((c) => c.model === activeModel)
-    return filtered.slice(0, 4)
-  }, [allCarsData, activeBrand, activeModel])
-
-  const brandLoading = allCarsLoading
+    const seen = new Set<string>()
+    const result: typeof allCarsData.cars = []
+    for (const car of allCarsData.cars) {
+      if (car.brand && !seen.has(car.brand)) {
+        seen.add(car.brand)
+        result.push(car)
+        if (result.length >= 4) break
+      }
+    }
+    return result
+  }, [allCarsData])
 
   // Сүүлийн нэмэгдсэн (4 ширхэг)
   const { data: latestCars } = useQuery({
@@ -288,7 +295,8 @@ export default function Home() {
 
   const topBanners = banners?.filter((b) => b.position === 'home_top' && b.isActive) || []
 
-  // Grid column count detection for dropdown row insertion
+
+  // Grid column count detection for row insertion
   const brandGridRef = useRef<HTMLDivElement>(null)
   const [gridCols, setGridCols] = useState(9)
 
@@ -304,11 +312,14 @@ export default function Home() {
     return () => window.removeEventListener('resize', updateCols)
   }, [])
 
-  const activeRowIdx = Math.floor(BRANDS.indexOf(activeBrand) / gridCols)
+  const activeRowIdx = activeBrand ? Math.floor(BRANDS.indexOf(activeBrand) / gridCols) : -1
 
   const handleBrandClick = (brand: string) => {
-    setActiveBrand(brand)
-    setActiveModel(null)
+    setActiveBrand(activeBrand === brand ? null : brand)
+  }
+
+  const handleModelClick = (brand: string, model: string) => {
+    navigate(`/cars?brand=${encodeURIComponent(brand)}&model=${encodeURIComponent(model)}`)
   }
 
   return (
@@ -321,57 +332,77 @@ export default function Home() {
             <span className="inline-block bg-red-600 text-white text-[16px] font-bold px-3 py-1 rounded-lg ml-3 align-middle">Somang Trading</span>
           </h1>
 
-          {/* Brand grid - brands stay in their rows, dropdown inserts between rows */}
-          <div ref={brandGridRef} className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-7 lg:grid-cols-9 gap-2 pb-4 mb-3 border-b border-gray-200">
-            {BRANDS.map((brand, i) => (
-              <Fragment key={brand}>
-                <button
-                  onClick={() => handleBrandClick(brand)}
-                  className={`px-2 py-2 text-[15px] font-medium rounded-lg border transition-all text-center truncate ${
-                    activeBrand === brand
-                      ? 'bg-dark text-white border-dark'
-                      : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
-                  }`}
-                >
-                  {brand}
-                </button>
-                {/* Insert model dropdown after the last brand in the active row */}
-                {models.length > 0 && Math.floor(i / gridCols) === activeRowIdx && (i + 1 === BRANDS.length || Math.floor((i + 1) / gridCols) !== activeRowIdx) && (
-                  <div className="col-span-full flex flex-wrap items-center gap-1.5 py-2 px-2 bg-gray-50 rounded-lg">
+          {/* Brand grid with models inserted below active row */}
+          <div className="mb-3">
+            <div ref={brandGridRef} className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-9 gap-2">
+              {BRANDS.map((brand, i) => {
+                const mobileVisible = showAllBrands || i < 12
+                const isLastInRow = i + 1 === BRANDS.length || Math.floor((i + 1) / gridCols) !== Math.floor(i / gridCols)
+                const isActiveRow = activeBrand && Math.floor(i / gridCols) === activeRowIdx
+                return (
+                  <Fragment key={brand}>
                     <button
-                      onClick={() => setActiveModel(null)}
-                      className={`shrink-0 px-3 py-1.5 text-[13px] font-medium rounded-full border transition-all ${
-                        !activeModel
-                          ? 'bg-primary text-white border-primary'
-                          : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
+                      onClick={() => handleBrandClick(brand)}
+                      className={`px-2 py-2 text-[15px] font-medium rounded-lg border transition-all text-center truncate ${!mobileVisible ? 'hidden sm:block' : ''} ${
+                        activeBrand === brand
+                          ? 'bg-dark text-white border-dark'
+                          : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
                       }`}
                     >
-                      Бүгд
+                      {brand}
                     </button>
-                    {models.map((model) => (
-                      <button
-                        key={model}
-                        onClick={() => setActiveModel(model)}
-                        className={`shrink-0 px-3 py-1.5 text-[13px] font-medium rounded-full border transition-all ${
-                          activeModel === model
-                            ? 'bg-primary text-white border-primary'
-                            : 'bg-white text-gray-500 border-gray-200 hover:border-gray-400'
-                        }`}
+                    {/* Models grid: same columns as brands, right below active row */}
+                    {activeBrand && models.length > 0 && isActiveRow && isLastInRow && (
+                      <div
+                        className="col-span-full bg-gray-100 rounded-xl p-3"
+                        style={{ display: 'grid', gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))`, gap: '0.375rem' }}
                       >
-                        {model}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </Fragment>
-            ))}
+                        <Link
+                          to={`/cars?brand=${encodeURIComponent(activeBrand)}`}
+                          className="text-[13px] py-1 rounded-md text-center truncate transition-all bg-dark text-white font-semibold"
+                        >
+                          Бүгд
+                        </Link>
+                        {models.map((model) => (
+                          <button
+                            key={model}
+                            onClick={() => handleModelClick(activeBrand, model)}
+                            className="text-[13px] py-1 rounded-md text-center truncate transition-all text-gray-600 hover:bg-gray-200"
+                          >
+                            {model}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </Fragment>
+                )
+              })}
+            </div>
+            {/* Show all brands button - mobile only */}
+            {!showAllBrands && BRANDS.length > 12 && (
+              <button
+                onClick={() => setShowAllBrands(true)}
+                className="sm:hidden w-full mt-2 py-2 text-[14px] font-medium text-primary border border-primary rounded-lg hover:bg-primary/5 transition"
+              >
+                Бүх brand харах ({BRANDS.length - 12}+)
+              </button>
+            )}
+            {showAllBrands && (
+              <button
+                onClick={() => setShowAllBrands(false)}
+                className="sm:hidden w-full mt-2 py-2 text-[14px] font-medium text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 transition"
+              >
+                Хураах
+              </button>
+            )}
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Left: Brand cars grid (2x2) */}
+            {/* Left: Онцлох машинууд (2x2) - 4 өөр brand */}
             <div className="lg:col-span-7">
+              <h2 className="text-[18px] font-bold text-dark mb-3">Онцлох машинууд</h2>
               <div className="grid grid-cols-2 gap-4">
-                {brandLoading
+                {allCarsLoading
                   ? Array.from({ length: 4 }).map((_, i) => (
                       <div key={i} className="bg-gray-50 rounded-lg p-4">
                         <div className="aspect-[4/3] skeleton rounded-lg mb-3" />
@@ -379,15 +410,15 @@ export default function Home() {
                         <div className="h-5 skeleton w-1/2" />
                       </div>
                     ))
-                  : (brandCars || []).map((car) => (
+                  : featuredBrandCars.map((car) => (
                       <CompactCarCard key={car.id} car={car} rates={rates} />
                     ))}
               </div>
               <Link
-                to={`/cars?brand=${activeBrand}${activeModel ? `&model=${activeModel}` : ''}`}
+                to="/cars"
                 className="inline-flex items-center gap-1 mt-4 text-[18px] font-semibold text-dark hover:text-primary transition"
               >
-                {activeBrand} {activeModel || ''} бүх машин харах →
+                Бүх машин харах →
               </Link>
             </div>
 
