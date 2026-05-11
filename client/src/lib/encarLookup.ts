@@ -135,30 +135,36 @@ async function fetchEncarPage(year: number, miMin: number, miMax: number, carTyp
   }
 }
 
-// Strong match = both mileage and price are within these tolerances.
-const MILEAGE_TOLERANCE = 200       // km
-const PRICE_TOLERANCE_MANWON = 10   // 100,000 KRW
-
-function isStrongMatch(car: Car, hit: SearchHit): boolean {
-  if (!car.mileage || !car.price || !hit.Mileage || !hit.Price) return false
-  return (
-    Math.abs(hit.Mileage - car.mileage) <= MILEAGE_TOLERANCE &&
-    Math.abs(hit.Price - car.price) <= PRICE_TOLERANCE_MANWON
-  )
-}
+// Acceptance thresholds (loose). We're filtered by year + brand already;
+// among that subset we just want the closest km+price hit. False
+// positives within the same model/year/price band are essentially
+// indistinguishable from the user's POV anyway.
+const MAX_MILEAGE_DIFF = 5000        // km
+const MAX_PRICE_DIFF_MANWON = 100    // 1,000,000 KRW
 
 function distance(car: Car, hit: SearchHit): number {
   const kmDiff = Math.abs((hit.Mileage || 0) - (car.mileage || 0))
   const priceDiff = Math.abs((hit.Price || 0) - (car.price || 0))
-  return kmDiff / 200 + priceDiff / 1
+  // Combine: treat 1 万원 ≈ 100 km of "value distance"
+  return kmDiff / 100 + priceDiff
+}
+
+function withinTolerance(car: Car, hit: SearchHit): boolean {
+  if (!car.mileage || !car.price || !hit.Mileage || !hit.Price) return false
+  return (
+    Math.abs(hit.Mileage - car.mileage) <= MAX_MILEAGE_DIFF &&
+    Math.abs(hit.Price - car.price) <= MAX_PRICE_DIFF_MANWON
+  )
 }
 
 export async function findEncarCarId(car: Car): Promise<string | null> {
   if (!car?.brand || !car?.year || !car?.mileage || !car?.price) return null
 
   const targetKm = car.mileage
-  const miMin = Math.max(0, targetKm - 500)
-  const miMax = targetKm + 500
+  // Wide DSL range — actual listing's mileage may drift up since
+  // Carapis last scraped, and Encar listings sometimes round.
+  const miMin = Math.max(0, targetKm - 5000)
+  const miMax = targetKm + 5000
 
   // Query all three CarType catalogues in parallel — the listing could
   // live in A (Korean passenger), N (imported passenger), or
@@ -169,11 +175,13 @@ export async function findEncarCarId(car: Car): Promise<string | null> {
   const hits = pages.flat()
   const branded = hits.filter((h) => brandMatches(car.brand!, h.Manufacturer))
 
-  const strong = branded.filter((h) => isStrongMatch(car, h))
-  if (strong.length === 0) return null
+  // Keep only hits inside the loose mileage+price box.
+  const candidates = branded.filter((h) => withinTolerance(car, h))
+  if (candidates.length === 0) return null
 
-  strong.sort((a, b) => distance(car, a) - distance(car, b))
-  return strong[0].Id
+  // Pick the absolute closest among the survivors.
+  candidates.sort((a, b) => distance(car, a) - distance(car, b))
+  return candidates[0].Id
 }
 
 export function encarDetailUrl(carId: string): string {
