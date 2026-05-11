@@ -68,10 +68,10 @@ async function cachedGet(url) {
 }
 
 const CDN = 'https://ci.encar.com'
-// Encar's image-resize endpoint. Without this, direct ci.encar.com URLs
-// serve a ~28KB cached thumbnail. With these params we get the
-// 1280×768 ~91KB high-quality version that encar.com itself uses.
-const IMG_QUERY = '?impolicy=heightRate&rh=768&cw=1280&ch=768&cg=Center'
+// Encar's image-resize endpoint. The bare URL serves a 28KB thumbnail.
+// With these params we get a high-quality 1920×1080 image — same
+// resolution Encar uses on its own desktop detail page (293KB).
+const IMG_QUERY = '?impolicy=heightRate&rh=1080&cw=1920&ch=1080&cg=Center'
 
 function imageUrl(path) {
   if (!path) return ''
@@ -84,26 +84,27 @@ function imageUrl(path) {
 
 function pickListPhotos(photos = []) {
   if (!photos.length) return []
-  // Encar list returns up to 4 thumbs. Prefer 003/004/007 (cleaner shots) over 001.
-  const sorted = [...photos].sort((a, b) => {
-    const score = (t) => (t === '001' ? 99 : Number(t) || 50)
-    return score(a.type) - score(b.type)
-  })
-  return sorted.map((p) => imageUrl(p.location))
+  // List endpoint sends 4 numbered thumbnails (type "001"/"003"/...).
+  // Order them numerically so the hero (001) is first.
+  return [...photos]
+    .sort((a, b) => (Number(a.type) || 999) - (Number(b.type) || 999))
+    .map((p) => imageUrl(p.location))
 }
 
 function pickDetailPhotos(photos = []) {
   if (!photos.length) return []
-  // Filter to high-quality typed photos; drop UNDER_BODY (separate field anyway).
-  // Prefer INNER/OPTION over the watermarked 001 OUTSIDE shot.
-  const order = (p) => {
-    if (p.type === 'INNER') return 1
-    if (p.type === 'OPTION') return 2
-    if (p.type === 'EQUIPMENT') return 3
-    if (p.code === '001') return 90 // watermarked shot last among outside
-    return 10 // other outside shots
-  }
-  return [...photos].sort((a, b) => order(a) - order(b)).map((p) => imageUrl(p.path))
+  // Use Encar's own ordering: photo code (001, 002, 003, ...) is the
+  // dealer-curated sequence with the hero shot first. We only filter
+  // out under-body inspection photos (those live in a separate field
+  // on the detail response anyway).
+  return [...photos]
+    .filter((p) => p.type !== 'UNDER_BODY')
+    .sort((a, b) => {
+      const ac = Number(a.code) || 999
+      const bc = Number(b.code) || 999
+      return ac - bc
+    })
+    .map((p) => imageUrl(p.path))
 }
 
 // Build Encar search DSL from our friendly query params.
@@ -169,7 +170,11 @@ function normalizeListItem(c) {
     badge,
     badge_detail: models.translateModelText(c.BadgeDetail || ''),
     year: c.FormYear ? Number(c.FormYear) : Math.floor((c.Year || 0) / 100),
-    price: c.Price ? c.Price * 10000 : 0, // KRW
+    // Frontend's toMnt() expects KRW prices in 万원 (10,000-KRW units),
+    // exactly like the legacy apicars.info response. Encar returns the
+    // value already in 万원, so we keep it as-is.
+    price: c.Price || 0,
+    original_price_krw: c.Price ? c.Price * 10000 : 0,
     currency: 'KRW',
     mileage: c.Mileage || 0,
     fuelType: tx.fuel(c.FuelType),
@@ -202,19 +207,25 @@ function normalizeDetail(d) {
     trim,
     year: cat.formYear ? Number(cat.formYear) : 0,
     year_month: cat.yearMonth || '',
-    price: ad.price ? ad.price * 10000 : 0, // KRW
+    // 万원 unit (matches frontend toMnt expectations + legacy apicars shape)
+    price: ad.price || 0,
     original_price_krw: ad.price ? ad.price * 10000 : 0,
     currency: 'KRW',
     mileage: spec.mileage || 0,
     displacement: spec.displacement || 0,
     fuelType: tx.fuel(spec.fuelName),
     fuel_type: tx.fuel(spec.fuelName),
+    fuel_mn: tx.fuel(spec.fuelName, 'mn'),
     transmission: tx.transmission(spec.transmissionName),
+    transmission_mn: tx.transmission(spec.transmissionName, 'mn'),
     color: tx.color(spec.colorName),
+    color_mn: tx.color(spec.colorName, 'mn'),
     body_type: tx.body(spec.bodyName),
+    body_type_mn: tx.body(spec.bodyName, 'mn'),
     seat_count: spec.seatCount || 0,
     vin: d.vin || '',
     location: (d.contact && d.contact.address) || '',
+    location_mn: tx.region((d.contact && d.contact.address) || '', 'mn'),
     dealer_type: d.contact && d.contact.userType,
     image: pickDetailPhotos(d.photos || [])[0] || '',
     images: pickDetailPhotos(d.photos || []),

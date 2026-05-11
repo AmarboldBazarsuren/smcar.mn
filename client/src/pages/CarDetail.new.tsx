@@ -77,8 +77,8 @@ export default function CarDetailNew() {
     )
   }
 
-  const optionsGroups: OptionGroup[] = (car.options && car.options.groups) || []
-  const optionsMnGroups: OptionGroup[] = (car.options_mn && car.options_mn.groups) || []
+  // Prefer Mongolian options; fall back to English when not available.
+  const optionsGroups: OptionGroup[] = (car.options_mn && car.options_mn.groups) || (car.options && car.options.groups) || []
 
   const priceInfo = calcPrice(
     Number(car.price || car.original_price_krw || 0),
@@ -98,9 +98,9 @@ export default function CarDetailNew() {
       <div className="max-w-[1400px] mx-auto px-4 lg:px-8 py-6 lg:py-8">
         {/* Breadcrumb */}
         <nav className="text-[13px] text-gray-500 mb-4">
-          <Link to="/" className="hover:text-red-600">Home</Link>
+          <Link to="/" className="hover:text-red-600">Нүүр</Link>
           <span className="mx-2">/</span>
-          <Link to="/cars" className="hover:text-red-600">Vehicles</Link>
+          <Link to="/cars" className="hover:text-red-600">Машинууд</Link>
           <span className="mx-2">/</span>
           <span className="text-gray-700">{car.brand} {car.model}</span>
         </nav>
@@ -120,11 +120,11 @@ export default function CarDetailNew() {
               </p>
 
               <div className="flex flex-wrap items-center gap-3 text-[13px] text-gray-500 mt-3">
-                <span>Source: <span className="text-gray-700 font-medium">Encar</span></span>
+                <span>Эх сурвалж: <span className="text-gray-700 font-medium">Encar</span></span>
                 {car.encar_id && <span>· ID: <span className="text-gray-700 font-mono">{car.encar_id}</span></span>}
-                {car.scraped_at && <span>· Updated {timeAgo(car.scraped_at)}</span>}
+                {car.scraped_at && <span>· Шинэчлэгдсэн: {timeAgoMn(car.scraped_at)}</span>}
                 <span className="ml-auto inline-flex items-center gap-1.5 bg-green-100 text-green-700 px-2.5 py-1 rounded-full text-[12px] font-semibold">
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-500" /> Active
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-500" /> Идэвхтэй
                 </span>
               </div>
             </div>
@@ -132,9 +132,9 @@ export default function CarDetailNew() {
             <SpecGrid car={car} cc={cc} />
 
             <div className="flex flex-wrap gap-2">
-              {car.diagnosis && <Tag tone="green">✓ Inspection passed</Tag>}
-              {car.pre_verified && <Tag tone="blue">✓ Pre-verified</Tag>}
-              {car.extend_warranty && <Tag tone="purple">✓ Extended warranty</Tag>}
+              {car.diagnosis && <Tag tone="green">✓ Үзлэг хийгдсэн</Tag>}
+              {car.pre_verified && <Tag tone="blue">✓ Урьдчилан баталгаажсан</Tag>}
+              {car.extend_warranty && <Tag tone="purple">✓ Сунгасан баталгаа</Tag>}
             </div>
 
             {car.vin && (
@@ -146,41 +146,28 @@ export default function CarDetailNew() {
 
             {car.one_line && (
               <div>
-                <h2 className="text-[20px] font-bold mb-3">Description</h2>
+                <h2 className="text-[20px] font-bold mb-3">Нэмэлт мэдээлэл</h2>
                 <p className="text-[15px] text-gray-700 leading-relaxed">{car.one_line}</p>
               </div>
             )}
 
             {optionsGroups.length > 0 && (
               <div>
-                <h2 className="text-[20px] font-bold mb-4">Equipment & Features</h2>
+                <h2 className="text-[20px] font-bold mb-4">Тоноглол ба хэрэгсэл</h2>
                 <div className="space-y-4">
-                  {optionsGroups.map((group, gi) => {
-                    const mnGroup = optionsMnGroups[gi]
-                    return (
-                      <div key={group.key} className="bg-white border border-gray-200 rounded-2xl p-5">
-                        <h3 className="text-[15px] font-bold text-gray-900 mb-3">
-                          {group.title}
-                          {mnGroup && mnGroup.title !== group.title && (
-                            <span className="ml-2 text-[13px] font-normal text-gray-400">/ {mnGroup.title}</span>
-                          )}
-                        </h3>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2">
-                          {group.items.map((item, ii) => (
-                            <div key={item.code} className="flex items-center gap-2 text-[14px]">
-                              <span className="text-green-600 font-bold">✓</span>
-                              <span className="text-gray-700">
-                                {item.label}
-                                {mnGroup && mnGroup.items[ii] && mnGroup.items[ii].label !== item.label && (
-                                  <span className="text-gray-400 text-[12px] ml-1">/ {mnGroup.items[ii].label}</span>
-                                )}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
+                  {optionsGroups.map((group) => (
+                    <div key={group.key} className="bg-white border border-gray-200 rounded-2xl p-5">
+                      <h3 className="text-[15px] font-bold text-gray-900 mb-3">{group.title}</h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2">
+                        {group.items.map((item) => (
+                          <div key={item.code} className="flex items-start gap-2 text-[14px]">
+                            <span className="text-green-600 font-bold mt-0.5">✓</span>
+                            <span className="text-gray-700">{item.label}</span>
+                          </div>
+                        ))}
                       </div>
-                    )
-                  })}
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
@@ -282,7 +269,7 @@ export default function CarDetailNew() {
                 to="/cars"
                 className="block text-center text-[13px] text-gray-500 hover:text-red-600 py-2"
               >
-                ← Back to all listings
+                ← Бүх машинуудруу буцах
               </Link>
             </div>
           </aside>
@@ -347,19 +334,21 @@ function PhotoMosaic({ imgs, onImageClick }: { imgs: string[]; onImageClick: (i:
 }
 
 function SpecGrid({ car, cc }: { car: any; cc: number | null }) {
+  const dealerLabel = car.dealer_type === 'DEALER' ? 'Автомашины дилер' : car.dealer_type === 'PERSONAL' ? 'Хувь хүн' : car.dealer_type || '—'
+  const statusLabel = car.advertisement_status === 'ADVERTISE' ? 'Бэлэн байгаа' : car.advertisement_status || '—'
   const items = [
-    { icon: '📅', label: 'Year', value: car.year || '—' },
-    { icon: '🛣', label: 'Mileage', value: car.mileage ? `${formatNumber(car.mileage)} km` : '—' },
-    { icon: '⚡', label: 'Engine', value: cc ? `${formatNumber(cc)} cc` : '—' },
-    { icon: '⛽', label: 'Fuel Type', value: car.fuelType || car.fuel_type || '—' },
-    { icon: '⚙', label: 'Transmission', value: car.transmission || '—' },
-    { icon: '🚗', label: 'Body Type', value: car.body_type || '—' },
-    { icon: '🎨', label: 'Color', value: car.color || '—' },
-    { icon: '💺', label: 'Seats', value: car.seat_count || '—' },
-    { icon: '🏷', label: 'Trim', value: car.trim || car.grade || '—' },
-    { icon: '📍', label: 'Region', value: car.location || '—' },
-    { icon: '👤', label: 'Seller', value: car.dealer_type === 'DEALER' ? 'Dealer' : car.dealer_type || '—' },
-    { icon: '✅', label: 'Availability', value: car.advertisement_status === 'ADVERTISE' ? 'Available' : car.advertisement_status || '—', tone: 'green' as const },
+    { icon: '📅', label: 'Үйлдвэрлэсэн он', value: car.year || '—' },
+    { icon: '🛣', label: 'Явсан км', value: car.mileage ? `${formatNumber(car.mileage)} км` : '—' },
+    { icon: '⚡', label: 'Хөдөлгүүрийн багтаамж', value: cc ? `${formatNumber(cc)} cc` : '—' },
+    { icon: '⛽', label: 'Түлшний төрөл', value: car.fuel_mn || car.fuelType || car.fuel_type || '—' },
+    { icon: '⚙', label: 'Хурдны хайрцаг', value: car.transmission_mn || car.transmission || '—' },
+    { icon: '🚗', label: 'Кузов ангилал', value: car.body_type_mn || car.body_type || '—' },
+    { icon: '🎨', label: 'Өнгө', value: car.color_mn || car.color || '—' },
+    { icon: '💺', label: 'Суудлын тоо', value: car.seat_count || '—' },
+    { icon: '🏷', label: 'Хувилбар', value: car.trim || car.grade || '—' },
+    { icon: '📍', label: 'Байршил', value: car.location_mn || car.location || '—' },
+    { icon: '👤', label: 'Худалдагч', value: dealerLabel },
+    { icon: '✅', label: 'Борлуулалтын төлөв', value: statusLabel, tone: 'green' as const },
   ]
   return (
     <div className="bg-white border border-gray-200 rounded-2xl p-5">
@@ -369,7 +358,7 @@ function SpecGrid({ car, cc }: { car: any; cc: number | null }) {
             <div className="flex items-center gap-1.5 text-[12px] uppercase tracking-wider text-gray-500 mb-1">
               <span>{it.icon}</span>{it.label}
             </div>
-            <div className={`text-[15px] font-semibold ${it.tone === 'green' ? 'text-green-600' : 'text-gray-900'}`}>
+            <div className={`text-[14px] font-semibold ${it.tone === 'green' ? 'text-green-600' : 'text-gray-900'}`}>
               {it.value}
             </div>
           </div>
@@ -415,18 +404,18 @@ function FullImagePreview({ imgs, index, onClose, onPrev, onNext, visible }: {
   )
 }
 
-function timeAgo(iso?: string): string {
-  if (!iso) return 'recently'
+function timeAgoMn(iso?: string): string {
+  if (!iso) return 'саяхан'
   const d = new Date(iso)
   const sec = Math.floor((Date.now() - d.getTime()) / 1000)
-  if (sec < 60) return 'just now'
+  if (sec < 60) return 'дөнгөж сая'
   const min = Math.floor(sec / 60)
-  if (min < 60) return `${min} min ago`
+  if (min < 60) return `${min} минутын өмнө`
   const hr = Math.floor(min / 60)
-  if (hr < 24) return `${hr} hr ago`
+  if (hr < 24) return `${hr} цагийн өмнө`
   const day = Math.floor(hr / 24)
-  if (day < 30) return `${day} days ago`
-  return d.toLocaleDateString()
+  if (day < 30) return `${day} өдрийн өмнө`
+  return d.toLocaleDateString('mn-MN')
 }
 
 /* ===== Price calculation (ported from legacy CarDetail) ===== */
@@ -492,10 +481,9 @@ function calcPrice(
   } else if (currency === 'EUR' && rates) {
     priceKrw = Math.round(price * rates.euroToMnt / rates.wonToMnt)
     manwon = Math.round(priceKrw / 10000)
-  } else if (currency === 'KRW') {
-    priceKrw = price
-    manwon = Math.round(price / 10000)
   } else {
+    // Both legacy apicars.info and our new Encar proxy return prices
+    // in 万원 (10,000-KRW units), so the raw `price` is manwon.
     manwon = Math.round(price)
     priceKrw = manwon * 10000
   }

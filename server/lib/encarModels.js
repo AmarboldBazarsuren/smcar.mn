@@ -228,8 +228,9 @@ function translateModelText(text) {
 }
 
 // Probe whether a string still contains Korean characters.
+// Covers Hangul syllables (가-힣) and the Jamo blocks too.
 function hasKorean(s) {
-  return /[ㄱ-힝]/.test(String(s || ''))
+  return /[ᄀ-ᇿ㄰-㆏가-힣]/.test(String(s || ''))
 }
 
 module.exports = { translateModelText, hasKorean }
