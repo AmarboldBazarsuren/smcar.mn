@@ -288,6 +288,8 @@ const CACHE_HEADER = 'public, max-age=172800, stale-while-revalidate=604800'
 const SPECIAL_BODY_TYPES = ['truck', 'van', 'minivan', 'pickup', 'bus']
 
 function buildListUrl(query, opts = {}) {
+  // strip cache-buster
+  delete query.v
   const u = new URL(`${CARAPIS_BASE}/vehicles/`)
   const page = Math.max(1, Number(query.page || 1))
   const limit = Math.min(100, Math.max(1, Number(query.limit || 20)))
