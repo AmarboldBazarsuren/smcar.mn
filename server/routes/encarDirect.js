@@ -235,6 +235,39 @@ function normalizeDetail(d) {
 // ===== Routes =====
 const CACHE_HEADER = 'public, max-age=3600, stale-while-revalidate=86400'
 
+// Throttled detail enrichment: for cars whose title still contains
+// Korean after the dictionary pass, fetch the detail endpoint (which
+// returns English manufacturer/model/grade) and overwrite the title.
+async function enrichWithDetailIfKorean(item) {
+  if (!models.hasKorean(item.title)) return item
+  try {
+    const d = await cachedGet(`https://api.encar.com/v1/readside/vehicle/${item.encar_id}`)
+    const cat = d.category || {}
+    const brand = cat.manufacturerEnglishName || item.brand
+    const model = cat.modelGroupEnglishName || item.model
+    const grade = cat.gradeEnglishName || item.badge
+    const trim = cat.gradeDetailEnglishName || ''
+    item.brand = brand
+    item.model = model
+    item.badge = grade
+    item.badge_detail = trim
+    item.title = [brand, model, grade, trim].filter(Boolean).join(' ')
+  } catch (err) {
+    // leave the item as-is on failure
+  }
+  return item
+}
+
+async function enrichInBatches(items, concurrency = 8) {
+  const result = []
+  for (let i = 0; i < items.length; i += concurrency) {
+    const batch = items.slice(i, i + concurrency)
+    const settled = await Promise.all(batch.map(enrichWithDetailIfKorean))
+    result.push(...settled)
+  }
+  return result
+}
+
 // GET /api/cars  — Encar list
 router.get('/', async (req, res) => {
   try {
@@ -245,7 +278,8 @@ router.get('/', async (req, res) => {
     u.searchParams.set('q', q)
     u.searchParams.set('sr', sr)
     const raw = await cachedGet(u.toString())
-    const cars = (raw.SearchResults || []).map(normalizeListItem)
+    let cars = (raw.SearchResults || []).map(normalizeListItem)
+    cars = await enrichInBatches(cars, 8)
     const page = Math.max(1, Number(req.query.page || 1))
     const limit = Math.min(100, Math.max(1, Number(req.query.limit || 20)))
     res.set('Cache-Control', CACHE_HEADER)

@@ -1,9 +1,18 @@
 import { useState, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { fetchCarFull, fetchExchangeRate, getImageUrl } from '../lib/api'
+import {
+  fetchCarFull,
+  fetchExchangeRate,
+  fetchFeeSettings,
+  fetchEncarInfo,
+  getImageUrl,
+} from '../lib/api'
 import { formatNumber } from '../lib/utils'
 import ReservationModal from '../components/cars/ReservationModal'
+import type { ExchangeRate, FeeSettings } from '../types'
+
+const TRANSPORT_OPTIONS = [1200, 1400, 1600, 1800, 2500]
 
 interface OptionGroup {
   key: string
@@ -13,8 +22,9 @@ interface OptionGroup {
 
 export default function CarDetailNew() {
   const { id } = useParams<{ id: string }>()
-  const [selectedImg, setSelectedImg] = useState(0)
+  const [selectedImg, setSelectedImg] = useState(-1)
   const [showModal, setShowModal] = useState(false)
+  const [transportFeeUsd, setTransportFeeUsd] = useState(1200)
 
   const { data: car, isLoading } = useQuery<any>({
     queryKey: ['car', id],
@@ -22,6 +32,14 @@ export default function CarDetailNew() {
     enabled: !!id,
   })
   const { data: rates } = useQuery({ queryKey: ['exchangeRate'], queryFn: fetchExchangeRate })
+  const { data: fees } = useQuery({ queryKey: ['feeSettings'], queryFn: fetchFeeSettings })
+  const { data: encarInfo } = useQuery({
+    queryKey: ['encarInfo', car?.encar_id],
+    queryFn: () => fetchEncarInfo(car!.encar_id),
+    enabled: !!car?.encar_id,
+  })
+  const cc = encarInfo?.cc ?? car?.displacement ?? null
+  const encarPrice = encarInfo?.price ?? null
 
   const imgs: string[] = car?.images?.length ? car.images : car?.image ? [car.image] : []
   const prevImg = useCallback(() => setSelectedImg((p) => (p > 0 ? p - 1 : imgs.length - 1)), [imgs.length])
@@ -59,13 +77,21 @@ export default function CarDetailNew() {
     )
   }
 
-  const priceKrw = Number(car.price || car.original_price_krw || 0)
-  const priceUsd = rates?.usdToMnt && rates?.wonToMnt
-    ? Math.round((priceKrw * rates.wonToMnt) / rates.usdToMnt)
-    : null
-  const priceMnt = rates?.wonToMnt ? Math.round(priceKrw * rates.wonToMnt) : null
   const optionsGroups: OptionGroup[] = (car.options && car.options.groups) || []
   const optionsMnGroups: OptionGroup[] = (car.options_mn && car.options_mn.groups) || []
+
+  const priceInfo = calcPrice(
+    Number(car.price || car.original_price_krw || 0),
+    car.currency || 'KRW',
+    rates,
+    fees,
+    Number(car.original_price_krw || 0),
+    encarPrice,
+    cc,
+    car.year,
+    car.fuelType || car.fuel_type,
+    transportFeeUsd
+  )
 
   return (
     <main className="bg-white min-h-screen text-gray-900">
@@ -82,13 +108,9 @@ export default function CarDetailNew() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* ===== LEFT: Photo grid + details ===== */}
           <div className="lg:col-span-8 space-y-6">
-            {/* Photo gallery: 1 big + 2x2 thumbs + "+N more" */}
-            <PhotoMosaic
-              imgs={imgs}
-              onImageClick={(i) => setSelectedImg(i)}
-            />
+            <PhotoMosaic imgs={imgs} onImageClick={(i) => setSelectedImg(i)} />
 
-            {/* Title + Price block */}
+            {/* Title block */}
             <div>
               <h1 className="text-[28px] md:text-[34px] font-extrabold leading-tight">
                 {car.brand} {car.model} {car.year ? `(${car.year})` : ''}
@@ -97,48 +119,24 @@ export default function CarDetailNew() {
                 {[car.brand, car.model, car.grade, car.trim].filter(Boolean).join(' · ')}
               </p>
 
-              <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2 mt-5">
-                <span className="text-[34px] font-extrabold text-gray-900">
-                  ₩{(priceKrw / 1_000_000).toFixed(1)}M
-                </span>
-                {priceUsd != null && (
-                  <span className="text-[15px] text-gray-500">~${formatNumber(priceUsd)}</span>
-                )}
-                {priceMnt != null && (
-                  <span className="text-[15px] text-gray-500">~{formatNumber(priceMnt)}₮</span>
-                )}
-                <span className="ml-auto inline-flex items-center gap-1.5 bg-green-100 text-green-700 px-2.5 py-1 rounded-full text-[12px] font-semibold">
-                  <span className="w-1.5 h-1.5 rounded-full bg-green-500" /> Active
-                </span>
-              </div>
-
               <div className="flex flex-wrap items-center gap-3 text-[13px] text-gray-500 mt-3">
                 <span>Source: <span className="text-gray-700 font-medium">Encar</span></span>
                 {car.encar_id && <span>· ID: <span className="text-gray-700 font-mono">{car.encar_id}</span></span>}
                 {car.scraped_at && <span>· Updated {timeAgo(car.scraped_at)}</span>}
+                <span className="ml-auto inline-flex items-center gap-1.5 bg-green-100 text-green-700 px-2.5 py-1 rounded-full text-[12px] font-semibold">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-500" /> Active
+                </span>
               </div>
             </div>
 
-            {/* Spec grid */}
-            <SpecGrid car={car} />
+            <SpecGrid car={car} cc={cc} />
 
-            {/* Status tags */}
             <div className="flex flex-wrap gap-2">
-              {car.diagnosis && (
-                <Tag tone="green">⚲ Inspection passed</Tag>
-              )}
-              {car.pre_verified && (
-                <Tag tone="blue">✔ Pre-verified</Tag>
-              )}
-              {car.extend_warranty && (
-                <Tag tone="purple">⛨ Extended warranty</Tag>
-              )}
-              {!car.diagnosis && (
-                <Tag tone="amber">⚠ Inspection pending</Tag>
-              )}
+              {car.diagnosis && <Tag tone="green">✓ Inspection passed</Tag>}
+              {car.pre_verified && <Tag tone="blue">✓ Pre-verified</Tag>}
+              {car.extend_warranty && <Tag tone="purple">✓ Extended warranty</Tag>}
             </div>
 
-            {/* VIN */}
             {car.vin && (
               <div className="bg-gray-50 border border-gray-200 rounded-2xl p-5">
                 <p className="text-[12px] uppercase tracking-wider text-gray-500 mb-1">VIN</p>
@@ -146,7 +144,6 @@ export default function CarDetailNew() {
               </div>
             )}
 
-            {/* Description / one-liner */}
             {car.one_line && (
               <div>
                 <h2 className="text-[20px] font-bold mb-3">Description</h2>
@@ -154,7 +151,6 @@ export default function CarDetailNew() {
               </div>
             )}
 
-            {/* Equipment grid */}
             {optionsGroups.length > 0 && (
               <div>
                 <h2 className="text-[20px] font-bold mb-4">Equipment & Features</h2>
@@ -190,50 +186,101 @@ export default function CarDetailNew() {
             )}
           </div>
 
-          {/* ===== RIGHT: Sticky action panel ===== */}
-          <aside className="lg:col-span-4 space-y-4">
+          {/* ===== RIGHT: Price + Fee Breakdown ===== */}
+          <aside className="lg:col-span-4">
             <div className="lg:sticky lg:top-24 space-y-4">
-              {/* Order CTA */}
-              <div className="bg-gradient-to-br from-red-600 to-red-700 rounded-2xl p-6 text-white">
-                <p className="text-[12px] uppercase tracking-wider text-red-200 mb-1">Total price</p>
-                <p className="text-[32px] font-extrabold">
-                  ₩{(priceKrw / 1_000_000).toFixed(1)}M
-                </p>
-                {priceMnt != null && (
-                  <p className="text-[14px] text-red-100/90 mt-1">
-                    ≈ {formatNumber(priceMnt)}₮
-                  </p>
+              {/* Price card */}
+              <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+                {priceInfo.mntCarPrice && (
+                  <div className="px-5 py-4 bg-red-50 border-b border-red-100">
+                    <p className="text-[12px] text-gray-500 uppercase tracking-wider font-medium mb-1">Машины үнэ</p>
+                    <p className="text-[28px] font-extrabold text-red-600">{priceInfo.krwFull}</p>
+                    <p className="text-[18px] font-semibold text-gray-500 mt-0.5">{priceInfo.mntCarPrice}</p>
+                  </div>
                 )}
-                <button
-                  onClick={() => setShowModal(true)}
-                  className="mt-5 w-full bg-white hover:bg-red-50 text-red-700 text-[15px] font-bold py-3 rounded-full transition"
+
+                {fees && rates && (
+                  <div className="p-5 space-y-3">
+                    <p className="text-[12px] text-gray-400 uppercase tracking-wider font-semibold mb-2">Зардлын задаргаа</p>
+
+                    <FeeRow label="Солонгос дахь зардал" amountKrw={fees.serviceFee} wonToMnt={rates.wonToMnt} />
+
+                    {/* Transport fee selector */}
+                    <div>
+                      <div className="flex items-start gap-2 mb-2">
+                        <span className="text-gray-700 text-[14px] font-medium">Тээврийн зардал</span>
+                      </div>
+                      <p className="text-[12px] text-gray-500 mb-2 leading-snug">
+                        Машины овор хэмжээнээс хамааран өөрчлөгдөнө
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {TRANSPORT_OPTIONS.map((opt) => {
+                          const mnt = Math.round(opt * rates.usdToMnt)
+                          return (
+                            <button
+                              key={opt}
+                              type="button"
+                              onClick={() => setTransportFeeUsd(opt)}
+                              className={`px-2.5 py-1.5 text-[13px] font-medium rounded-lg border transition-all ${
+                                transportFeeUsd === opt
+                                  ? 'bg-red-600 text-white border-red-600'
+                                  : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
+                              }`}
+                            >
+                              {formatNumber(mnt)}₮
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+
+                    <FeeRow label="Онцгой албан татвар" amountMnt={priceInfo.specialTaxMnt} />
+                    <FeeRow label="Гаалийн татвар (15.5%)" amountMnt={priceInfo.customsDutyMnt} />
+
+                    <div className="border-t border-gray-200 pt-3 mt-3">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-[15px] font-bold text-gray-800">Нийт гаалийн зардал</span>
+                        <span className="text-[16px] font-extrabold text-gray-900">{formatNumber(priceInfo.totalCustomsMnt)}₮</span>
+                      </div>
+                      <div className="flex justify-between items-center pt-2 border-t border-gray-100">
+                        <span className="text-[18px] font-bold text-red-600">Бүгд нийт</span>
+                        <span className="text-[20px] font-extrabold text-red-600">{priceInfo.mntGrandTotal}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <button
+                onClick={() => setShowModal(true)}
+                className="w-full bg-red-600 hover:bg-red-500 text-white py-4 rounded-2xl text-[18px] font-bold transition shadow-lg shadow-red-900/20"
+              >
+                Захиалга өгөх
+              </button>
+
+              <div className="grid grid-cols-2 gap-2">
+                <a
+                  href="tel:+97677220707"
+                  className="flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-800 py-3 rounded-2xl text-[14px] font-semibold hover:bg-gray-50 transition"
                 >
-                  Reserve this car
-                </button>
+                  🇲🇳 7722-0707
+                </a>
                 <a
                   href="tel:+97672105633"
-                  className="mt-2 block w-full text-center bg-white/10 hover:bg-white/20 border border-white/25 text-white text-[14px] font-medium py-3 rounded-full transition"
+                  className="flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-800 py-3 rounded-2xl text-[14px] font-semibold hover:bg-gray-50 transition"
                 >
-                  Call us: 7210-5633
+                  🇰🇷 7210-5633
                 </a>
               </div>
 
-              {/* Quick facts */}
-              <div className="bg-white border border-gray-200 rounded-2xl p-5">
-                <h3 className="text-[14px] font-bold uppercase tracking-wider text-gray-500 mb-3">At a glance</h3>
-                <dl className="space-y-2.5 text-[14px]">
-                  <Row k="Year" v={car.year} />
-                  <Row k="Mileage" v={car.mileage ? `${formatNumber(car.mileage)} km` : '—'} />
-                  <Row k="Fuel" v={car.fuelType || car.fuel_type || '—'} />
-                  <Row k="Transmission" v={car.transmission || '—'} />
-                  <Row k="Color" v={car.color || '—'} />
-                  <Row k="Body" v={car.body_type || '—'} />
-                </dl>
+              <div className="bg-red-50 rounded-2xl p-4 text-[13px] text-red-700 leading-relaxed">
+                <p className="font-semibold mb-1">Мэдээлэл</p>
+                <p>Үнэ нь ханшийн өөрчлөлтөөс хамааран өөрчлөгдөж болно. Дэлгэрэнгүй мэдээллийг утсаар авна уу.</p>
               </div>
 
               <Link
                 to="/cars"
-                className="block text-center text-[14px] text-gray-500 hover:text-red-600 py-2"
+                className="block text-center text-[13px] text-gray-500 hover:text-red-600 py-2"
               >
                 ← Back to all listings
               </Link>
@@ -242,7 +289,6 @@ export default function CarDetailNew() {
         </div>
       </div>
 
-      {/* Lightbox-like full image preview */}
       {imgs.length > 0 && (
         <FullImagePreview
           imgs={imgs}
@@ -280,33 +326,17 @@ function PhotoMosaic({ imgs, onImageClick }: { imgs: string[]; onImageClick: (i:
         onClick={() => onImageClick(0)}
         className="col-span-12 md:col-span-7 aspect-[16/11] overflow-hidden rounded-2xl bg-gray-100 group"
       >
-        <img
-          src={getImageUrl(main)}
-          alt=""
-          className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
-          loading="eager"
-        />
+        <img src={getImageUrl(main)} alt="" className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500" loading="eager" />
       </button>
       <div className="col-span-12 md:col-span-5 grid grid-cols-2 gap-2">
         {grid.map((img, i) => {
           const idx = i + 1
           const isLast = i === grid.length - 1 && extra > 0
           return (
-            <button
-              key={img}
-              onClick={() => onImageClick(idx)}
-              className="relative aspect-[5/4] overflow-hidden rounded-xl bg-gray-100 group"
-            >
-              <img
-                src={getImageUrl(img)}
-                alt=""
-                className="w-full h-full object-cover group-hover:scale-[1.05] transition-transform"
-                loading="lazy"
-              />
+            <button key={img} onClick={() => onImageClick(idx)} className="relative aspect-[5/4] overflow-hidden rounded-xl bg-gray-100 group">
+              <img src={getImageUrl(img)} alt="" className="w-full h-full object-cover group-hover:scale-[1.05] transition-transform" loading="lazy" />
               {isLast && (
-                <div className="absolute inset-0 bg-black/55 flex items-center justify-center text-white font-bold text-[18px]">
-                  +{extra}
-                </div>
+                <div className="absolute inset-0 bg-black/55 flex items-center justify-center text-white font-bold text-[18px]">+{extra}</div>
               )}
             </button>
           )
@@ -316,11 +346,11 @@ function PhotoMosaic({ imgs, onImageClick }: { imgs: string[]; onImageClick: (i:
   )
 }
 
-function SpecGrid({ car }: { car: any }) {
+function SpecGrid({ car, cc }: { car: any; cc: number | null }) {
   const items = [
     { icon: '📅', label: 'Year', value: car.year || '—' },
     { icon: '🛣', label: 'Mileage', value: car.mileage ? `${formatNumber(car.mileage)} km` : '—' },
-    { icon: '⚡', label: 'Engine', value: car.displacement ? `${formatNumber(car.displacement)} cc` : '—' },
+    { icon: '⚡', label: 'Engine', value: cc ? `${formatNumber(cc)} cc` : '—' },
     { icon: '⛽', label: 'Fuel Type', value: car.fuelType || car.fuel_type || '—' },
     { icon: '⚙', label: 'Transmission', value: car.transmission || '—' },
     { icon: '🚗', label: 'Body Type', value: car.body_type || '—' },
@@ -349,15 +379,6 @@ function SpecGrid({ car }: { car: any }) {
   )
 }
 
-function Row({ k, v }: { k: string; v: React.ReactNode }) {
-  return (
-    <div className="flex justify-between gap-3">
-      <dt className="text-gray-500">{k}</dt>
-      <dd className="text-gray-900 font-medium text-right">{v ?? '—'}</dd>
-    </div>
-  )
-}
-
 function Tag({ tone, children }: { tone: 'green' | 'blue' | 'purple' | 'amber' | 'red'; children: React.ReactNode }) {
   const tones = {
     green: 'bg-green-100 text-green-700',
@@ -369,33 +390,27 @@ function Tag({ tone, children }: { tone: 'green' | 'blue' | 'purple' | 'amber' |
   return <span className={`inline-flex items-center gap-1.5 ${tones[tone]} px-3 py-1.5 rounded-full text-[13px] font-semibold`}>{children}</span>
 }
 
+function FeeRow({ label, amountKrw, amountMnt, wonToMnt }: { label: string; amountKrw?: number; amountMnt?: number; wonToMnt?: number }) {
+  const mnt = amountMnt ?? (amountKrw && wonToMnt ? Math.round(amountKrw * wonToMnt) : 0)
+  return (
+    <div className="flex justify-between text-[14px]">
+      <span className="text-gray-700">{label}</span>
+      <span className="font-medium text-gray-900">{formatNumber(mnt)}₮</span>
+    </div>
+  )
+}
+
 function FullImagePreview({ imgs, index, onClose, onPrev, onNext, visible }: {
   imgs: string[]; index: number; onClose: () => void; onPrev: () => void; onNext: () => void; visible: boolean
 }) {
   if (!visible || index < 0) return null
   return (
     <div className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center" onClick={onClose}>
-      <button
-        onClick={(e) => { e.stopPropagation(); onPrev() }}
-        className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center"
-      >‹</button>
-      <img
-        src={getImageUrl(imgs[index])}
-        className="max-w-[95vw] max-h-[90vh] object-contain"
-        onClick={(e) => e.stopPropagation()}
-        alt=""
-      />
-      <button
-        onClick={(e) => { e.stopPropagation(); onNext() }}
-        className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center"
-      >›</button>
-      <button
-        onClick={onClose}
-        className="absolute top-4 right-4 text-white/70 hover:text-white text-[28px]"
-      >×</button>
-      <p className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/70 text-[13px]">
-        {index + 1} / {imgs.length}
-      </p>
+      <button onClick={(e) => { e.stopPropagation(); onPrev() }} className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center">‹</button>
+      <img src={getImageUrl(imgs[index])} className="max-w-[95vw] max-h-[90vh] object-contain" onClick={(e) => e.stopPropagation()} alt="" />
+      <button onClick={(e) => { e.stopPropagation(); onNext() }} className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center">›</button>
+      <button onClick={onClose} className="absolute top-4 right-4 text-white/70 hover:text-white text-[28px]">×</button>
+      <p className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/70 text-[13px]">{index + 1} / {imgs.length}</p>
     </div>
   )
 }
@@ -412,4 +427,101 @@ function timeAgo(iso?: string): string {
   const day = Math.floor(hr / 24)
   if (day < 30) return `${day} days ago`
   return d.toLocaleDateString()
+}
+
+/* ===== Price calculation (ported from legacy CarDetail) ===== */
+
+const TAX_TABLE_NORMAL: { maxCc: number; rates: number[] }[] = [
+  { maxCc: 1500, rates: [750000, 1600000, 3350000, 10000000] },
+  { maxCc: 2500, rates: [2300000, 3200000, 5000000, 11700000] },
+  { maxCc: 3500, rates: [3050000, 4000000, 6700000, 13350000] },
+  { maxCc: 4500, rates: [6850750, 8000000, 10850000, 17500000] },
+  { maxCc: Infinity, rates: [14210000, 27200000, 39150000, 65975000] },
+]
+const TAX_TABLE_ELECTRIC: number[] = [375000, 800000, 1675000, 5000000]
+const TAX_TABLE_HYBRID: { maxCc: number; rates: number[] }[] = [
+  { maxCc: 1500, rates: [375000, 800000, 1675000, 5000000] },
+  { maxCc: 2500, rates: [1150000, 1600000, 2500000, 5850000] },
+  { maxCc: 3500, rates: [1525000, 2000000, 3350000, 6675000] },
+  { maxCc: 4500, rates: [3425000, 4000000, 5425000, 8750000] },
+  { maxCc: Infinity, rates: [7105000, 13600000, 19575000, 32987500] },
+]
+
+function getAgeIndex(carYear: number): number {
+  const age = new Date().getFullYear() - carYear
+  if (age <= 3) return 0
+  if (age <= 6) return 1
+  if (age <= 9) return 2
+  return 3
+}
+
+function getSpecialTax(ccValue: number | null, carYear: number, fuelType?: string): number {
+  const ageIdx = getAgeIndex(carYear)
+  const fuel = (fuelType || '').toLowerCase()
+  if (fuel === 'electric' || fuel === 'ev') return TAX_TABLE_ELECTRIC[ageIdx]
+  if (fuel === 'hybrid' || fuel === 'lpg' || fuel.includes('hybrid') || fuel.includes('lpg')) {
+    if (!ccValue || ccValue <= 0) return TAX_TABLE_HYBRID[0].rates[ageIdx]
+    const row = TAX_TABLE_HYBRID.find((r) => ccValue <= r.maxCc)!
+    return row.rates[ageIdx]
+  }
+  if (!ccValue || ccValue <= 0) return 0
+  const row = TAX_TABLE_NORMAL.find((r) => ccValue <= r.maxCc)!
+  return row.rates[ageIdx]
+}
+
+function calcPrice(
+  price: number,
+  currency: string,
+  rates?: ExchangeRate,
+  fees?: FeeSettings,
+  originalPriceKrw?: number,
+  encarPrice?: number | null,
+  ccValue?: number | null,
+  carYear?: number,
+  fuelType?: string,
+  transportFeeUsd: number = 1200
+) {
+  let priceKrw: number
+  let manwon: number
+  if (encarPrice && encarPrice > 0) {
+    manwon = encarPrice
+    priceKrw = manwon * 10000
+  } else if (originalPriceKrw && originalPriceKrw > 0) {
+    priceKrw = originalPriceKrw
+    manwon = Math.round(priceKrw / 10000)
+  } else if (currency === 'EUR' && rates) {
+    priceKrw = Math.round(price * rates.euroToMnt / rates.wonToMnt)
+    manwon = Math.round(priceKrw / 10000)
+  } else if (currency === 'KRW') {
+    priceKrw = price
+    manwon = Math.round(price / 10000)
+  } else {
+    manwon = Math.round(price)
+    priceKrw = manwon * 10000
+  }
+  const krwFull = `${formatNumber(priceKrw)}₩`
+  let mntCarPrice: string | null = null
+  let carPriceMnt = 0
+  if (rates) {
+    carPriceMnt = Math.round(priceKrw * rates.wonToMnt)
+    mntCarPrice = `${carPriceMnt.toLocaleString('mn-MN')}₮`
+  }
+  const serviceMnt = fees && rates ? Math.round(fees.serviceFee * rates.wonToMnt) : 0
+  const transportMnt = rates ? Math.round(transportFeeUsd * rates.usdToMnt) : 0
+  const specialTaxMnt = getSpecialTax(ccValue ?? null, carYear ?? 2024, fuelType)
+  const baseMnt = carPriceMnt + transportMnt
+  const customsDutyMnt = Math.round((baseMnt + specialTaxMnt) * 15.5 / 100)
+  const totalCustomsMnt = specialTaxMnt + customsDutyMnt
+  const grandTotalMnt = carPriceMnt + serviceMnt + transportMnt + totalCustomsMnt
+  const mntGrandTotal = rates ? `${grandTotalMnt.toLocaleString('mn-MN')}₮` : null
+  return {
+    priceKrw,
+    manwon,
+    krwFull,
+    mntCarPrice,
+    specialTaxMnt,
+    customsDutyMnt,
+    totalCustomsMnt,
+    mntGrandTotal,
+  }
 }
