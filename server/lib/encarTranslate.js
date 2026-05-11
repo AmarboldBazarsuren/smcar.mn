@@ -95,13 +95,16 @@ const REGION = {
 }
 
 function region(text, lang = 'mn') {
-  if (!text) return text
-  // First token is the province/city
+  if (!text) return ''
+  // First token is the province/city (e.g. "대전" in "대전 유성구")
   const first = text.trim().split(/\s+/)[0]
   const hit = REGION[first]
-  if (!hit) return text
+  if (!hit) {
+    // Don't leak raw Korean if we can't translate — return empty.
+    return ''
+  }
   const friendly = hit[lang] || hit.en
-  return lang === 'mn' ? `БНСУ, ${friendly} (${text})` : `${friendly}, South Korea`
+  return lang === 'mn' ? `БНСУ, ${friendly}` : `${friendly}, South Korea`
 }
 
 // Korean brand → English. List endpoint returns Korean only; detail has Englih.

@@ -263,7 +263,7 @@ function normalizeDetail(d) {
     body_type_mn: tx.body(spec.bodyName, 'mn'),
     seat_count: spec.seatCount || 0,
     vin: d.vin || '',
-    location: (d.contact && d.contact.address) || '',
+    location: tx.region((d.contact && d.contact.address) || '', 'en'),
     location_mn: tx.region((d.contact && d.contact.address) || '', 'mn'),
     dealer_type: d.contact && d.contact.userType,
     image: pickDetailPhotos(d.photos || [])[0] || '',
