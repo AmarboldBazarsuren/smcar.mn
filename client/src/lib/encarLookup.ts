@@ -1,189 +1,145 @@
-// Browser-side reverse lookup: given a Carapis vehicle (free-tier
-// hides listing_id), search api.encar.com for an exact match by
-// year + mileage + price and return Encar's numeric carId.
+// Encar deep-link helper.
 //
-// Encar's CORS policy allows https://smcar.mn so we can call their
-// search API directly from the user's browser, bypassing our VPS
-// IP block.
+// Strategy change (2026-05-12): we stop trying to identify THE single
+// listing on Encar — Carapis's price/mileage drift from Encar's live
+// values made every confidence threshold either too tight (no match)
+// or too loose (wrong match). The cross-API matching loop is gone.
 //
-// Approach (this version):
-//   1. CarType.A and CarType.N catalogues sit in parallel namespaces
-//      (Korean vs imported brands). We run BOTH queries in parallel
-//      and merge.
-//   2. DSL Manufacturer filter is broken/undocumented — we filter
-//      year+mileage on the server, then filter brand client-side
-//      against an alias map (Carapis 'Jaguar' ↔ Encar '재규어' etc).
-//   3. A match counts only when mileage AND price are both within
-//      tight tolerances — false negatives are preferred over false
-//      positives.
+// Instead we build a URL that opens Encar's own search list pre-filtered
+// to year + (Korean) brand keyword + a narrow mileage/price band. The
+// typical result is 1-5 listings, one of which is the exact car. The
+// investor / user picks visually — far more reliable than guessing.
+//
+// Encar's search URL format:
+//   https://www.encar.com/dc/dc_carsearchlist.do?carType=<kor|for>
+//     &searchType=keyword&keyword=<korean brand model year>
+//     #!{"action":"(And.Hidden.N._.CarType.<T>._.Year.range(...)
+//        ._.Mileage.range(...)._.Price.range(...).)","sort":"ModifiedDate","page":1,"limit":20}
 
-// English brand → list of strings any of which Encar's Manufacturer
-// field may contain. We use 'includes' rather than equality so
-// suffixes like 'KG모빌리티(쌍용)' match 'KG모빌리티'.
-const BRAND_ALIASES: Record<string, string[]> = {
-  // Korean
-  Hyundai: ['현대', 'Hyundai'],
-  Kia: ['기아', 'Kia'],
-  Genesis: ['제네시스', 'Genesis'],
-  KGM: ['KG모빌리티', '쌍용', 'KGM'],
-  Ssangyong: ['쌍용', 'Ssangyong'],
-  'Renault Samsung': ['르노삼성', 'Renault Samsung'],
-  'Renault Korea': ['르노코리아', '르노', 'Renault'],
-  Daewoo: ['대우', 'Daewoo'],
-  Chevrolet: ['쉐보레', 'Chevrolet', 'GM대우'],
-  // Foreign — German
-  BMW: ['BMW'],
-  'Mercedes-Benz': ['벤츠', '메르세데스', 'Mercedes-Benz', 'Mercedes', '메르세데스-벤츠'],
-  Audi: ['아우디', 'Audi'],
-  Volkswagen: ['폭스바겐', 'Volkswagen'],
-  Porsche: ['포르쉐', 'Porsche'],
-  Mini: ['미니', 'MINI', 'Mini'],
-  Smart: ['스마트', 'Smart'],
-  Opel: ['오펠', 'Opel'],
-  // Foreign — British
-  Jaguar: ['재규어', 'Jaguar'],
-  'Land Rover': ['랜드로버', 'Land Rover'],
-  Bentley: ['벤틀리', 'Bentley'],
-  'Rolls-Royce': ['롤스로이스', 'Rolls-Royce', 'Rolls Royce'],
-  'Aston Martin': ['애스턴마틴', 'Aston Martin'],
-  McLaren: ['맥라렌', 'McLaren'],
-  Lotus: ['로터스', 'Lotus'],
-  // Foreign — Japanese
-  Toyota: ['도요타', '토요타', 'Toyota'],
-  Lexus: ['렉서스', 'Lexus'],
-  Honda: ['혼다', 'Honda'],
-  Nissan: ['닛산', 'Nissan'],
-  Infiniti: ['인피니티', 'Infiniti'],
-  Mazda: ['마쯔다', '마즈다', 'Mazda'],
-  Subaru: ['스바루', 'Subaru'],
-  Mitsubishi: ['미쯔비시', '미쓰비시', 'Mitsubishi'],
-  // Foreign — American
-  Ford: ['포드', 'Ford'],
-  Cadillac: ['캐딜락', 'Cadillac'],
-  Lincoln: ['링컨', 'Lincoln'],
-  Jeep: ['지프', 'Jeep'],
-  Chrysler: ['크라이슬러', 'Chrysler'],
-  Dodge: ['닷지', 'Dodge'],
-  RAM: ['램', 'RAM'],
-  Tesla: ['테슬라', 'Tesla'],
-  // Foreign — Italian
-  Fiat: ['피아트', 'Fiat'],
-  'Alfa Romeo': ['알파로메오', 'Alfa Romeo'],
-  Ferrari: ['페라리', 'Ferrari'],
-  Lamborghini: ['람보르기니', 'Lamborghini'],
-  Maserati: ['마세라티', 'Maserati'],
-  // Foreign — French
-  Peugeot: ['푸조', 'Peugeot'],
-  Citroen: ['시트로엥', 'Citroen'],
-  DS: ['DS'],
-  // Foreign — Swedish
-  Volvo: ['볼보', 'Volvo'],
-  Polestar: ['폴스타', 'Polestar'],
-  // Foreign — Chinese
-  BYD: ['BYD', '비야디'],
+// Korean brand names for keyword search.
+const BRAND_KR: Record<string, string> = {
+  Hyundai: '현대',
+  Kia: '기아',
+  Genesis: '제네시스',
+  KGM: 'KG모빌리티',
+  Ssangyong: '쌍용',
+  'Renault Samsung': '르노삼성',
+  'Renault Korea': '르노코리아',
+  Daewoo: '대우',
+  Chevrolet: '쉐보레',
+  BMW: 'BMW',
+  'Mercedes-Benz': '벤츠',
+  Audi: '아우디',
+  Volkswagen: '폭스바겐',
+  Porsche: '포르쉐',
+  Mini: 'MINI',
+  Jaguar: '재규어',
+  'Land Rover': '랜드로버',
+  Bentley: '벤틀리',
+  'Rolls-Royce': '롤스로이스',
+  Toyota: '도요타',
+  Lexus: '렉서스',
+  Honda: '혼다',
+  Nissan: '닛산',
+  Infiniti: '인피니티',
+  Mazda: '마쯔다',
+  Subaru: '스바루',
+  Mitsubishi: '미쯔비시',
+  Ford: '포드',
+  Cadillac: '캐딜락',
+  Lincoln: '링컨',
+  Jeep: '지프',
+  Chrysler: '크라이슬러',
+  Tesla: '테슬라',
+  Fiat: '피아트',
+  'Alfa Romeo': '알파로메오',
+  Ferrari: '페라리',
+  Lamborghini: '람보르기니',
+  Maserati: '마세라티',
+  Volvo: '볼보',
+  Peugeot: '푸조',
+  Citroen: '시트로엥',
 }
 
-// Encar splits listings into three CarType buckets:
-//   A = Korean passenger cars
-//   N = imported passenger cars
-//   Y = commercial vehicles (trucks/vans/buses) regardless of origin
-// The car could live in any of them — we query all three in parallel
-// because we can't reliably guess which one applies for every listing
-// (e.g. a Kia Bongo is a Korean brand but a truck, so lives in Y).
+const KOREAN_BRANDS = new Set([
+  'Hyundai', 'Kia', 'Genesis', 'KGM', 'Ssangyong',
+  'Renault Samsung', 'Renault Korea', 'Daewoo', 'Chevrolet',
+])
 
 interface Car {
   brand?: string
   model?: string
   year?: number
-  mileage?: number
-  price?: number // 万원
+  mileage?: number     // km
+  price?: number       // 万원
+  body_type?: string
 }
 
-interface SearchHit {
-  Id: string
-  Manufacturer: string
-  Model: string
-  Year: number
-  Mileage: number
-  Price: number
+// Body types that live in Encar's CarType.Y commercial catalogue.
+const COMMERCIAL_BODIES = new Set([
+  'truck', 'van', 'minivan', 'pickup', 'bus',
+  'Truck', 'Van', 'Minivan', 'Pickup', 'Bus',
+  'Ачааны', 'Вэн', 'Мини вэн', 'Пикап', 'Автобус',
+])
+
+function carTypeFor(car: Car): 'A' | 'N' | 'Y' {
+  if (car.body_type && COMMERCIAL_BODIES.has(car.body_type)) return 'Y'
+  if (car.brand && KOREAN_BRANDS.has(car.brand)) return 'A'
+  return 'N'
 }
 
-function brandMatches(carBrand: string, encarMfg: string): boolean {
-  if (!carBrand || !encarMfg) return false
-  const aliases = BRAND_ALIASES[carBrand] || [carBrand]
-  return aliases.some((a) => encarMfg.includes(a))
-}
+// Build a precise Encar search URL pre-filtered to a narrow window.
+// Year is exact; mileage/price wrap a small range around the known
+// values. The investor sees 1-5 results and picks the matching photo.
+export function buildPreciseEncarUrl(car: Car): string {
+  const year = car.year || 0
+  const km = car.mileage || 0
+  const manwon = car.price || 0
 
-type CarType = 'A' | 'N' | 'Y'
-const CAR_TYPES: CarType[] = ['A', 'N', 'Y']
+  // Mileage window: ±500 km when high-mileage, ±200 km when low.
+  const kmRange = km > 5000 ? 500 : 200
+  const miMin = Math.max(0, km - kmRange)
+  const miMax = km + kmRange
 
-function buildDslQuery(year: number, miMin: number, miMax: number, carType: CarType): string {
-  return `(And.CarType.${carType}._.Year.range(${year}01..${year}12)._.Mileage.range(${miMin}..${miMax}).)`
-}
+  // Price window: ±5 万원 (±50,000 KRW) is tight enough that we usually
+  // narrow to a couple of listings yet loose enough to absorb minor
+  // staleness in Carapis's snapshot.
+  const priceRange = 5
+  const prMin = Math.max(0, manwon - priceRange)
+  const prMax = manwon + priceRange
 
-async function fetchEncarPage(year: number, miMin: number, miMax: number, carType: CarType): Promise<SearchHit[]> {
-  const q = buildDslQuery(year, miMin, miMax, carType)
-  const sr = '|ModifiedDate|0|100'
-  const url = `https://api.encar.com/search/car/list/general?count=true&q=${encodeURIComponent(q)}&sr=${encodeURIComponent(sr)}`
-  try {
-    const res = await fetch(url, { credentials: 'omit' })
-    if (!res.ok) return []
-    const data = await res.json()
-    return Array.isArray(data?.SearchResults) ? data.SearchResults : []
-  } catch {
-    return []
-  }
-}
+  const ct = carTypeFor(car)
+  const dslParts = ['Hidden.N.', `CarType.${ct}.`]
+  if (year) dslParts.push(`Year.range(${year}01..${year}12).`)
+  if (km) dslParts.push(`Mileage.range(${miMin}..${miMax}).`)
+  if (manwon) dslParts.push(`Price.range(${prMin}..${prMax}).`)
+  const action = `(And.${dslParts.join('_.')})`
 
-// Acceptance thresholds (loose). We're filtered by year + brand already;
-// among that subset we just want the closest km+price hit. False
-// positives within the same model/year/price band are essentially
-// indistinguishable from the user's POV anyway.
-const MAX_MILEAGE_DIFF = 5000        // km
-const MAX_PRICE_DIFF_MANWON = 100    // 1,000,000 KRW
+  const hash = JSON.stringify({
+    action,
+    toggle: {},
+    layer: '',
+    sort: 'ModifiedDate',
+    page: 1,
+    limit: 20,
+    searchKey: '',
+    loginCheck: false,
+  })
 
-function distance(car: Car, hit: SearchHit): number {
-  const kmDiff = Math.abs((hit.Mileage || 0) - (car.mileage || 0))
-  const priceDiff = Math.abs((hit.Price || 0) - (car.price || 0))
-  // Combine: treat 1 万원 ≈ 100 km of "value distance"
-  return kmDiff / 100 + priceDiff
-}
+  // Keyword for keyword-search index too (brand-in-Korean + model + year).
+  const kw = [BRAND_KR[car.brand || ''] || car.brand, car.model, car.year]
+    .filter(Boolean)
+    .join(' ')
 
-function withinTolerance(car: Car, hit: SearchHit): boolean {
-  if (!car.mileage || !car.price || !hit.Mileage || !hit.Price) return false
+  const carTypeParam = ct === 'A' ? 'kor' : ct === 'N' ? 'for' : 'truck'
+  const params = new URLSearchParams({
+    carType: carTypeParam,
+    searchType: 'keyword',
+    keyword: kw,
+  })
+
   return (
-    Math.abs(hit.Mileage - car.mileage) <= MAX_MILEAGE_DIFF &&
-    Math.abs(hit.Price - car.price) <= MAX_PRICE_DIFF_MANWON
+    `https://www.encar.com/dc/dc_carsearchlist.do?${params.toString()}` +
+    `#!${encodeURI(hash)}`
   )
-}
-
-export async function findEncarCarId(car: Car): Promise<string | null> {
-  if (!car?.brand || !car?.year || !car?.mileage || !car?.price) return null
-
-  const targetKm = car.mileage
-  // Wide DSL range — actual listing's mileage may drift up since
-  // Carapis last scraped, and Encar listings sometimes round.
-  const miMin = Math.max(0, targetKm - 5000)
-  const miMax = targetKm + 5000
-
-  // Query all three CarType catalogues in parallel — the listing could
-  // live in A (Korean passenger), N (imported passenger), or
-  // Y (commercial/trucks like Bongo, Porter).
-  const pages = await Promise.all(
-    CAR_TYPES.map((ct) => fetchEncarPage(car.year!, miMin, miMax, ct))
-  )
-  const hits = pages.flat()
-  const branded = hits.filter((h) => brandMatches(car.brand!, h.Manufacturer))
-
-  // Keep only hits inside the loose mileage+price box.
-  const candidates = branded.filter((h) => withinTolerance(car, h))
-  if (candidates.length === 0) return null
-
-  // Pick the absolute closest among the survivors.
-  candidates.sort((a, b) => distance(car, a) - distance(car, b))
-  return candidates[0].Id
-}
-
-export function encarDetailUrl(carId: string): string {
-  return `https://fem.encar.com/cars/detail/${carId}`
 }

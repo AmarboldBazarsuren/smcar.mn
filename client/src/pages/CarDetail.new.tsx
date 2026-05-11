@@ -9,7 +9,7 @@ import {
 } from '../lib/api'
 import { formatNumber } from '../lib/utils'
 import ReservationModal from '../components/cars/ReservationModal'
-import { findEncarCarId, encarDetailUrl } from '../lib/encarLookup'
+import { buildPreciseEncarUrl } from '../lib/encarLookup'
 import type { ExchangeRate, FeeSettings } from '../types'
 
 const TRANSPORT_OPTIONS = [1200, 1400, 1600, 1800, 2500]
@@ -25,26 +25,12 @@ export default function CarDetailNew() {
   const [selectedImg, setSelectedImg] = useState(-1)
   const [showModal, setShowModal] = useState(false)
   const [transportFeeUsd, setTransportFeeUsd] = useState(1200)
-  const [encarCarId, setEncarCarId] = useState<string | null>(null)
 
   const { data: car, isLoading } = useQuery<any>({
     queryKey: ['car', id],
     queryFn: () => fetchCarFull(id!),
     enabled: !!id,
   })
-
-  // Browser-side reverse-lookup of the real Encar carId. Encar's CORS
-  // allows smcar.mn so we can fetch their search API directly from the
-  // user's machine and match by brand+year+mileage+price.
-  useEffect(() => {
-    if (!car) return
-    let cancelled = false
-    setEncarCarId(null)
-    findEncarCarId(car).then((id) => {
-      if (!cancelled) setEncarCarId(id)
-    })
-    return () => { cancelled = true }
-  }, [car])
   const { data: rates } = useQuery({ queryKey: ['exchangeRate'], queryFn: fetchExchangeRate })
   const { data: fees } = useQuery({ queryKey: ['feeSettings'], queryFn: fetchFeeSettings })
   // CC + canonical price come from the active data source (Carapis) — no
@@ -278,25 +264,21 @@ export default function CarDetailNew() {
                 </a>
               </div>
 
-              {/* Browser-side reverse-lookup of Encar carId. If we find an
-                  exact match → deep-link to fem.encar.com/cars/detail/<id>.
-                  Otherwise fall back to encar.com's keyword search. */}
+              {/* Encar's own search list, pre-filtered to year + brand
+                  keyword + a tight mileage/price band. Typically lands on
+                  1-5 listings — the investor picks the matching photo. */}
               <a
-                href={encarCarId ? encarDetailUrl(encarCarId) : buildEncarSearchUrl(car)}
+                href={buildPreciseEncarUrl(car)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`flex items-center justify-center gap-2 w-full py-3 rounded-2xl text-[14px] font-semibold transition border-2 ${
-                  encarCarId
-                    ? 'bg-red-600 border-red-600 text-white hover:bg-red-500'
-                    : 'bg-white border-dashed border-gray-300 text-gray-700 hover:border-red-400 hover:bg-red-50 hover:text-red-700'
-                }`}
+                className="flex items-center justify-center gap-2 w-full bg-red-600 border-2 border-red-600 text-white hover:bg-red-500 py-3 rounded-2xl text-[14px] font-semibold transition"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
                   <polyline points="15 3 21 3 21 9" />
                   <line x1="10" y1="14" x2="21" y2="3" />
                 </svg>
-                {encarCarId ? 'encar.com дээрх хуудас' : 'encar.com дээр хайх'}
+                encar.com дээр харах
               </a>
 
               <div className="bg-red-50 rounded-2xl p-4 text-[13px] text-red-700 leading-relaxed">
@@ -450,30 +432,6 @@ function FullImagePreview({ imgs, index, onClose, onPrev, onNext, visible }: {
 // the exact listing_id (Carapis hides it on free tier) but the brand +
 // model + year combo narrows the result list down to a handful of cars
 // the user can pick from visually.
-//
-// Korean brands need their Korean name to match Encar's search index;
-// foreign brands work with English. carType=kor for domestic, for=foreign.
-const KOREAN_BRANDS: Record<string, { kr: string; carType: 'kor' }> = {
-  Hyundai: { kr: '현대', carType: 'kor' },
-  Kia: { kr: '기아', carType: 'kor' },
-  Genesis: { kr: '제네시스', carType: 'kor' },
-  KGM: { kr: 'KG모빌리티', carType: 'kor' },
-  Ssangyong: { kr: '쌍용', carType: 'kor' },
-  'Renault Samsung': { kr: '르노삼성', carType: 'kor' },
-  'Renault Korea': { kr: '르노코리아', carType: 'kor' },
-  Daewoo: { kr: '대우', carType: 'kor' },
-}
-
-function buildEncarSearchUrl(car: any): string {
-  const brand: string = car.brand || ''
-  const ko = KOREAN_BRANDS[brand]
-  const carType = ko ? 'kor' : 'for'
-  const brandTerm = ko ? ko.kr : brand
-  const keyword = [brandTerm, car.model, car.year].filter(Boolean).join(' ')
-  const q = encodeURIComponent(keyword)
-  return `https://www.encar.com/dc/dc_carsearchlist.do?carType=${carType}&searchType=keyword&keyword=${q}`
-}
-
 function timeAgoMn(iso?: string): string {
   if (!iso) return 'саяхан'
   const d = new Date(iso)
