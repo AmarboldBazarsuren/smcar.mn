@@ -324,46 +324,55 @@ export default function Home() {
 
   return (
     <main className="bg-white">
-      {/* ===== HERO: Bold dark/orange splash like GTM Trading ===== */}
-      <section className="relative overflow-hidden bg-[#1a0e0a]">
-        {/* Background gradient + car silhouette */}
+      {/* ===== HERO: Refined Somang Trading splash with Korean luxury sedan ===== */}
+      <section className="relative overflow-hidden bg-[#0b1426]">
+        {/* Deep navy gradient base */}
         <div
           className="absolute inset-0"
           style={{
             backgroundImage:
-              'radial-gradient(ellipse at 65% 60%, rgba(255,140,40,0.55) 0%, rgba(150,55,15,0.4) 30%, rgba(20,10,8,1) 75%)',
+              'radial-gradient(ellipse at 75% 55%, rgba(212,175,90,0.18) 0%, rgba(20,40,80,0.5) 30%, rgba(11,20,38,1) 75%)',
           }}
         />
+        {/* Luxury sedan background image */}
         <img
-          src="https://images.unsplash.com/photo-1494976388531-d1058494cdd8?auto=format&fit=crop&w=1800&q=80"
+          src="https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?auto=format&fit=crop&w=1800&q=80"
           alt=""
           aria-hidden="true"
-          className="absolute right-0 bottom-0 w-[60%] h-full object-cover object-center opacity-40 mix-blend-multiply pointer-events-none select-none"
+          className="absolute right-0 top-0 w-[65%] h-full object-cover object-center opacity-50 pointer-events-none select-none"
           loading="eager"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#1a0e0a] via-[#1a0e0a]/40 to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#1a0e0a] to-transparent" />
+        {/* Left-to-right fade so text stays readable */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0b1426] via-[#0b1426]/70 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#0b1426] to-transparent" />
 
         <div className="relative max-w-[1400px] mx-auto px-4 lg:px-8 pt-14 pb-20 lg:pt-20 lg:pb-28">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center min-h-[420px]">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center min-h-[440px]">
             {/* Left: text */}
             <div className="lg:col-span-7 text-white">
-              <p className="text-[13px] uppercase tracking-[0.25em] text-orange-200/80 mb-4">
-                Листинг · үзлэг · захиалгын зөвлөгөө
-              </p>
+              {/* Somang Trading badge */}
+              <div className="inline-flex items-center gap-2 mb-5 px-3 py-1.5 rounded-full border border-amber-400/40 bg-amber-400/10 backdrop-blur-sm">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                <span className="text-[12px] uppercase tracking-[0.2em] text-amber-200 font-semibold">
+                  Somang Trading
+                </span>
+              </div>
+
               <h1 className="text-[40px] md:text-[56px] lg:text-[64px] font-extrabold leading-[1.05] tracking-tight">
                 Таны хүссэн машин,
                 <br />
-                <span className="text-orange-200">бидний хариуцлага.</span>
+                <span className="bg-gradient-to-r from-amber-200 to-amber-400 bg-clip-text text-transparent">
+                  бидний хариуцлага.
+                </span>
               </h1>
-              <p className="mt-5 text-[17px] md:text-[18px] text-orange-100/80 max-w-[560px] leading-relaxed">
-                Солонгосын зах зээлээс сонгон, шалгаж, Монгол руу тээвэрлэх
-                бүх үйл явцыг найдвартай удирдана.
+              <p className="mt-5 text-[17px] md:text-[18px] text-blue-100/80 max-w-[560px] leading-relaxed">
+                БНСУ-аас Монгол руу автомашин экспортлох албан ёсны компани.
+                Сонголт, шалгалт, бичиг баримт, тээвэр, гааль — бүхнийг нэг газраас.
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-4">
                 <Link
                   to="/cars"
-                  className="inline-flex items-center gap-2 bg-white text-[#1a0e0a] hover:bg-orange-50 text-[16px] font-semibold px-6 py-3 rounded-full transition shadow-lg shadow-black/30"
+                  className="inline-flex items-center gap-2 bg-amber-400 text-[#0b1426] hover:bg-amber-300 text-[16px] font-bold px-6 py-3 rounded-full transition shadow-lg shadow-amber-900/40"
                 >
                   Машин үзэх <span aria-hidden>→</span>
                 </Link>
@@ -378,24 +387,24 @@ export default function Home() {
 
             {/* Right: 3 feature cards */}
             <div className="lg:col-span-5">
-              <div className="bg-black/30 backdrop-blur-sm border border-white/10 rounded-2xl p-2 divide-y divide-white/10">
+              <div className="bg-[#0b1426]/60 backdrop-blur-md border border-amber-400/15 rounded-2xl p-2 divide-y divide-white/10">
                 {[
                   {
                     title: 'Өргөн сонголт',
-                    desc: 'БНСУ-ын зах зээлийн мэдээлэл',
+                    desc: 'БНСУ-ын зах зээлийн бүхэл хүртээмж',
                   },
                   {
                     title: 'Найдвартай түнш',
-                    desc: 'Шалгалт, мэдээлэл, дэмжлэг',
+                    desc: 'Бодит шалгалт, ил тод мэдээлэл',
                   },
                   {
                     title: 'Бүрэн шийдэл',
-                    desc: 'Тээвэр, гааль, хүргэлт',
+                    desc: 'Тээвэр, гааль, хүргэлт нэг газраас',
                   },
                 ].map((item) => (
                   <div key={item.title} className="px-5 py-5">
                     <h3 className="text-white font-bold text-[18px]">{item.title}</h3>
-                    <p className="text-orange-100/70 text-[14px] mt-1">{item.desc}</p>
+                    <p className="text-blue-100/70 text-[14px] mt-1">{item.desc}</p>
                   </div>
                 ))}
               </div>
