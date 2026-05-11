@@ -11,6 +11,7 @@ const uploadRouter = require('./routes/upload')
 const imageProxyRouter = require('./routes/imageProxy')
 const carsProxyRouter = require('./routes/carsProxy')
 const encarDirectRouter = require('./routes/encarDirect')
+const carapisDirectRouter = require('./routes/carapisDirect')
 const photoProxyRouter = require('./routes/photoProxy')
 const reservationsProxyRouter = require('./routes/reservationsProxy')
 const authProxyRouter = require('./routes/authProxy')
@@ -45,14 +46,19 @@ app.use('/api/image-proxy', imageProxyRouter)
 // Opaque photo proxy: /api/p/<base64>.jpg → ci.encar.com (hidden)
 app.use('/api/p', photoProxyRouter)
 
-// DATA_SOURCE=encar  → direct Encar (api.encar.com)
-// DATA_SOURCE=apicars  (default) → apicars.info middleman
+// DATA_SOURCE switch:
+//   encar    → direct api.encar.com (requires non-blocked egress)
+//   carapis  → api.carapis.com public catalog
+//   apicars  → legacy apicars.info middleman (default)
 const dataSource = (process.env.DATA_SOURCE || 'apicars').toLowerCase()
 if (dataSource === 'encar') {
-  console.log('[cars] using direct Encar source')
+  console.log('[cars] source = direct Encar')
   app.use('/api/cars', encarDirectRouter)
+} else if (dataSource === 'carapis') {
+  console.log('[cars] source = Carapis')
+  app.use('/api/cars', carapisDirectRouter)
 } else {
-  console.log('[cars] using apicars.info source')
+  console.log('[cars] source = apicars.info')
   app.use('/api/cars', carsProxyRouter)
 }
 app.use('/api/reservations', reservationsProxyRouter)
