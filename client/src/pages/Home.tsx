@@ -324,13 +324,92 @@ export default function Home() {
 
   return (
     <main className="bg-white">
-      {/* ===== HERO: Featured car + brand tabs + models ===== */}
+      {/* ===== HERO: Bold dark/orange splash like GTM Trading ===== */}
+      <section className="relative overflow-hidden bg-[#1a0e0a]">
+        {/* Background gradient + car silhouette */}
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage:
+              'radial-gradient(ellipse at 65% 60%, rgba(255,140,40,0.55) 0%, rgba(150,55,15,0.4) 30%, rgba(20,10,8,1) 75%)',
+          }}
+        />
+        <img
+          src="https://images.unsplash.com/photo-1494976388531-d1058494cdd8?auto=format&fit=crop&w=1800&q=80"
+          alt=""
+          aria-hidden="true"
+          className="absolute right-0 bottom-0 w-[60%] h-full object-cover object-center opacity-40 mix-blend-multiply pointer-events-none select-none"
+          loading="eager"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#1a0e0a] via-[#1a0e0a]/40 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#1a0e0a] to-transparent" />
+
+        <div className="relative max-w-[1400px] mx-auto px-4 lg:px-8 pt-14 pb-20 lg:pt-20 lg:pb-28">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center min-h-[420px]">
+            {/* Left: text */}
+            <div className="lg:col-span-7 text-white">
+              <p className="text-[13px] uppercase tracking-[0.25em] text-orange-200/80 mb-4">
+                Листинг · үзлэг · захиалгын зөвлөгөө
+              </p>
+              <h1 className="text-[40px] md:text-[56px] lg:text-[64px] font-extrabold leading-[1.05] tracking-tight">
+                Таны хүссэн машин,
+                <br />
+                <span className="text-orange-200">бидний хариуцлага.</span>
+              </h1>
+              <p className="mt-5 text-[17px] md:text-[18px] text-orange-100/80 max-w-[560px] leading-relaxed">
+                Солонгосын зах зээлээс сонгон, шалгаж, Монгол руу тээвэрлэх
+                бүх үйл явцыг найдвартай удирдана.
+              </p>
+              <div className="mt-8 flex flex-wrap items-center gap-4">
+                <Link
+                  to="/cars"
+                  className="inline-flex items-center gap-2 bg-white text-[#1a0e0a] hover:bg-orange-50 text-[16px] font-semibold px-6 py-3 rounded-full transition shadow-lg shadow-black/30"
+                >
+                  Машин үзэх <span aria-hidden>→</span>
+                </Link>
+                <a
+                  href="tel:+97672105633"
+                  className="inline-flex items-center gap-2 border border-white/30 text-white hover:bg-white/10 text-[16px] font-medium px-6 py-3 rounded-full transition"
+                >
+                  Холбоо барих
+                </a>
+              </div>
+            </div>
+
+            {/* Right: 3 feature cards */}
+            <div className="lg:col-span-5">
+              <div className="bg-black/30 backdrop-blur-sm border border-white/10 rounded-2xl p-2 divide-y divide-white/10">
+                {[
+                  {
+                    title: 'Өргөн сонголт',
+                    desc: 'БНСУ-ын зах зээлийн мэдээлэл',
+                  },
+                  {
+                    title: 'Найдвартай түнш',
+                    desc: 'Шалгалт, мэдээлэл, дэмжлэг',
+                  },
+                  {
+                    title: 'Бүрэн шийдэл',
+                    desc: 'Тээвэр, гааль, хүргэлт',
+                  },
+                ].map((item) => (
+                  <div key={item.title} className="px-5 py-5">
+                    <h3 className="text-white font-bold text-[18px]">{item.title}</h3>
+                    <p className="text-orange-100/70 text-[14px] mt-1">{item.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ===== BRAND TABS + MODELS + FEATURED ===== */}
       <section className="bg-white">
-        <div className="max-w-[1400px] mx-auto px-4 lg:px-8 py-6">
-          <h1 className="text-[28px] font-bold text-dark mb-5">
-            Солонгос улсаас автомашин захиалга
-            <span className="inline-block bg-red-600 text-white text-[16px] font-bold px-3 py-1 rounded-lg ml-3 align-middle">Somang Trading</span>
-          </h1>
+        <div className="max-w-[1400px] mx-auto px-4 lg:px-8 py-10">
+          <h2 className="text-[24px] md:text-[28px] font-bold text-dark mb-5">
+            Брэнд, загвараар хайх
+          </h2>
 
           {/* Brand grid with models inserted below active row */}
           <div className="mb-3">
