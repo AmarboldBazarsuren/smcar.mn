@@ -83,13 +83,13 @@ const BRAND_ALIASES: Record<string, string[]> = {
   BYD: ['BYD', '비야디'],
 }
 
-// Brands that live in CarType.A (Korean catalogue). Everything else
-// is treated as foreign and queried under CarType.N; we additionally
-// query the other CarType as a fallback if the first returns nothing.
-const KOREAN_BRANDS = new Set([
-  'Hyundai', 'Kia', 'Genesis', 'KGM', 'Ssangyong',
-  'Renault Samsung', 'Renault Korea', 'Daewoo', 'Chevrolet', 'Samsung',
-])
+// Encar splits listings into three CarType buckets:
+//   A = Korean passenger cars
+//   N = imported passenger cars
+//   Y = commercial vehicles (trucks/vans/buses) regardless of origin
+// The car could live in any of them — we query all three in parallel
+// because we can't reliably guess which one applies for every listing
+// (e.g. a Kia Bongo is a Korean brand but a truck, so lives in Y).
 
 interface Car {
   brand?: string
@@ -114,11 +114,14 @@ function brandMatches(carBrand: string, encarMfg: string): boolean {
   return aliases.some((a) => encarMfg.includes(a))
 }
 
-function buildDslQuery(year: number, miMin: number, miMax: number, carType: 'A' | 'N'): string {
+type CarType = 'A' | 'N' | 'Y'
+const CAR_TYPES: CarType[] = ['A', 'N', 'Y']
+
+function buildDslQuery(year: number, miMin: number, miMax: number, carType: CarType): string {
   return `(And.CarType.${carType}._.Year.range(${year}01..${year}12)._.Mileage.range(${miMin}..${miMax}).)`
 }
 
-async function fetchEncarPage(year: number, miMin: number, miMax: number, carType: 'A' | 'N'): Promise<SearchHit[]> {
+async function fetchEncarPage(year: number, miMin: number, miMax: number, carType: CarType): Promise<SearchHit[]> {
   const q = buildDslQuery(year, miMin, miMax, carType)
   const sr = '|ModifiedDate|0|100'
   const url = `https://api.encar.com/search/car/list/general?count=true&q=${encodeURIComponent(q)}&sr=${encodeURIComponent(sr)}`
@@ -157,17 +160,14 @@ export async function findEncarCarId(car: Car): Promise<string | null> {
   const miMin = Math.max(0, targetKm - 500)
   const miMax = targetKm + 500
 
-  // Choose primary CarType based on whether the brand is Korean.
-  const primary: 'A' | 'N' = KOREAN_BRANDS.has(car.brand) ? 'A' : 'N'
-  const secondary: 'A' | 'N' = primary === 'A' ? 'N' : 'A'
-
-  // Pull primary catalogue first; only fall back if needed.
-  let hits = await fetchEncarPage(car.year, miMin, miMax, primary)
-  let branded = hits.filter((h) => brandMatches(car.brand!, h.Manufacturer))
-  if (branded.length === 0) {
-    hits = await fetchEncarPage(car.year, miMin, miMax, secondary)
-    branded = hits.filter((h) => brandMatches(car.brand!, h.Manufacturer))
-  }
+  // Query all three CarType catalogues in parallel — the listing could
+  // live in A (Korean passenger), N (imported passenger), or
+  // Y (commercial/trucks like Bongo, Porter).
+  const pages = await Promise.all(
+    CAR_TYPES.map((ct) => fetchEncarPage(car.year!, miMin, miMax, ct))
+  )
+  const hits = pages.flat()
+  const branded = hits.filter((h) => brandMatches(car.brand!, h.Manufacturer))
 
   const strong = branded.filter((h) => isStrongMatch(car, h))
   if (strong.length === 0) return null
