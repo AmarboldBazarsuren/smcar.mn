@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
@@ -44,6 +44,22 @@ export default function CarDetailNew() {
   const imgs: string[] = car?.images?.length ? car.images : car?.image ? [car.image] : []
   const prevImg = useCallback(() => setSelectedImg((p) => (p > 0 ? p - 1 : imgs.length - 1)), [imgs.length])
   const nextImg = useCallback(() => setSelectedImg((p) => (p < imgs.length - 1 ? p + 1 : 0)), [imgs.length])
+
+  // Preload all photos in the background so the lightbox advances instantly.
+  // Browser keeps them in its HTTP cache for the disk-cached lifetime.
+  useEffect(() => {
+    if (!imgs.length) return
+    const preloads: HTMLImageElement[] = []
+    imgs.forEach((src, idx) => {
+      // Stagger to avoid hammering the proxy all at once
+      setTimeout(() => {
+        const img = new Image()
+        img.src = getImageUrl(src)
+        preloads.push(img)
+      }, idx * 120)
+    })
+    return () => { preloads.length = 0 }
+  }, [imgs])
 
   if (isLoading) {
     return (

@@ -63,7 +63,6 @@ export default function Footer() {
             <ul className="space-y-3 text-[15px]">
               <li><Link to="/" className="text-red-50/65 hover:text-white transition">Нүүр</Link></li>
               <li><Link to="/cars" className="text-red-50/65 hover:text-white transition">Машинууд</Link></li>
-              <li><Link to="/cars?vehicleType=special" className="text-red-50/65 hover:text-white transition">Тусгай ангилал</Link></li>
               <li><Link to="/about" className="text-red-50/65 hover:text-white transition">Бидний тухай</Link></li>
             </ul>
           </div>

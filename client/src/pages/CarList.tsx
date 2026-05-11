@@ -43,9 +43,34 @@ export default function CarList() {
     }
   }
 
-  // Тусгай ангилал (화물•특장•버스): model-аар API-аас шууд авна
+  // Тусгай ангилал нь одоогоор boltомжгүй (Encar-ийн search DSL нь model
+  // filter-ийг хүлээж авдаггүй). URL дотор vehicleType=special орвол
+  // friendly хариу үзүүлнэ.
   const vehicleType = searchParams.get('vehicleType') || undefined
   const isVehicleTypeFilter = !!vehicleType
+  if (isVehicleTypeFilter) {
+    return (
+      <main className="bg-white min-h-screen">
+        <div className="max-w-[1100px] mx-auto px-4 lg:px-8 py-20 text-center">
+          <p className="text-[14px] uppercase tracking-[0.25em] text-red-500 font-semibold mb-3">
+            Удахгүй ирнэ
+          </p>
+          <h1 className="text-[32px] md:text-[40px] font-extrabold text-gray-900">
+            Тусгай ангилалын машин
+          </h1>
+          <p className="text-[16px] text-gray-500 mt-4 max-w-xl mx-auto">
+            Энэ хэсгийг бид дахин нэмж байна. Хүлээж байсанд баярлалаа.
+          </p>
+          <Link
+            to="/cars"
+            className="inline-flex mt-8 bg-red-600 hover:bg-red-500 text-white font-semibold px-6 py-3 rounded-full transition"
+          >
+            Бүх машин руу очих →
+          </Link>
+        </div>
+      </main>
+    )
+  }
 
   const SPECIAL_MODELS = ['Porter', 'Bongo', 'County', 'Mighty', 'Starex', 'Staria', 'Solati', 'Colorado', 'Master', 'Truck', 'Xcient', 'Universe']
 
