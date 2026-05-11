@@ -66,6 +66,66 @@ const KOREAN_BRANDS = new Set([
   'Renault Samsung', 'Renault Korea', 'Daewoo', 'Chevrolet',
 ])
 
+// Brand alias substrings that may appear in Encar's Manufacturer field.
+// (Encar returns Korean for Korean brands and 'BMW'-style Latin for foreign.)
+const BRAND_ALIASES: Record<string, string[]> = {
+  Hyundai: ['현대'],
+  Kia: ['기아'],
+  Genesis: ['제네시스'],
+  KGM: ['KG모빌리티', '쌍용', 'KGM'],
+  Ssangyong: ['쌍용'],
+  'Renault Samsung': ['르노삼성'],
+  'Renault Korea': ['르노코리아', '르노'],
+  Daewoo: ['대우'],
+  Chevrolet: ['쉐보레', 'GM대우'],
+  BMW: ['BMW'],
+  'Mercedes-Benz': ['벤츠', '메르세데스', 'Mercedes-Benz'],
+  Audi: ['아우디'],
+  Volkswagen: ['폭스바겐'],
+  Porsche: ['포르쉐'],
+  Mini: ['미니', 'MINI'],
+  Jaguar: ['재규어'],
+  'Land Rover': ['랜드로버'],
+  Bentley: ['벤틀리'],
+  'Rolls-Royce': ['롤스로이스'],
+  Toyota: ['도요타', '토요타'],
+  Lexus: ['렉서스'],
+  Honda: ['혼다'],
+  Nissan: ['닛산'],
+  Infiniti: ['인피니티'],
+  Mazda: ['마쯔다', '마즈다'],
+  Subaru: ['스바루'],
+  Mitsubishi: ['미쯔비시', '미쓰비시'],
+  Ford: ['포드'],
+  Cadillac: ['캐딜락'],
+  Lincoln: ['링컨'],
+  Jeep: ['지프'],
+  Chrysler: ['크라이슬러'],
+  Tesla: ['테슬라'],
+  Fiat: ['피아트'],
+  'Alfa Romeo': ['알파로메오'],
+  Ferrari: ['페라리'],
+  Lamborghini: ['람보르기니'],
+  Maserati: ['마세라티'],
+  Volvo: ['볼보'],
+  Peugeot: ['푸조'],
+  Citroen: ['시트로엥'],
+}
+
+function brandMatches(carBrand: string, encarMfg: string): boolean {
+  if (!carBrand || !encarMfg) return false
+  const aliases = BRAND_ALIASES[carBrand] || [carBrand]
+  return aliases.some((a) => encarMfg.includes(a))
+}
+
+interface SearchHit {
+  Id: string
+  Manufacturer: string
+  Year: number
+  Mileage: number
+  Price: number
+}
+
 interface Car {
   brand?: string
   model?: string
@@ -142,4 +202,49 @@ export function buildPreciseEncarUrl(car: Car): string {
     `https://www.encar.com/dc/dc_carsearchlist.do?${params.toString()}` +
     `#!${encodeURI(hash)}`
   )
+}
+
+// Browser-side: fetch the same DSL search Encar would use and return
+// the first brand-matching result's carId. The user has already
+// confirmed that the first hit in the filtered list is consistently
+// the right car, so we just resolve it ourselves and skip the manual
+// pick step.
+export async function findFirstEncarCarId(car: Car): Promise<string | null> {
+  if (!car?.year || !car?.brand) return null
+  const year = car.year
+  const km = car.mileage || 0
+  const manwon = car.price || 0
+  const kmRange = km > 5000 ? 500 : 200
+  const miMin = Math.max(0, km - kmRange)
+  const miMax = km + kmRange
+  const prRange = 5
+  const prMin = Math.max(0, manwon - prRange)
+  const prMax = manwon + prRange
+  const ct = carTypeFor(car)
+  const parts = ['Hidden.N.', `CarType.${ct}.`]
+  parts.push(`Year.range(${year}01..${year}12).`)
+  if (km) parts.push(`Mileage.range(${miMin}..${miMax}).`)
+  if (manwon) parts.push(`Price.range(${prMin}..${prMax}).`)
+  const q = `(And.${parts.join('_.')})`
+  const sr = '|ModifiedDate|0|20'
+  const url =
+    `https://api.encar.com/search/car/list/general?count=true` +
+    `&q=${encodeURIComponent(q)}&sr=${encodeURIComponent(sr)}`
+  try {
+    const res = await fetch(url, { credentials: 'omit' })
+    if (!res.ok) return null
+    const data = await res.json()
+    const hits: SearchHit[] = Array.isArray(data?.SearchResults)
+      ? data.SearchResults
+      : []
+    if (hits.length === 0) return null
+    const matchByBrand = hits.find((h) => brandMatches(car.brand!, h.Manufacturer))
+    return (matchByBrand || hits[0]).Id
+  } catch {
+    return null
+  }
+}
+
+export function encarDetailUrl(carId: string): string {
+  return `https://fem.encar.com/cars/detail/${carId}`
 }

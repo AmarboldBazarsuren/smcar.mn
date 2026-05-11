@@ -9,7 +9,7 @@ import {
 } from '../lib/api'
 import { formatNumber } from '../lib/utils'
 import ReservationModal from '../components/cars/ReservationModal'
-import { buildPreciseEncarUrl } from '../lib/encarLookup'
+import { buildPreciseEncarUrl, findFirstEncarCarId, encarDetailUrl } from '../lib/encarLookup'
 import type { ExchangeRate, FeeSettings } from '../types'
 
 const TRANSPORT_OPTIONS = [1200, 1400, 1600, 1800, 2500]
@@ -25,12 +25,25 @@ export default function CarDetailNew() {
   const [selectedImg, setSelectedImg] = useState(-1)
   const [showModal, setShowModal] = useState(false)
   const [transportFeeUsd, setTransportFeeUsd] = useState(1200)
+  const [encarCarId, setEncarCarId] = useState<string | null>(null)
 
   const { data: car, isLoading } = useQuery<any>({
     queryKey: ['car', id],
     queryFn: () => fetchCarFull(id!),
     enabled: !!id,
   })
+
+  // Resolve the first matching Encar listing in the background so the
+  // 'encar.com дээр харах' button opens the detail page directly.
+  useEffect(() => {
+    if (!car) return
+    let cancelled = false
+    setEncarCarId(null)
+    findFirstEncarCarId(car).then((eid) => {
+      if (!cancelled) setEncarCarId(eid)
+    })
+    return () => { cancelled = true }
+  }, [car])
   const { data: rates } = useQuery({ queryKey: ['exchangeRate'], queryFn: fetchExchangeRate })
   const { data: fees } = useQuery({ queryKey: ['feeSettings'], queryFn: fetchFeeSettings })
   // CC + canonical price come from the active data source (Carapis) — no
@@ -264,11 +277,11 @@ export default function CarDetailNew() {
                 </a>
               </div>
 
-              {/* Encar's own search list, pre-filtered to year + brand
-                  keyword + a tight mileage/price band. Typically lands on
-                  1-5 listings — the investor picks the matching photo. */}
+              {/* Once the background lookup resolves a carId we point at
+                  the exact Encar detail page. Until then (or if the
+                  lookup fails) we fall back to the filtered search list. */}
               <a
-                href={buildPreciseEncarUrl(car)}
+                href={encarCarId ? encarDetailUrl(encarCarId) : buildPreciseEncarUrl(car)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2 w-full bg-red-600 border-2 border-red-600 text-white hover:bg-red-500 py-3 rounded-2xl text-[14px] font-semibold transition"
