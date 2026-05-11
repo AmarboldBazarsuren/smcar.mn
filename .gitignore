@@ -1,6 +1,8 @@
 node_modules/
 dist/
 .env
+.cache/
+server/.cache/
 uploads/cars/
 *.log
 .DS_Store
