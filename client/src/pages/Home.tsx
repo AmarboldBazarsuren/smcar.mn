@@ -324,29 +324,29 @@ export default function Home() {
 
   return (
     <main className="bg-white">
-      {/* ===== HERO: Bold red theme, big background photo, plain-language steps ===== */}
-      <section className="relative overflow-hidden bg-[#1a0608]">
-        {/* Larger, more prominent car photo */}
+      {/* ===== HERO: Bold red theme, large prominent photo, plain-language steps ===== */}
+      <section className="relative overflow-hidden bg-[#1a0608] min-h-[88vh]">
+        {/* Big, prominent car photo */}
         <img
-          src="https://images.unsplash.com/photo-1583121274602-3e2820c69888?auto=format&fit=crop&w=2000&q=80"
+          src="https://images.unsplash.com/photo-1583121274602-3e2820c69888?auto=format&fit=crop&w=2400&q=85"
           alt=""
           aria-hidden="true"
-          className="absolute inset-0 w-full h-full object-cover object-center opacity-25 pointer-events-none select-none"
+          className="absolute inset-0 w-full h-full object-cover object-center opacity-75 pointer-events-none select-none"
           loading="eager"
         />
-        {/* Red ambient glow */}
+        {/* Red ambient glow (lighter so the photo reads) */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
             backgroundImage:
-              'radial-gradient(ellipse at 70% 40%, rgba(220,40,40,0.30) 0%, transparent 55%), radial-gradient(circle at 15% 80%, rgba(150,10,10,0.25) 0%, transparent 50%)',
+              'radial-gradient(ellipse at 70% 40%, rgba(220,40,40,0.20) 0%, transparent 55%)',
           }}
         />
-        {/* Bottom + side fades for readability */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#1a0608]/70 via-[#1a0608]/40 to-[#1a0608]" />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#1a0608]/60 via-transparent to-[#1a0608]/60" />
+        {/* Subtle bottom/side fades for text readability without hiding the photo */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#1a0608]/40 via-[#1a0608]/15 to-[#1a0608]" />
+        <div className="absolute inset-y-0 left-0 w-2/3 bg-gradient-to-r from-[#1a0608]/65 to-transparent" />
 
-        <div className="relative max-w-[1400px] mx-auto px-4 lg:px-8 pt-24 pb-14 lg:pt-32 lg:pb-20">
+        <div className="relative max-w-[1400px] mx-auto px-4 lg:px-8 pt-28 pb-16 lg:pt-40 lg:pb-24">
           {/* Centered hero text */}
           <div className="text-center max-w-3xl mx-auto">
             <div className="inline-flex items-center gap-2 mb-6 px-4 py-1.5 rounded-full border border-red-400/50 bg-red-500/15 backdrop-blur-sm">
