@@ -348,22 +348,25 @@ function PhotoMosaic({ imgs, onImageClick }: { imgs: string[]; onImageClick: (i:
 }
 
 function SpecGrid({ car, cc }: { car: any; cc: number | null }) {
-  const dealerLabel = car.dealer_type === 'DEALER' ? 'Автомашины дилер' : car.dealer_type === 'PERSONAL' ? 'Хувь хүн' : car.dealer_type || '—'
-  const statusLabel = (car.status || car.advertisement_status) === 'ADVERTISE' ? 'Бэлэн байгаа' : (car.status || car.advertisement_status) || '—'
+  const dealerLabel = car.dealer_type === 'DEALER' ? 'Автомашины дилер' : car.dealer_type === 'PERSONAL' ? 'Хувь хүн' : car.dealer_type
+  const status = car.status || car.advertisement_status
+  const statusLabel = status === 'ADVERTISE' ? 'Бэлэн байгаа' : status
+  // Only include fields with a real value — hide empty entries instead of "—".
   const items = [
-    { icon: '📅', label: 'Үйлдвэрлэсэн он', value: car.year || '—' },
-    { icon: '🛣', label: 'Явсан км', value: car.mileage ? `${formatNumber(car.mileage)} км` : '—' },
-    { icon: '⚡', label: 'Хөдөлгүүрийн багтаамж', value: cc ? `${formatNumber(cc)} cc` : '—' },
-    { icon: '⛽', label: 'Түлшний төрөл', value: car.fuel_mn || car.fuelType || car.fuel_type || '—' },
-    { icon: '⚙', label: 'Хурдны хайрцаг', value: car.transmission_mn || car.transmission || '—' },
-    { icon: '🚗', label: 'Кузов ангилал', value: car.body_type_mn || car.body_type || '—' },
-    { icon: '🎨', label: 'Өнгө', value: car.color_mn || car.color || '—' },
-    { icon: '💺', label: 'Суудлын тоо', value: car.seat_count || '—' },
-    { icon: '🏷', label: 'Хувилбар', value: car.trim || car.grade || '—' },
-    { icon: '📍', label: 'Байршил', value: car.location_mn || car.location || '—' },
-    { icon: '👤', label: 'Худалдагч', value: dealerLabel },
-    { icon: '✅', label: 'Борлуулалтын төлөв', value: statusLabel, tone: 'green' as const },
-  ]
+    car.year && { icon: '📅', label: 'Үйлдвэрлэсэн он', value: car.year },
+    car.mileage && { icon: '🛣', label: 'Явсан км', value: `${formatNumber(car.mileage)} км` },
+    cc && { icon: '⚡', label: 'Хөдөлгүүрийн багтаамж', value: `${formatNumber(cc)} cc` },
+    (car.fuel_mn || car.fuelType || car.fuel_type) && { icon: '⛽', label: 'Түлшний төрөл', value: car.fuel_mn || car.fuelType || car.fuel_type },
+    (car.transmission_mn || car.transmission) && { icon: '⚙', label: 'Хурдны хайрцаг', value: car.transmission_mn || car.transmission },
+    (car.body_type_mn || car.body_type) && { icon: '🚗', label: 'Кузов ангилал', value: car.body_type_mn || car.body_type },
+    (car.color_mn || car.color) && { icon: '🎨', label: 'Өнгө', value: car.color_mn || car.color },
+    car.seat_count && { icon: '💺', label: 'Суудлын тоо', value: car.seat_count },
+    (car.trim || car.grade) && { icon: '🏷', label: 'Хувилбар', value: car.trim || car.grade },
+    (car.location_mn || car.location) && { icon: '📍', label: 'Байршил', value: car.location_mn || car.location },
+    dealerLabel && { icon: '👤', label: 'Худалдагч', value: dealerLabel },
+    statusLabel && { icon: '✅', label: 'Борлуулалтын төлөв', value: statusLabel, tone: 'green' as const },
+  ].filter(Boolean) as { icon: string; label: string; value: React.ReactNode; tone?: 'green' }[]
+  if (items.length === 0) return null
   return (
     <div className="bg-white border border-gray-200 rounded-2xl p-5">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-5">
