@@ -85,6 +85,12 @@ const REGION_MN = {
   Seoul: 'Сөүл', Busan: 'Бусан', Daegu: 'Тэгү', Incheon: 'Инчон',
   Daejeon: 'Тэжон', Gwangju: 'Гванжү', Ulsan: 'Ульсан', Sejong: 'Сэжон',
   Gyeonggi: 'Кёнги', Gangwon: 'Канвон', Jeju: 'Жэжү',
+  Gyeongnam: 'Кёнсан Намбу',
+  Gyeongbuk: 'Кёнсан Хойт',
+  Jeonnam: 'Жолла Намбу',
+  Jeonbuk: 'Жолла Хойт',
+  Chungnam: 'Чүнчон Намбу',
+  Chungbuk: 'Чүнчон Хойт',
 }
 
 const lc = (s) => (s == null ? '' : String(s).toLowerCase())
