@@ -323,7 +323,7 @@ export default function Home() {
   }
 
   return (
-    <main className="bg-white">
+    <main className="bg-white -mt-16">
       {/* ===== HERO: Bold red theme, large prominent photo, plain-language steps ===== */}
       <section className="relative overflow-hidden bg-[#1a0608] min-h-[88vh]">
         {/* Big, prominent car photo */}
