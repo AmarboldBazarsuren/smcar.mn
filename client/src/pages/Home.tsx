@@ -324,58 +324,59 @@ export default function Home() {
 
   return (
     <main className="bg-white">
-      {/* ===== HERO: Centered headline + horizontal 4-step process below ===== */}
-      <section className="relative overflow-hidden bg-[#0b1426]">
-        {/* Multi-layer ambient backdrop */}
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage:
-              'radial-gradient(circle at 80% 30%, rgba(212,175,90,0.18) 0%, transparent 45%), radial-gradient(circle at 15% 75%, rgba(40,90,150,0.25) 0%, transparent 50%)',
-          }}
-        />
+      {/* ===== HERO: Bold red theme, big background photo, plain-language steps ===== */}
+      <section className="relative overflow-hidden bg-[#1a0608]">
+        {/* Larger, more prominent car photo */}
         <img
-          src="https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?auto=format&fit=crop&w=1800&q=80"
+          src="https://images.unsplash.com/photo-1583121274602-3e2820c69888?auto=format&fit=crop&w=2000&q=80"
           alt=""
           aria-hidden="true"
-          className="absolute inset-0 w-full h-full object-cover object-center opacity-25 pointer-events-none select-none"
+          className="absolute inset-0 w-full h-full object-cover object-center opacity-50 pointer-events-none select-none"
           loading="eager"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#0b1426]/85 via-[#0b1426]/60 to-[#0b1426]" />
+        {/* Red ambient glow */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            backgroundImage:
+              'radial-gradient(ellipse at 70% 40%, rgba(220,40,40,0.30) 0%, transparent 55%), radial-gradient(circle at 15% 80%, rgba(150,10,10,0.25) 0%, transparent 50%)',
+          }}
+        />
+        {/* Bottom + side fades for readability */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#1a0608]/70 via-[#1a0608]/40 to-[#1a0608]" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#1a0608]/60 via-transparent to-[#1a0608]/60" />
 
-        <div className="relative max-w-[1400px] mx-auto px-4 lg:px-8 pt-16 pb-12 lg:pt-24 lg:pb-16">
+        <div className="relative max-w-[1400px] mx-auto px-4 lg:px-8 pt-24 pb-14 lg:pt-32 lg:pb-20">
           {/* Centered hero text */}
           <div className="text-center max-w-3xl mx-auto">
-            <div className="inline-flex items-center gap-2 mb-6 px-4 py-1.5 rounded-full border border-amber-400/40 bg-amber-400/10 backdrop-blur-sm">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-              <span className="text-[12px] uppercase tracking-[0.25em] text-amber-200 font-semibold">
+            <div className="inline-flex items-center gap-2 mb-6 px-4 py-1.5 rounded-full border border-red-400/50 bg-red-500/15 backdrop-blur-sm">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-pulse" />
+              <span className="text-[12px] uppercase tracking-[0.25em] text-red-100 font-semibold">
                 Somang Trading · БНСУ
               </span>
             </div>
 
-            <h1 className="text-white text-[36px] md:text-[52px] lg:text-[62px] font-extrabold leading-[1.08] tracking-tight">
-              Солонгосоос захиалсан машин
+            <h1 className="text-white text-[40px] md:text-[60px] lg:text-[72px] font-extrabold leading-[1.05] tracking-tight drop-shadow-2xl">
+              Солонгосоос Монгол хүртэл,
               <br />
-              <span className="bg-gradient-to-r from-amber-200 via-amber-300 to-amber-400 bg-clip-text text-transparent">
-                танай гарагт хүрнэ.
+              <span className="bg-gradient-to-r from-red-300 via-red-400 to-red-500 bg-clip-text text-transparent">
+                бид тантай хамт.
               </span>
             </h1>
-            <p className="mt-6 text-[16px] md:text-[18px] text-blue-100/75 leading-relaxed">
-              Албан ёсны экспортын компани — Солонгосын зах зээлээс шууд,
-              <br className="hidden md:block" />
-              нэмэлт зуучлалгүй, ил тод үнээр.
+            <p className="mt-6 text-[17px] md:text-[19px] text-red-50/85 leading-relaxed max-w-2xl mx-auto">
+              Машинаа Солонгосоос захиалаад, хаалгандаа авч үлдээх хүртэл бүх ажлыг бид хариуцна.
             </p>
 
             <div className="mt-9 flex flex-wrap justify-center gap-3">
               <Link
                 to="/cars"
-                className="inline-flex items-center gap-2 bg-amber-400 text-[#0b1426] hover:bg-amber-300 text-[15px] font-bold px-6 py-3 rounded-full transition shadow-lg shadow-amber-900/40"
+                className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-500 text-white text-[15px] font-bold px-7 py-3.5 rounded-full transition shadow-xl shadow-red-900/50"
               >
                 Машин үзэх <span aria-hidden>→</span>
               </Link>
               <a
                 href="tel:+97672105633"
-                className="inline-flex items-center gap-2 border border-white/25 text-white hover:bg-white/10 text-[15px] font-medium px-6 py-3 rounded-full transition"
+                className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/25 text-white text-[15px] font-medium px-7 py-3.5 rounded-full transition"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
@@ -385,24 +386,40 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Horizontal 4-step process timeline */}
-          <div className="mt-14 lg:mt-20">
+          {/* Horizontal 4-step process timeline (plain Mongolian) */}
+          <div className="mt-16 lg:mt-24">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-white/10 rounded-2xl overflow-hidden border border-white/10 backdrop-blur-sm">
               {[
-                { n: '01', title: 'Сонголт', desc: 'Encar, Kbchachacha, KJ-cars дуудлагаас' },
-                { n: '02', title: 'Шалгалт', desc: 'VIN, осол, гүйлт, дотор гадаар бодит шалгалт' },
-                { n: '03', title: 'Тээвэр', desc: 'Контейнер эсвэл Ro-Ro, бичиг баримт бүрэн' },
-                { n: '04', title: 'Хүлээж авах', desc: 'Гааль, бүртгэл, та таныг хүсэн хүлээж байна' },
+                {
+                  n: '01',
+                  title: 'Машинаа сонгох',
+                  desc: 'Манай вэб дээрх машинуудаас өөрт таалагдсаныг нь сонгоно.',
+                },
+                {
+                  n: '02',
+                  title: 'Биечлэн шалгана',
+                  desc: 'Худалдан авахаас өмнө машиныг газар дээр нь шалгаж зургаар үзүүлнэ.',
+                },
+                {
+                  n: '03',
+                  title: 'Монгол руу тээвэрлэнэ',
+                  desc: 'Контейнер эсвэл усан замаар найдвартай хүргэнэ.',
+                },
+                {
+                  n: '04',
+                  title: 'Гар дээр тань хүрнэ',
+                  desc: 'Гааль, бичиг баримт, шилжүүлгийн ажлыг бид бүрэн хариуцна.',
+                },
               ].map((step) => (
-                <div key={step.n} className="bg-[#0b1426]/80 px-5 py-6 hover:bg-[#0e1a30] transition group">
-                  <div className="flex items-baseline gap-2 mb-2">
-                    <span className="text-amber-300/90 font-bold text-[14px] tracking-wider">{step.n}</span>
-                    <span className="h-px flex-1 bg-amber-400/20" />
+                <div key={step.n} className="bg-[#1a0608]/85 px-5 py-7 hover:bg-[#260a0c] transition group">
+                  <div className="flex items-baseline gap-2 mb-3">
+                    <span className="text-red-300 font-bold text-[18px] tracking-wider">{step.n}</span>
+                    <span className="h-px flex-1 bg-red-400/25" />
                   </div>
-                  <h3 className="text-white text-[16px] font-bold group-hover:text-amber-200 transition">
+                  <h3 className="text-white text-[17px] font-bold group-hover:text-red-200 transition">
                     {step.title}
                   </h3>
-                  <p className="text-blue-100/55 text-[13px] mt-1.5 leading-relaxed">
+                  <p className="text-red-50/60 text-[13.5px] mt-2 leading-relaxed">
                     {step.desc}
                   </p>
                 </div>

@@ -5,7 +5,7 @@ export default function Footer() {
     <footer className="bg-white border-t border-gray-200 text-gray-700">
       <div className="max-w-[1400px] mx-auto px-4 lg:px-8 py-14">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-10">
-          {/* Left: Logo + Description + CTAs */}
+          {/* Brand + Description + CTAs */}
           <div className="md:col-span-4">
             <Link to="/" className="inline-flex items-center gap-2 mb-5">
               <img src="/logo2.png" alt="Somang Trading" className="h-12" />
@@ -15,86 +15,25 @@ export default function Footer() {
             </Link>
             <p className="text-[15px] text-gray-600 leading-relaxed mb-6">
               БНСУ-аас Монгол руу автомашин экспортлох албан ёсны худалдааны компани.
-              Сонголт, шалгалт, бичиг баримт, тээвэр, гааль — бүхнийг мэргэжлийн түвшинд.
+              Сонголтоос хүргэлт хүртэлх бүх алхамд бид хариуцлагатай.
             </p>
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3 mb-6">
               <Link
                 to="/cars"
-                className="inline-flex items-center gap-2 bg-primary hover:bg-primary-dark text-white text-[15px] font-semibold px-5 py-2.5 rounded-full transition"
+                className="inline-flex items-center gap-2 bg-red-600 hover:bg-red-500 text-white text-[15px] font-semibold px-5 py-2.5 rounded-full transition"
               >
                 Машин үзэх
               </Link>
-              <a
-                href="tel:+97672105633"
+              <Link
+                to="/about"
                 className="inline-flex items-center gap-2 border border-gray-300 hover:border-gray-400 text-gray-800 text-[15px] font-medium px-5 py-2.5 rounded-full transition"
               >
-                7210-5633
-              </a>
+                Бидний тухай
+              </Link>
             </div>
-          </div>
 
-          {/* Middle: Useful links */}
-          <div className="md:col-span-4 md:pl-6">
-            <h4 className="text-[16px] font-bold text-gray-900 mb-5">
-              Хэрэгтэй холбоосууд
-            </h4>
-            <ul className="space-y-3 text-[15px]">
-              <li>
-                <Link to="/" className="text-gray-600 hover:text-primary transition">
-                  Нүүр хуудас
-                </Link>
-              </li>
-              <li>
-                <Link to="/cars" className="text-gray-600 hover:text-primary transition">
-                  Машинууд үзэх
-                </Link>
-              </li>
-              <li>
-                <Link to="/cars?vehicleType=special" className="text-gray-600 hover:text-primary transition">
-                  Тусгай ангилал
-                </Link>
-              </li>
-              <li>
-                <Link to="/cars?sortBy=scraped_at&sortOrder=desc" className="text-gray-600 hover:text-primary transition">
-                  Сүүлд нэмэгдсэн
-                </Link>
-              </li>
-              <li>
-                <a href="tel:+97672105633" className="text-gray-600 hover:text-primary transition">
-                  Холбоо барих
-                </a>
-              </li>
-            </ul>
-          </div>
-
-          {/* Right: Contact */}
-          <div className="md:col-span-4">
-            <h4 className="text-[16px] font-bold text-gray-900 mb-5">
-              Бидэнтэй холбоо барих
-            </h4>
-            <ul className="space-y-3 text-[15px] text-gray-600">
-              <li>
-                <span className="text-gray-500">Солонгос утас: </span>
-                <a href="tel:+821056576492" className="text-gray-800 hover:text-primary transition">
-                  +82 10-5657-6492
-                </a>
-              </li>
-              <li>
-                <span className="text-gray-500">Солонгос утас: </span>
-                <a href="tel:+821023396492" className="text-gray-800 hover:text-primary transition">
-                  +82 10-2339-6492
-                </a>
-              </li>
-              <li>
-                <span className="text-gray-500">Монгол утас: </span>
-                <a href="tel:+97672105633" className="text-gray-800 hover:text-primary transition">
-                  +976 7210-5633
-                </a>
-              </li>
-            </ul>
-
-            {/* Social icons */}
-            <div className="flex items-center gap-3 mt-6">
+            {/* Social */}
+            <div className="flex items-center gap-3">
               <a
                 href="#"
                 aria-label="Facebook"
@@ -117,6 +56,54 @@ export default function Footer() {
               </a>
             </div>
           </div>
+
+          {/* Хуудаснууд */}
+          <div className="md:col-span-2 md:pl-4">
+            <h4 className="text-[16px] font-bold text-gray-900 mb-5">Хуудаснууд</h4>
+            <ul className="space-y-3 text-[15px]">
+              <li><Link to="/" className="text-gray-600 hover:text-red-600 transition">Нүүр</Link></li>
+              <li><Link to="/cars" className="text-gray-600 hover:text-red-600 transition">Машинууд</Link></li>
+              <li><Link to="/cars?vehicleType=special" className="text-gray-600 hover:text-red-600 transition">Тусгай ангилал</Link></li>
+              <li><Link to="/about" className="text-gray-600 hover:text-red-600 transition">Бидний тухай</Link></li>
+            </ul>
+          </div>
+
+          {/* Үйлчилгээ */}
+          <div className="md:col-span-3">
+            <h4 className="text-[16px] font-bold text-gray-900 mb-5">Үйлчилгээ</h4>
+            <ul className="space-y-3 text-[15px] text-gray-600">
+              <li>Машин захиалга</li>
+              <li>Бодит шалгалт</li>
+              <li>Экспортын бичиг баримт</li>
+              <li>Контейнер / Ro-Ro тээвэр</li>
+              <li>Гааль, шилжүүлгийн зөвлөгөө</li>
+            </ul>
+          </div>
+
+          {/* Холбоо барих */}
+          <div className="md:col-span-3">
+            <h4 className="text-[16px] font-bold text-gray-900 mb-5">Холбоо барих</h4>
+            <ul className="space-y-3 text-[15px] text-gray-600">
+              <li>
+                <span className="text-gray-500">Солонгос: </span>
+                <a href="tel:+821056576492" className="text-gray-800 hover:text-red-600 transition block">
+                  +82 10-5657-6492
+                </a>
+                <a href="tel:+821023396492" className="text-gray-800 hover:text-red-600 transition block">
+                  +82 10-2339-6492
+                </a>
+              </li>
+              <li>
+                <span className="text-gray-500">Монгол: </span>
+                <a href="tel:+97672105633" className="text-gray-800 hover:text-red-600 transition">
+                  +976 7210-5633
+                </a>
+              </li>
+              <li className="text-gray-500 text-[13px] pt-2">
+                Ажиллах цаг: Дав–Ням 09:00–20:00
+              </li>
+            </ul>
+          </div>
         </div>
       </div>
 
@@ -127,7 +114,7 @@ export default function Footer() {
             &copy; {new Date().getFullYear()} Somang Trading. Бүх эрх хуулиар хамгаалагдсан.
           </p>
           <p className="text-[13px] text-gray-500">
-            БНСУ-аас Монгол руу автомашин экспортлох үйлчилгээ
+            Итгэлтэй сонголт · найдвартай экспорт
           </p>
         </div>
       </div>

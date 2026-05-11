@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import ErrorBoundary from './components/ErrorBoundary'
 import Home from './pages/Home'
+import About from './pages/About'
 import CarList from './pages/CarList'
 import CarDetail from './pages/CarDetail'
 import ManualCarDetail from './pages/ManualCarDetail'
@@ -54,6 +55,16 @@ function App() {
               <>
                 <Header />
                 <CarList />
+                <Footer />
+              </>
+            }
+          />
+          <Route
+            path="/about"
+            element={
+              <>
+                <Header />
+                <About />
                 <Footer />
               </>
             }
