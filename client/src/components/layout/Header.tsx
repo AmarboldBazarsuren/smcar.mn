@@ -30,10 +30,12 @@ export default function Header() {
     return location.pathname === path && searchParams.toString() === ''
   }
 
-  // Цуглуулсан өнгөний загвар
-  const headerBg = transparent ? 'bg-transparent border-transparent' : 'bg-white border-gray-200 shadow-sm'
-  const navText = transparent ? 'text-white/90 hover:text-white' : 'text-blue-500 hover:text-blue-700'
-  const navActive = transparent ? 'border-white text-white' : 'border-blue-500 text-blue-600'
+  // Цуглуулсан өнгөний загвар - transparent үед ч хар жаалуу backdrop байх ёстой
+  const headerBg = transparent
+    ? 'bg-black/35 backdrop-blur-md border-white/10'
+    : 'bg-white border-gray-200 shadow-sm'
+  const navText = transparent ? 'text-white/95 hover:text-white' : 'text-gray-700 hover:text-red-600'
+  const navActive = transparent ? 'border-red-300 text-white' : 'border-red-500 text-red-600'
 
   const navLinks = [
     { to: '/', label: 'Нүүр' },

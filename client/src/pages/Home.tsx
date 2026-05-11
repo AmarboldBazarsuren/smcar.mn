@@ -331,7 +331,7 @@ export default function Home() {
           src="https://images.unsplash.com/photo-1583121274602-3e2820c69888?auto=format&fit=crop&w=2000&q=80"
           alt=""
           aria-hidden="true"
-          className="absolute inset-0 w-full h-full object-cover object-center opacity-50 pointer-events-none select-none"
+          className="absolute inset-0 w-full h-full object-cover object-center opacity-25 pointer-events-none select-none"
           loading="eager"
         />
         {/* Red ambient glow */}
@@ -364,7 +364,7 @@ export default function Home() {
               </span>
             </h1>
             <p className="mt-6 text-[17px] md:text-[19px] text-red-50/85 leading-relaxed max-w-2xl mx-auto">
-              Машинаа Солонгосоос захиалаад, хаалгандаа авч үлдээх хүртэл бүх ажлыг бид хариуцна.
+              Машинаа Солонгосоос захиалаад, Монгол улсад ирэх хүртэл бүх ажлыг бид хариуцна.
             </p>
 
             <div className="mt-9 flex flex-wrap justify-center gap-3">
