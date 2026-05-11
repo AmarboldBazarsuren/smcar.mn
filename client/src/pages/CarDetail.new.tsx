@@ -9,6 +9,7 @@ import {
 } from '../lib/api'
 import { formatNumber } from '../lib/utils'
 import ReservationModal from '../components/cars/ReservationModal'
+import { findEncarCarId, encarDetailUrl } from '../lib/encarLookup'
 import type { ExchangeRate, FeeSettings } from '../types'
 
 const TRANSPORT_OPTIONS = [1200, 1400, 1600, 1800, 2500]
@@ -24,12 +25,26 @@ export default function CarDetailNew() {
   const [selectedImg, setSelectedImg] = useState(-1)
   const [showModal, setShowModal] = useState(false)
   const [transportFeeUsd, setTransportFeeUsd] = useState(1200)
+  const [encarCarId, setEncarCarId] = useState<string | null>(null)
 
   const { data: car, isLoading } = useQuery<any>({
     queryKey: ['car', id],
     queryFn: () => fetchCarFull(id!),
     enabled: !!id,
   })
+
+  // Browser-side reverse-lookup of the real Encar carId. Encar's CORS
+  // allows smcar.mn so we can fetch their search API directly from the
+  // user's machine and match by brand+year+mileage+price.
+  useEffect(() => {
+    if (!car) return
+    let cancelled = false
+    setEncarCarId(null)
+    findEncarCarId(car).then((id) => {
+      if (!cancelled) setEncarCarId(id)
+    })
+    return () => { cancelled = true }
+  }, [car])
   const { data: rates } = useQuery({ queryKey: ['exchangeRate'], queryFn: fetchExchangeRate })
   const { data: fees } = useQuery({ queryKey: ['feeSettings'], queryFn: fetchFeeSettings })
   // CC + canonical price come from the active data source (Carapis) — no
@@ -263,20 +278,25 @@ export default function CarDetailNew() {
                 </a>
               </div>
 
-              {/* Encar.com-руу шууд key keyword search. Korean brand-уудад
-                  Korean нэрийг ашиглах нь Encar-аас илүү тохирох үр дүн өгнө. */}
+              {/* Browser-side reverse-lookup of Encar carId. If we find an
+                  exact match → deep-link to fem.encar.com/cars/detail/<id>.
+                  Otherwise fall back to encar.com's keyword search. */}
               <a
-                href={buildEncarSearchUrl(car)}
+                href={encarCarId ? encarDetailUrl(encarCarId) : buildEncarSearchUrl(car)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 w-full bg-white border-2 border-dashed border-gray-300 hover:border-red-400 hover:bg-red-50 text-gray-700 hover:text-red-700 py-3 rounded-2xl text-[14px] font-semibold transition"
+                className={`flex items-center justify-center gap-2 w-full py-3 rounded-2xl text-[14px] font-semibold transition border-2 ${
+                  encarCarId
+                    ? 'bg-red-600 border-red-600 text-white hover:bg-red-500'
+                    : 'bg-white border-dashed border-gray-300 text-gray-700 hover:border-red-400 hover:bg-red-50 hover:text-red-700'
+                }`}
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
                   <polyline points="15 3 21 3 21 9" />
                   <line x1="10" y1="14" x2="21" y2="3" />
                 </svg>
-                encar.com дээр хайх
+                {encarCarId ? 'encar.com дээрх хуудас' : 'encar.com дээр хайх'}
               </a>
 
               <div className="bg-red-50 rounded-2xl p-4 text-[13px] text-red-700 leading-relaxed">
