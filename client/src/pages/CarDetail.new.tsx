@@ -263,6 +263,23 @@ export default function CarDetailNew() {
                 </a>
               </div>
 
+              {/* encar.com дээр шууд хайх (Google site search ашиглана) */}
+              <a
+                href={`https://www.google.com/search?q=${encodeURIComponent(
+                  `site:encar.com ${car.brand} ${car.model} ${car.year || ''} ${car.mileage ? car.mileage + 'km' : ''}`.trim()
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 w-full bg-white border-2 border-dashed border-gray-300 hover:border-red-400 hover:bg-red-50 text-gray-700 hover:text-red-700 py-3 rounded-2xl text-[14px] font-semibold transition"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                  <polyline points="15 3 21 3 21 9" />
+                  <line x1="10" y1="14" x2="21" y2="3" />
+                </svg>
+                encar.com дээр хайх
+              </a>
+
               <div className="bg-red-50 rounded-2xl p-4 text-[13px] text-red-700 leading-relaxed">
                 <p className="font-semibold mb-1">Мэдээлэл</p>
                 <p>Үнэ нь ханшийн өөрчлөлтөөс хамааран өөрчлөгдөж болно. Дэлгэрэнгүй мэдээллийг утсаар авна уу.</p>
