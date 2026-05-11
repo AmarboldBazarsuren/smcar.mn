@@ -119,7 +119,16 @@ function titleCase(s) {
     .join(' ')
 }
 
-const CARAPIS_BASE = 'https://api.carapis.com/apix/catalog_public'
+// When CARAPIS_API_KEY is set we hit the authenticated /catalog_private
+// namespace (Starter+ tiers) which exposes VIN, listing_id, listing_url,
+// description, features, watermark-free photos, etc. Without a key we
+// fall back to /catalog_public which masks those fields.
+const HAS_KEY = !!process.env.CARAPIS_API_KEY
+const CARAPIS_BASE = HAS_KEY
+  ? 'https://api.carapis.com/apix/catalog_private'
+  : 'https://api.carapis.com/apix/catalog_public'
+const DETAIL_PATH = HAS_KEY ? '' : '/detail' // private uses /{id}/, public uses /detail/{id}/
+console.log(`[carapis] using ${HAS_KEY ? 'PRIVATE (auth)' : 'PUBLIC (no key)'} catalog`)
 
 // ===== Cache layer (48h fresh / 14d stale / disk-persisted) =====
 const CACHE_TTL = 48 * 60 * 60 * 1000
@@ -234,6 +243,33 @@ function normalizeList(v) {
   }
 }
 
+// Carapis premium tiers return a `features` field. The exact shape isn't
+// documented yet — could be string[] like ["Sunroof","Navigation"] or
+// object[] like [{name, category, name_mn}]. Handle both, fall back to
+// an empty group set when missing/free-tier.
+function featureGroups(features, lang) {
+  if (!Array.isArray(features) || features.length === 0) return { groups: [] }
+  const CAT_TITLES = {
+    exterior: { en: 'Exterior & Lighting', mn: 'Гадна хийц ба гэрэлтүүлэг' },
+    safety: { en: 'Safety & Driver Assist', mn: 'Аюулгүй байдал ба жолоодлогын туслах систем' },
+    comfort: { en: 'Comfort & Multimedia', mn: 'Тав тух ба мультимедиа' },
+    seats: { en: 'Seats & Interior', mn: 'Суудал ба салон' },
+    other: { en: 'Other equipment', mn: 'Бусад тоноглол' },
+  }
+  const buckets = { exterior: [], safety: [], comfort: [], seats: [], other: [] }
+  features.forEach((f, i) => {
+    const label = typeof f === 'string' ? f : (f[lang === 'mn' ? 'name_mn' : 'name'] || f.name || String(f))
+    const cat = (typeof f === 'object' && f.category && buckets[f.category]) ? f.category : 'other'
+    buckets[cat].push({ code: String(i), label })
+  })
+  const groups = []
+  for (const key of ['exterior', 'safety', 'comfort', 'seats', 'other']) {
+    if (buckets[key].length === 0) continue
+    groups.push({ key, title: CAT_TITLES[key][lang] || CAT_TITLES[key].en, items: buckets[key] })
+  }
+  return { groups }
+}
+
 function normalizeDetail(v) {
   const brand = titleCase(v.brand?.name || '')
   const model = titleCase(v.model?.name || '')
@@ -270,8 +306,8 @@ function normalizeDetail(v) {
     dealer_type: v.seller_type === 'private' ? 'PERSONAL' : 'DEALER',
     image: absoluteUrlToProxyUrl(v.photos?.[0]?.url || ''),
     images: (v.photos || []).map((p) => absoluteUrlToProxyUrl(p.url)),
-    options: { groups: [] },
-    options_mn: { groups: [] },
+    options: featureGroups(v.features, 'en'),
+    options_mn: featureGroups(v.features, 'mn'),
     diagnosis: !!v.inspection_passed,
     pre_verified: !!v.is_verified,
     extend_warranty: v.warranty_type && v.warranty_type !== 'none',
@@ -360,7 +396,7 @@ router.get('/stats', async (req, res) => {
 
 router.get('/:id', async (req, res) => {
   try {
-    const raw = await cachedGet(`${CARAPIS_BASE}/vehicles/detail/${req.params.id}/`)
+    const raw = await cachedGet(`${CARAPIS_BASE}/vehicles${DETAIL_PATH}/${req.params.id}/`)
     res.set('Cache-Control', CACHE_HEADER)
     res.json(normalizeDetail(raw))
   } catch (err) {
@@ -371,7 +407,7 @@ router.get('/:id', async (req, res) => {
 
 router.get('/:id/full', async (req, res) => {
   try {
-    const raw = await cachedGet(`${CARAPIS_BASE}/vehicles/detail/${req.params.id}/`)
+    const raw = await cachedGet(`${CARAPIS_BASE}/vehicles${DETAIL_PATH}/${req.params.id}/`)
     res.set('Cache-Control', CACHE_HEADER)
     res.json(normalizeDetail(raw))
   } catch (err) {
