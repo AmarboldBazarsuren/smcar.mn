@@ -6,6 +6,8 @@
 // fall back to the original carsProxy.js mounted in index.js.
 
 const express = require('express')
+const fs = require('fs')
+const path = require('path')
 const tx = require('../lib/encarTranslate')
 const opts = require('../lib/encarOptions')
 const models = require('../lib/encarModels')
@@ -21,18 +23,62 @@ const ENCAR_HEADERS = {
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
 }
 
-// ===== In-memory cache (24h fresh, 7d stale-while-revalidate) =====
+// ===== Cache: 48h fresh, 14d stale-while-revalidate, disk-persisted =====
+const CACHE_TTL = 48 * 60 * 60 * 1000          // 48 hours fresh window
+const STALE_TTL = 14 * 24 * 60 * 60 * 1000     // 14 days stale-while-revalidate
+const CACHE_FILE = path.join(__dirname, '..', '.cache', 'encar-cache.json')
 const cache = new Map()
-const CACHE_TTL = 24 * 60 * 60 * 1000
-const STALE_TTL = 7 * 24 * 60 * 60 * 1000
 const inflight = new Map()
+let dirty = false
+
+// Load existing cache from disk on startup (survives pm2 restarts).
+function loadCache() {
+  try {
+    if (!fs.existsSync(CACHE_FILE)) return
+    const raw = fs.readFileSync(CACHE_FILE, 'utf8')
+    const obj = JSON.parse(raw)
+    let loaded = 0
+    for (const [k, v] of Object.entries(obj)) {
+      if (v && typeof v.time === 'number' && Date.now() - v.time < STALE_TTL) {
+        cache.set(k, v)
+        loaded++
+      }
+    }
+    if (loaded) console.log(`[encar cache] loaded ${loaded} entries from disk`)
+  } catch (e) {
+    console.error('[encar cache] load failed:', e.message)
+  }
+}
+function persistCache() {
+  if (!dirty) return
+  try {
+    fs.mkdirSync(path.dirname(CACHE_FILE), { recursive: true })
+    // Only persist entries that are still within the stale window.
+    const valid = {}
+    const now = Date.now()
+    for (const [k, v] of cache.entries()) {
+      if (now - v.time < STALE_TTL) valid[k] = v
+    }
+    fs.writeFileSync(CACHE_FILE, JSON.stringify(valid))
+    dirty = false
+  } catch (e) {
+    console.error('[encar cache] persist failed:', e.message)
+  }
+}
+loadCache()
+// Flush dirty cache to disk every 60 seconds + on shutdown.
+setInterval(persistCache, 60 * 1000).unref()
+process.on('SIGTERM', persistCache)
+process.on('SIGINT', persistCache)
+process.on('beforeExit', persistCache)
 
 function getCached(key) {
   return cache.get(key) || null
 }
 function setCache(key, data) {
-  if (cache.size > 1000) cache.delete(cache.keys().next().value)
+  if (cache.size > 2000) cache.delete(cache.keys().next().value)
   cache.set(key, { data, time: Date.now() })
+  dirty = true
 }
 function isFresh(it) { return it && Date.now() - it.time < CACHE_TTL }
 function isStale(it) { return it && Date.now() - it.time < STALE_TTL }
@@ -244,7 +290,10 @@ function normalizeDetail(d) {
 }
 
 // ===== Routes =====
-const CACHE_HEADER = 'public, max-age=3600, stale-while-revalidate=86400'
+// Browser/CDN: cache fresh for 48h (172800s), stale-while-revalidate for 7 days.
+// CDN gets one upstream hit per 48h window per cache key (filter combo);
+// browsers reuse the same response on refresh until it expires.
+const CACHE_HEADER = 'public, max-age=172800, stale-while-revalidate=604800'
 
 // Throttled detail enrichment: for cars whose title still contains
 // Korean after the dictionary pass, fetch the detail endpoint (which

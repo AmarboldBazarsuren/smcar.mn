@@ -28,11 +28,12 @@ import './App.css'
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 60 * 60 * 1000, // 1 цаг шинэхэн (background-д сэргээнэ)
-      gcTime: 24 * 60 * 60 * 1000, // 24 цаг санах ойд хадгална
+      staleTime: 48 * 60 * 60 * 1000,    // 48 цаг fresh: refresh-д ч background refetch явахгүй
+      gcTime: 14 * 24 * 60 * 60 * 1000,  // 14 хоног памятд хадгалагдана
       retry: 1,
       refetchOnWindowFocus: false,
       refetchOnMount: false,
+      refetchOnReconnect: false,
     },
   },
 })
