@@ -12,6 +12,7 @@ const imageProxyRouter = require('./routes/imageProxy')
 const carsProxyRouter = require('./routes/carsProxy')
 const encarDirectRouter = require('./routes/encarDirect')
 const carapisDirectRouter = require('./routes/carapisDirect')
+const maintenanceRouter = require('./routes/maintenance')
 const photoProxyRouter = require('./routes/photoProxy')
 const reservationsProxyRouter = require('./routes/reservationsProxy')
 const authProxyRouter = require('./routes/authProxy')
@@ -46,12 +47,19 @@ app.use('/api/image-proxy', imageProxyRouter)
 // Opaque photo proxy: /api/p/<base64>.jpg → ci.encar.com (hidden)
 app.use('/api/p', photoProxyRouter)
 
+// MAINTENANCE_MODE=true hides every car (returns empty list / 503 detail)
+// without requiring any frontend redeploy.
+const maintenance = (process.env.MAINTENANCE_MODE || '').toLowerCase() === 'true'
+
 // DATA_SOURCE switch:
 //   encar    → direct api.encar.com (requires non-blocked egress)
 //   carapis  → api.carapis.com public catalog
 //   apicars  → legacy apicars.info middleman (default)
 const dataSource = (process.env.DATA_SOURCE || 'apicars').toLowerCase()
-if (dataSource === 'encar') {
+if (maintenance) {
+  console.log('[cars] MAINTENANCE_MODE — serving empty lists')
+  app.use('/api/cars', maintenanceRouter)
+} else if (dataSource === 'encar') {
   console.log('[cars] source = direct Encar')
   app.use('/api/cars', encarDirectRouter)
 } else if (dataSource === 'carapis') {
