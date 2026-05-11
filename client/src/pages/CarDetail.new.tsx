@@ -9,7 +9,6 @@ import {
 } from '../lib/api'
 import { formatNumber } from '../lib/utils'
 import ReservationModal from '../components/cars/ReservationModal'
-import CarDescription from '../components/cars/CarDescription'
 import type { ExchangeRate, FeeSettings } from '../types'
 
 const TRANSPORT_OPTIONS = [1200, 1400, 1600, 1800, 2500]
@@ -154,7 +153,6 @@ export default function CarDetailNew() {
               </div>
             )}
 
-            <CarDescription text={car.one_line} carTitle={car.title} />
 
             {optionsGroups.length > 0 && (
               <div>
