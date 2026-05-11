@@ -14,6 +14,27 @@ const { absoluteUrlToProxyUrl } = require('./photoProxy')
 
 const router = express.Router()
 
+// ===== Brand name → Carapis slug =====
+// Frontend passes friendly names like "Mercedes" / "Land Rover".
+// Carapis slugs are kebab-case ("mercedes-benz", "land-rover"). For most
+// brands a simple slugify works; the alias map covers known mismatches.
+
+const BRAND_ALIASES = {
+  mercedes: 'mercedes-benz',
+  benz: 'mercedes-benz',
+  vw: 'volkswagen',
+  rolls: 'rolls-royce',
+  range: 'land-rover',
+  rangerover: 'land-rover',
+  landrover: 'land-rover',
+}
+
+function slugifyBrand(s) {
+  if (!s) return s
+  const key = String(s).toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+  return BRAND_ALIASES[key.replace(/-/g, '')] || BRAND_ALIASES[key] || key
+}
+
 // ===== English → Mongolian / cleaned-up English value maps =====
 // Carapis returns lower-case English values (gasoline / auto / sedan / white).
 
@@ -105,17 +126,39 @@ const region = (v, lang) => {
 
 // Carapis brand/model come in mixed case (e.g. "Bmw"). Convert to nice
 // Title Case but keep all-caps brands (BMW, KGM, GMC) properly.
+// Also handles hyphenated names so "Mercedes-Benz S-Class" stays
+// proper-cased on both sides of the dash.
 function titleCase(s) {
   if (!s) return s
-  const ALL_CAPS = new Set(['BMW', 'GMC', 'KGM', 'BYD', 'DS'])
+  const ALL_CAPS = new Set([
+    // Brands
+    'BMW', 'GMC', 'KGM', 'BYD', 'DS',
+    // Mercedes-Benz model lines
+    'GLA', 'GLB', 'GLC', 'GLE', 'GLS', 'GLK',
+    'CLA', 'CLS', 'CLE', 'SLK', 'SLC', 'AMG',
+    'EQA', 'EQB', 'EQC', 'EQE', 'EQS',
+    // Audi
+    'TT', 'TTS', 'RS', 'SQ',
+    // Lexus / Infiniti / Genesis trim codes
+    'RX', 'NX', 'ES', 'IS', 'LS', 'LC', 'GS', 'GX', 'LX', 'UX',
+    'QX', 'EX', 'JX', 'FX', 'KX',
+    'EV', 'EV6', 'EV9', 'EV3',
+    // Korean specials
+    'SM3', 'SM5', 'SM6', 'SM7', 'QM3', 'QM5', 'QM6', 'XM3',
+    'G70', 'G80', 'G90', 'GV60', 'GV70', 'GV80',
+    'K3', 'K5', 'K7', 'K8', 'K9',
+    // Generic trim acronyms
+    'XLT', 'SXT', 'SLT', 'LTD', 'GT', 'GTI', 'GLI', 'XDR', 'AWD', 'FWD', 'RWD',
+  ])
+  const capWord = (w) => {
+    if (!w) return w
+    const upper = w.toUpperCase()
+    if (ALL_CAPS.has(upper)) return upper
+    return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()
+  }
   return String(s)
     .split(/\s+/)
-    .map((w) => {
-      if (!w) return w
-      const upper = w.toUpperCase()
-      if (ALL_CAPS.has(upper)) return upper
-      return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()
-    })
+    .map((token) => token.split('-').map(capWord).join('-'))
     .join(' ')
 }
 
@@ -330,8 +373,8 @@ function buildListUrl(query, opts = {}) {
   const limit = Math.min(100, Math.max(1, Number(query.limit || 20)))
   u.searchParams.set('page', page)
   u.searchParams.set('page_size', limit)
-  if (query.brand) u.searchParams.set('brand', String(query.brand).toLowerCase())
-  if (query.model) u.searchParams.set('model', String(query.model).toLowerCase())
+  if (query.brand) u.searchParams.set('brand', slugifyBrand(query.brand))
+  if (query.model) u.searchParams.set('model', String(query.model).toLowerCase().replace(/\s+/g, '-'))
   if (query.yearFrom) u.searchParams.set('min_year', query.yearFrom)
   if (query.yearTo) u.searchParams.set('max_year', query.yearTo)
   if (query.priceFrom) u.searchParams.set('min_price', Math.round(Number(query.priceFrom) * 10000))
