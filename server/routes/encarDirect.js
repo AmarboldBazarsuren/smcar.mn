@@ -109,6 +109,16 @@ async function cachedGet(url) {
   if (inflight.has(url)) return inflight.get(url)
   const p = fetchEncar(url)
     .then((d) => { setCache(url, d); return d })
+    .catch((err) => {
+      // Upstream failed and no fresh/stale cache: as a last resort serve
+      // ANY cached entry we still have (older than STALE_TTL too), so the
+      // site keeps working when Encar throttles or blocks us.
+      if (cached) {
+        console.error(`upstream fail, serving expired cache: ${err.message}`)
+        return cached.data
+      }
+      throw err
+    })
     .finally(() => inflight.delete(url))
   inflight.set(url, p)
   return p
