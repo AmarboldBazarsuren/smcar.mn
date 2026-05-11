@@ -5,7 +5,11 @@ import ScrollToTop from './components/ScrollToTop'
 import Home from './pages/Home'
 import About from './pages/About'
 import CarList from './pages/CarList'
-import CarDetail from './pages/CarDetail'
+import CarDetailLegacy from './pages/CarDetail'
+import CarDetailNew from './pages/CarDetail.new'
+// VITE_USE_NEW_DETAIL=true   → New Encar-driven white detail page
+// (default / unset)          → Legacy detail page
+const CarDetail = import.meta.env.VITE_USE_NEW_DETAIL === 'true' ? CarDetailNew : CarDetailLegacy
 import ManualCarDetail from './pages/ManualCarDetail'
 import AdminLogin from './pages/admin/AdminLogin'
 import Dashboard from './pages/admin/Dashboard'
