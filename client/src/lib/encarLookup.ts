@@ -1,31 +1,95 @@
-// Browser-side reverse lookup: given a Carapis vehicle (which hides the
-// real Encar listing_id on the free tier), search api.encar.com for an
-// exact match by brand + year + mileage + price and return Encar's carId.
+// Browser-side reverse lookup: given a Carapis vehicle (free-tier
+// hides listing_id), search api.encar.com for an exact match by
+// year + mileage + price and return Encar's numeric carId.
 //
-// Encar's CORS policy specifically allows https://smcar.mn so the
-// user's browser can hit api.encar.com directly while our VPS IP is
-// blocked.
+// Encar's CORS policy allows https://smcar.mn so we can call their
+// search API directly from the user's browser, bypassing our VPS
+// IP block.
 //
-// Match philosophy: prefer FALSE NEGATIVES over false positives. If we
-// can't confidently identify the listing we return null and let the UI
-// fall back to a search URL — much better than deep-linking to the
-// wrong car.
+// Approach (this version):
+//   1. CarType.A and CarType.N catalogues sit in parallel namespaces
+//      (Korean vs imported brands). We run BOTH queries in parallel
+//      and merge.
+//   2. DSL Manufacturer filter is broken/undocumented — we filter
+//      year+mileage on the server, then filter brand client-side
+//      against an alias map (Carapis 'Jaguar' ↔ Encar '재규어' etc).
+//   3. A match counts only when mileage AND price are both within
+//      tight tolerances — false negatives are preferred over false
+//      positives.
 
-// English brand → Korean name as it appears in Encar's Manufacturer
-// field. Foreign brands ("BMW", "Audi") stay in Latin.
-const KOREAN_BRAND: Record<string, string> = {
-  Hyundai: '현대',
-  Kia: '기아',
-  Genesis: '제네시스',
-  KGM: 'KG모빌리티(쌍용)',
-  Ssangyong: '쌍용',
-  'Renault Samsung': '르노삼성',
-  'Renault Korea': '르노코리아',
-  'Renault Korea Motors': '르노코리아',
-  Daewoo: '대우',
-  Chevrolet: '쉐보레(GM대우)',
-  Samsung: '삼성',
+// English brand → list of strings any of which Encar's Manufacturer
+// field may contain. We use 'includes' rather than equality so
+// suffixes like 'KG모빌리티(쌍용)' match 'KG모빌리티'.
+const BRAND_ALIASES: Record<string, string[]> = {
+  // Korean
+  Hyundai: ['현대', 'Hyundai'],
+  Kia: ['기아', 'Kia'],
+  Genesis: ['제네시스', 'Genesis'],
+  KGM: ['KG모빌리티', '쌍용', 'KGM'],
+  Ssangyong: ['쌍용', 'Ssangyong'],
+  'Renault Samsung': ['르노삼성', 'Renault Samsung'],
+  'Renault Korea': ['르노코리아', '르노', 'Renault'],
+  Daewoo: ['대우', 'Daewoo'],
+  Chevrolet: ['쉐보레', 'Chevrolet', 'GM대우'],
+  // Foreign — German
+  BMW: ['BMW'],
+  'Mercedes-Benz': ['벤츠', '메르세데스', 'Mercedes-Benz', 'Mercedes', '메르세데스-벤츠'],
+  Audi: ['아우디', 'Audi'],
+  Volkswagen: ['폭스바겐', 'Volkswagen'],
+  Porsche: ['포르쉐', 'Porsche'],
+  Mini: ['미니', 'MINI', 'Mini'],
+  Smart: ['스마트', 'Smart'],
+  Opel: ['오펠', 'Opel'],
+  // Foreign — British
+  Jaguar: ['재규어', 'Jaguar'],
+  'Land Rover': ['랜드로버', 'Land Rover'],
+  Bentley: ['벤틀리', 'Bentley'],
+  'Rolls-Royce': ['롤스로이스', 'Rolls-Royce', 'Rolls Royce'],
+  'Aston Martin': ['애스턴마틴', 'Aston Martin'],
+  McLaren: ['맥라렌', 'McLaren'],
+  Lotus: ['로터스', 'Lotus'],
+  // Foreign — Japanese
+  Toyota: ['도요타', '토요타', 'Toyota'],
+  Lexus: ['렉서스', 'Lexus'],
+  Honda: ['혼다', 'Honda'],
+  Nissan: ['닛산', 'Nissan'],
+  Infiniti: ['인피니티', 'Infiniti'],
+  Mazda: ['마쯔다', '마즈다', 'Mazda'],
+  Subaru: ['스바루', 'Subaru'],
+  Mitsubishi: ['미쯔비시', '미쓰비시', 'Mitsubishi'],
+  // Foreign — American
+  Ford: ['포드', 'Ford'],
+  Cadillac: ['캐딜락', 'Cadillac'],
+  Lincoln: ['링컨', 'Lincoln'],
+  Jeep: ['지프', 'Jeep'],
+  Chrysler: ['크라이슬러', 'Chrysler'],
+  Dodge: ['닷지', 'Dodge'],
+  RAM: ['램', 'RAM'],
+  Tesla: ['테슬라', 'Tesla'],
+  // Foreign — Italian
+  Fiat: ['피아트', 'Fiat'],
+  'Alfa Romeo': ['알파로메오', 'Alfa Romeo'],
+  Ferrari: ['페라리', 'Ferrari'],
+  Lamborghini: ['람보르기니', 'Lamborghini'],
+  Maserati: ['마세라티', 'Maserati'],
+  // Foreign — French
+  Peugeot: ['푸조', 'Peugeot'],
+  Citroen: ['시트로엥', 'Citroen'],
+  DS: ['DS'],
+  // Foreign — Swedish
+  Volvo: ['볼보', 'Volvo'],
+  Polestar: ['폴스타', 'Polestar'],
+  // Foreign — Chinese
+  BYD: ['BYD', '비야디'],
 }
+
+// Brands that live in CarType.A (Korean catalogue). Everything else
+// is treated as foreign and queried under CarType.N; we additionally
+// query the other CarType as a fallback if the first returns nothing.
+const KOREAN_BRANDS = new Set([
+  'Hyundai', 'Kia', 'Genesis', 'KGM', 'Ssangyong',
+  'Renault Samsung', 'Renault Korea', 'Daewoo', 'Chevrolet', 'Samsung',
+])
 
 interface Car {
   brand?: string
@@ -39,26 +103,23 @@ interface SearchHit {
   Id: string
   Manufacturer: string
   Model: string
-  Badge?: string
-  BadgeDetail?: string
   Year: number
   Mileage: number
   Price: number
 }
 
-function buildDslQuery(car: Car, range: { miMin: number; miMax: number }): string {
-  const mfg = (car.brand && KOREAN_BRAND[car.brand]) || car.brand || ''
-  const yearFrom = `${car.year}01`
-  const yearTo = `${car.year}12`
-  const parts = [`CarType.A.`]
-  if (mfg) parts.push(`Manufacturer.${mfg}.`)
-  parts.push(`Year.range(${yearFrom}..${yearTo}).`)
-  parts.push(`Mileage.range(${range.miMin}..${range.miMax}).`)
-  return `(And.${parts.join('_.')})`
+function brandMatches(carBrand: string, encarMfg: string): boolean {
+  if (!carBrand || !encarMfg) return false
+  const aliases = BRAND_ALIASES[carBrand] || [carBrand]
+  return aliases.some((a) => encarMfg.includes(a))
 }
 
-async function fetchEncarMatches(car: Car, range: { miMin: number; miMax: number }): Promise<SearchHit[]> {
-  const q = buildDslQuery(car, range)
+function buildDslQuery(year: number, miMin: number, miMax: number, carType: 'A' | 'N'): string {
+  return `(And.CarType.${carType}._.Year.range(${year}01..${year}12)._.Mileage.range(${miMin}..${miMax}).)`
+}
+
+async function fetchEncarPage(year: number, miMin: number, miMax: number, carType: 'A' | 'N'): Promise<SearchHit[]> {
+  const q = buildDslQuery(year, miMin, miMax, carType)
   const sr = '|ModifiedDate|0|100'
   const url = `https://api.encar.com/search/car/list/general?count=true&q=${encodeURIComponent(q)}&sr=${encodeURIComponent(sr)}`
   try {
@@ -71,37 +132,46 @@ async function fetchEncarMatches(car: Car, range: { miMin: number; miMax: number
   }
 }
 
-// A "strong" match must hit both mileage AND price closely. One alone
-// is not enough — there are plenty of listings sharing one or the other.
+// Strong match = both mileage and price are within these tolerances.
 const MILEAGE_TOLERANCE = 200       // km
 const PRICE_TOLERANCE_MANWON = 10   // 100,000 KRW
 
 function isStrongMatch(car: Car, hit: SearchHit): boolean {
   if (!car.mileage || !car.price || !hit.Mileage || !hit.Price) return false
-  const kmDiff = Math.abs(hit.Mileage - car.mileage)
-  const priceDiff = Math.abs(hit.Price - car.price)
-  return kmDiff <= MILEAGE_TOLERANCE && priceDiff <= PRICE_TOLERANCE_MANWON
+  return (
+    Math.abs(hit.Mileage - car.mileage) <= MILEAGE_TOLERANCE &&
+    Math.abs(hit.Price - car.price) <= PRICE_TOLERANCE_MANWON
+  )
 }
 
-// Combined distance for picking between several strong matches.
 function distance(car: Car, hit: SearchHit): number {
   const kmDiff = Math.abs((hit.Mileage || 0) - (car.mileage || 0))
   const priceDiff = Math.abs((hit.Price || 0) - (car.price || 0))
-  // Weight km and price comparably (1 만원 ≈ 200 km of value)
   return kmDiff / 200 + priceDiff / 1
 }
 
 export async function findEncarCarId(car: Car): Promise<string | null> {
-  if (!car?.year || !car?.mileage || !car?.price) return null
+  if (!car?.brand || !car?.year || !car?.mileage || !car?.price) return null
+
   const targetKm = car.mileage
-  // Cast a slightly wider net than MILEAGE_TOLERANCE so we don't miss
-  // listings whose mileage drifted a bit since Carapis last scraped.
-  const range = { miMin: Math.max(0, targetKm - 500), miMax: targetKm + 500 }
-  const hits = await fetchEncarMatches(car, range)
-  if (hits.length === 0) return null
-  const strong = hits.filter((h) => isStrongMatch(car, h))
+  const miMin = Math.max(0, targetKm - 500)
+  const miMax = targetKm + 500
+
+  // Choose primary CarType based on whether the brand is Korean.
+  const primary: 'A' | 'N' = KOREAN_BRANDS.has(car.brand) ? 'A' : 'N'
+  const secondary: 'A' | 'N' = primary === 'A' ? 'N' : 'A'
+
+  // Pull primary catalogue first; only fall back if needed.
+  let hits = await fetchEncarPage(car.year, miMin, miMax, primary)
+  let branded = hits.filter((h) => brandMatches(car.brand!, h.Manufacturer))
+  if (branded.length === 0) {
+    hits = await fetchEncarPage(car.year, miMin, miMax, secondary)
+    branded = hits.filter((h) => brandMatches(car.brand!, h.Manufacturer))
+  }
+
+  const strong = branded.filter((h) => isStrongMatch(car, h))
   if (strong.length === 0) return null
-  // Pick the one closest in combined km+price distance.
+
   strong.sort((a, b) => distance(car, a) - distance(car, b))
   return strong[0].Id
 }
