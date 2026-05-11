@@ -324,90 +324,89 @@ export default function Home() {
 
   return (
     <main className="bg-white">
-      {/* ===== HERO: Refined Somang Trading splash with Korean luxury sedan ===== */}
+      {/* ===== HERO: Centered headline + horizontal 4-step process below ===== */}
       <section className="relative overflow-hidden bg-[#0b1426]">
-        {/* Deep navy gradient base */}
+        {/* Multi-layer ambient backdrop */}
         <div
           className="absolute inset-0"
           style={{
             backgroundImage:
-              'radial-gradient(ellipse at 75% 55%, rgba(212,175,90,0.18) 0%, rgba(20,40,80,0.5) 30%, rgba(11,20,38,1) 75%)',
+              'radial-gradient(circle at 80% 30%, rgba(212,175,90,0.18) 0%, transparent 45%), radial-gradient(circle at 15% 75%, rgba(40,90,150,0.25) 0%, transparent 50%)',
           }}
         />
-        {/* Luxury sedan background image */}
         <img
           src="https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?auto=format&fit=crop&w=1800&q=80"
           alt=""
           aria-hidden="true"
-          className="absolute right-0 top-0 w-[65%] h-full object-cover object-center opacity-50 pointer-events-none select-none"
+          className="absolute inset-0 w-full h-full object-cover object-center opacity-25 pointer-events-none select-none"
           loading="eager"
         />
-        {/* Left-to-right fade so text stays readable */}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#0b1426] via-[#0b1426]/70 to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#0b1426] to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0b1426]/85 via-[#0b1426]/60 to-[#0b1426]" />
 
-        <div className="relative max-w-[1400px] mx-auto px-4 lg:px-8 pt-14 pb-20 lg:pt-20 lg:pb-28">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center min-h-[440px]">
-            {/* Left: text */}
-            <div className="lg:col-span-7 text-white">
-              {/* Somang Trading badge */}
-              <div className="inline-flex items-center gap-2 mb-5 px-3 py-1.5 rounded-full border border-amber-400/40 bg-amber-400/10 backdrop-blur-sm">
-                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                <span className="text-[12px] uppercase tracking-[0.2em] text-amber-200 font-semibold">
-                  Somang Trading
-                </span>
-              </div>
-
-              <h1 className="text-[40px] md:text-[56px] lg:text-[64px] font-extrabold leading-[1.05] tracking-tight">
-                Таны хүссэн машин,
-                <br />
-                <span className="bg-gradient-to-r from-amber-200 to-amber-400 bg-clip-text text-transparent">
-                  бидний хариуцлага.
-                </span>
-              </h1>
-              <p className="mt-5 text-[17px] md:text-[18px] text-blue-100/80 max-w-[560px] leading-relaxed">
-                БНСУ-аас Монгол руу автомашин экспортлох албан ёсны компани.
-                Сонголт, шалгалт, бичиг баримт, тээвэр, гааль — бүхнийг нэг газраас.
-              </p>
-              <div className="mt-8 flex flex-wrap items-center gap-4">
-                <Link
-                  to="/cars"
-                  className="inline-flex items-center gap-2 bg-amber-400 text-[#0b1426] hover:bg-amber-300 text-[16px] font-bold px-6 py-3 rounded-full transition shadow-lg shadow-amber-900/40"
-                >
-                  Машин үзэх <span aria-hidden>→</span>
-                </Link>
-                <a
-                  href="tel:+97672105633"
-                  className="inline-flex items-center gap-2 border border-white/30 text-white hover:bg-white/10 text-[16px] font-medium px-6 py-3 rounded-full transition"
-                >
-                  Холбоо барих
-                </a>
-              </div>
+        <div className="relative max-w-[1400px] mx-auto px-4 lg:px-8 pt-16 pb-12 lg:pt-24 lg:pb-16">
+          {/* Centered hero text */}
+          <div className="text-center max-w-3xl mx-auto">
+            <div className="inline-flex items-center gap-2 mb-6 px-4 py-1.5 rounded-full border border-amber-400/40 bg-amber-400/10 backdrop-blur-sm">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+              <span className="text-[12px] uppercase tracking-[0.25em] text-amber-200 font-semibold">
+                Somang Trading · БНСУ
+              </span>
             </div>
 
-            {/* Right: 3 feature cards */}
-            <div className="lg:col-span-5">
-              <div className="bg-[#0b1426]/60 backdrop-blur-md border border-amber-400/15 rounded-2xl p-2 divide-y divide-white/10">
-                {[
-                  {
-                    title: 'Өргөн сонголт',
-                    desc: 'БНСУ-ын зах зээлийн бүхэл хүртээмж',
-                  },
-                  {
-                    title: 'Найдвартай түнш',
-                    desc: 'Бодит шалгалт, ил тод мэдээлэл',
-                  },
-                  {
-                    title: 'Бүрэн шийдэл',
-                    desc: 'Тээвэр, гааль, хүргэлт нэг газраас',
-                  },
-                ].map((item) => (
-                  <div key={item.title} className="px-5 py-5">
-                    <h3 className="text-white font-bold text-[18px]">{item.title}</h3>
-                    <p className="text-blue-100/70 text-[14px] mt-1">{item.desc}</p>
+            <h1 className="text-white text-[36px] md:text-[52px] lg:text-[62px] font-extrabold leading-[1.08] tracking-tight">
+              Солонгосоос захиалсан машин
+              <br />
+              <span className="bg-gradient-to-r from-amber-200 via-amber-300 to-amber-400 bg-clip-text text-transparent">
+                танай гарагт хүрнэ.
+              </span>
+            </h1>
+            <p className="mt-6 text-[16px] md:text-[18px] text-blue-100/75 leading-relaxed">
+              Албан ёсны экспортын компани — Солонгосын зах зээлээс шууд,
+              <br className="hidden md:block" />
+              нэмэлт зуучлалгүй, ил тод үнээр.
+            </p>
+
+            <div className="mt-9 flex flex-wrap justify-center gap-3">
+              <Link
+                to="/cars"
+                className="inline-flex items-center gap-2 bg-amber-400 text-[#0b1426] hover:bg-amber-300 text-[15px] font-bold px-6 py-3 rounded-full transition shadow-lg shadow-amber-900/40"
+              >
+                Машин үзэх <span aria-hidden>→</span>
+              </Link>
+              <a
+                href="tel:+97672105633"
+                className="inline-flex items-center gap-2 border border-white/25 text-white hover:bg-white/10 text-[15px] font-medium px-6 py-3 rounded-full transition"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
+                </svg>
+                7210-5633
+              </a>
+            </div>
+          </div>
+
+          {/* Horizontal 4-step process timeline */}
+          <div className="mt-14 lg:mt-20">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-white/10 rounded-2xl overflow-hidden border border-white/10 backdrop-blur-sm">
+              {[
+                { n: '01', title: 'Сонголт', desc: 'Encar, Kbchachacha, KJ-cars дуудлагаас' },
+                { n: '02', title: 'Шалгалт', desc: 'VIN, осол, гүйлт, дотор гадаар бодит шалгалт' },
+                { n: '03', title: 'Тээвэр', desc: 'Контейнер эсвэл Ro-Ro, бичиг баримт бүрэн' },
+                { n: '04', title: 'Хүлээж авах', desc: 'Гааль, бүртгэл, та таныг хүсэн хүлээж байна' },
+              ].map((step) => (
+                <div key={step.n} className="bg-[#0b1426]/80 px-5 py-6 hover:bg-[#0e1a30] transition group">
+                  <div className="flex items-baseline gap-2 mb-2">
+                    <span className="text-amber-300/90 font-bold text-[14px] tracking-wider">{step.n}</span>
+                    <span className="h-px flex-1 bg-amber-400/20" />
                   </div>
-                ))}
-              </div>
+                  <h3 className="text-white text-[16px] font-bold group-hover:text-amber-200 transition">
+                    {step.title}
+                  </h3>
+                  <p className="text-blue-100/55 text-[13px] mt-1.5 leading-relaxed">
+                    {step.desc}
+                  </p>
+                </div>
+              ))}
             </div>
           </div>
         </div>
