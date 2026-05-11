@@ -4,3 +4,11 @@ dist/
 uploads/cars/
 *.log
 .DS_Store
+.env.production
+.claude/
+.claude
+image.png
+image copy*.png
+server/image.png
+server/image copy*.png
+client/image.png
