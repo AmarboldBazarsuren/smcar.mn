@@ -263,11 +263,10 @@ export default function CarDetailNew() {
                 </a>
               </div>
 
-              {/* encar.com дээр шууд хайх (Google site search ашиглана) */}
+              {/* Encar.com-руу шууд key keyword search. Korean brand-уудад
+                  Korean нэрийг ашиглах нь Encar-аас илүү тохирох үр дүн өгнө. */}
               <a
-                href={`https://www.google.com/search?q=${encodeURIComponent(
-                  `site:encar.com ${car.brand} ${car.model} ${car.year || ''} ${car.mileage ? car.mileage + 'km' : ''}`.trim()
-                )}`}
+                href={buildEncarSearchUrl(car)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2 w-full bg-white border-2 border-dashed border-gray-300 hover:border-red-400 hover:bg-red-50 text-gray-700 hover:text-red-700 py-3 rounded-2xl text-[14px] font-semibold transition"
@@ -425,6 +424,34 @@ function FullImagePreview({ imgs, index, onClose, onPrev, onNext, visible }: {
       <p className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/70 text-[13px]">{index + 1} / {imgs.length}</p>
     </div>
   )
+}
+
+// Build a deep-ish link into encar.com's keyword search. We don't have
+// the exact listing_id (Carapis hides it on free tier) but the brand +
+// model + year combo narrows the result list down to a handful of cars
+// the user can pick from visually.
+//
+// Korean brands need their Korean name to match Encar's search index;
+// foreign brands work with English. carType=kor for domestic, for=foreign.
+const KOREAN_BRANDS: Record<string, { kr: string; carType: 'kor' }> = {
+  Hyundai: { kr: '현대', carType: 'kor' },
+  Kia: { kr: '기아', carType: 'kor' },
+  Genesis: { kr: '제네시스', carType: 'kor' },
+  KGM: { kr: 'KG모빌리티', carType: 'kor' },
+  Ssangyong: { kr: '쌍용', carType: 'kor' },
+  'Renault Samsung': { kr: '르노삼성', carType: 'kor' },
+  'Renault Korea': { kr: '르노코리아', carType: 'kor' },
+  Daewoo: { kr: '대우', carType: 'kor' },
+}
+
+function buildEncarSearchUrl(car: any): string {
+  const brand: string = car.brand || ''
+  const ko = KOREAN_BRANDS[brand]
+  const carType = ko ? 'kor' : 'for'
+  const brandTerm = ko ? ko.kr : brand
+  const keyword = [brandTerm, car.model, car.year].filter(Boolean).join(' ')
+  const q = encodeURIComponent(keyword)
+  return `https://www.encar.com/dc/dc_carsearchlist.do?carType=${carType}&searchType=keyword&keyword=${q}`
 }
 
 function timeAgoMn(iso?: string): string {
