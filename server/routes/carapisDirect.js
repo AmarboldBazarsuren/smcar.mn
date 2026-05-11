@@ -284,28 +284,60 @@ function normalizeDetail(v) {
 
 const CACHE_HEADER = 'public, max-age=172800, stale-while-revalidate=604800'
 
+// Body types we consider "Тусгай ангилал" (commercial / utility).
+const SPECIAL_BODY_TYPES = ['truck', 'van', 'minivan', 'pickup', 'bus']
+
+function buildListUrl(query, opts = {}) {
+  const u = new URL(`${CARAPIS_BASE}/vehicles/`)
+  const page = Math.max(1, Number(query.page || 1))
+  const limit = Math.min(100, Math.max(1, Number(query.limit || 20)))
+  u.searchParams.set('page', page)
+  u.searchParams.set('page_size', limit)
+  if (query.brand) u.searchParams.set('brand_slug', String(query.brand).toLowerCase())
+  if (query.model) u.searchParams.set('model_slug', String(query.model).toLowerCase())
+  if (query.yearFrom) u.searchParams.set('min_year', query.yearFrom)
+  if (query.yearTo) u.searchParams.set('max_year', query.yearTo)
+  if (query.priceFrom) u.searchParams.set('min_price', Math.round(Number(query.priceFrom) * 10000))
+  if (query.priceTo) u.searchParams.set('max_price', Math.round(Number(query.priceTo) * 10000))
+  if (query.fuelType) u.searchParams.set('fuel_type', String(query.fuelType).toLowerCase())
+  if (query.transmission) u.searchParams.set('transmission', String(query.transmission).toLowerCase())
+  if (query.maxMileage) u.searchParams.set('max_mileage', query.maxMileage)
+  if (opts.bodyType) u.searchParams.set('body_type', opts.bodyType)
+  return u.toString()
+}
+
 router.get('/', async (req, res) => {
   try {
-    const u = new URL(`${CARAPIS_BASE}/vehicles/`)
-    const page = Math.max(1, Number(req.query.page || 1))
-    const limit = Math.min(100, Math.max(1, Number(req.query.limit || 20)))
-    u.searchParams.set('page', page)
-    u.searchParams.set('page_size', limit)
-    if (req.query.brand) u.searchParams.set('brand_slug', String(req.query.brand).toLowerCase())
-    if (req.query.model) u.searchParams.set('model_slug', String(req.query.model).toLowerCase())
-    if (req.query.yearFrom) u.searchParams.set('min_year', req.query.yearFrom)
-    if (req.query.yearTo) u.searchParams.set('max_year', req.query.yearTo)
-    if (req.query.priceFrom) u.searchParams.set('min_price', Math.round(Number(req.query.priceFrom) * 10000))
-    if (req.query.priceTo) u.searchParams.set('max_price', Math.round(Number(req.query.priceTo) * 10000))
-    if (req.query.fuelType) u.searchParams.set('fuel_type', String(req.query.fuelType).toLowerCase())
-    if (req.query.transmission) u.searchParams.set('transmission', String(req.query.transmission).toLowerCase())
-    if (req.query.maxMileage) u.searchParams.set('max_mileage', req.query.maxMileage)
-    const raw = await cachedGet(u.toString())
     res.set('Cache-Control', CACHE_HEADER)
+
+    // Тусгай ангилал: fetch each commercial body_type in parallel
+    // and merge into one combined list. Sort & paginate locally.
+    if (req.query.vehicleType === 'special') {
+      const results = await Promise.all(
+        SPECIAL_BODY_TYPES.map((bt) =>
+          cachedGet(buildListUrl({ ...req.query, page: 1, limit: 100 }, { bodyType: bt }))
+            .catch(() => ({ results: [] }))
+        )
+      )
+      const merged = results.flatMap((r) => r.results || []).map(normalizeList)
+      // Sort newest first (by year then mileage)
+      merged.sort((a, b) => (b.year || 0) - (a.year || 0) || (a.mileage || 0) - (b.mileage || 0))
+      const page = Math.max(1, Number(req.query.page || 1))
+      const limit = Math.min(100, Math.max(1, Number(req.query.limit || 20)))
+      const start = (page - 1) * limit
+      return res.json({
+        cars: merged.slice(start, start + limit),
+        total: merged.length,
+        page,
+        totalPages: Math.max(1, Math.ceil(merged.length / limit)),
+      })
+    }
+
+    const raw = await cachedGet(buildListUrl(req.query))
     res.json({
       cars: (raw.results || []).map(normalizeList),
       total: raw.count || 0,
-      page: raw.page || page,
+      page: raw.page || Number(req.query.page || 1),
       totalPages: raw.pages || 1,
     })
   } catch (err) {

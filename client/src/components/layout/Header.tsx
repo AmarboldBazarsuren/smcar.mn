@@ -42,6 +42,7 @@ export default function Header() {
   const navLinks = [
     { to: '/', label: 'Нүүр' },
     { to: '/cars', label: 'Бүх машин' },
+    { to: '/cars?vehicleType=special', label: 'Тусгай ангилал' },
     { to: '/about', label: 'Бидний тухай' },
   ]
 
