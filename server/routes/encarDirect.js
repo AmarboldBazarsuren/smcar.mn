@@ -8,6 +8,7 @@
 const express = require('express')
 const tx = require('../lib/encarTranslate')
 const opts = require('../lib/encarOptions')
+const models = require('../lib/encarModels')
 
 const router = express.Router()
 
@@ -67,14 +68,18 @@ async function cachedGet(url) {
 }
 
 const CDN = 'https://ci.encar.com'
+// Encar's image-resize endpoint. Without this, direct ci.encar.com URLs
+// serve a ~28KB cached thumbnail. With these params we get the
+// 1280×768 ~91KB high-quality version that encar.com itself uses.
+const IMG_QUERY = '?impolicy=heightRate&rh=768&cw=1280&ch=768&cg=Center'
 
-// Encar list photos are 4 thumbnails (often watermarked).
-// Detail photos have many types: OUTSIDE/INNER/OPTION/EQUIPMENT.
-// We prefer non-OUTSIDE-type-001 (the watermarked dealer shot) when possible.
 function imageUrl(path) {
   if (!path) return ''
   if (path.startsWith('http')) return path
-  return CDN + path
+  // Encar's resize endpoint requires '/carpicture/' prefix even if the
+  // original path already starts with '/carpicture##/...'.
+  const normalized = path.startsWith('/carpicture') ? '/carpicture' + path : path
+  return CDN + normalized + IMG_QUERY
 }
 
 function pickListPhotos(photos = []) {
@@ -152,14 +157,17 @@ function buildSr(params) {
 }
 
 function normalizeListItem(c) {
+  const brand = tx.brand(c.Manufacturer)
+  const model = models.translateModelText(c.Model || '')
+  const badge = models.translateModelText(c.Badge || '')
   return {
     id: String(c.Id),
     encar_id: String(c.Id),
-    title: [tx.brand(c.Manufacturer), c.Model, c.Badge].filter(Boolean).join(' '),
-    brand: tx.brand(c.Manufacturer),
-    model: c.Model || '',
-    badge: c.Badge || '',
-    badge_detail: c.BadgeDetail || '',
+    title: [brand, model, badge].filter(Boolean).join(' '),
+    brand,
+    model,
+    badge,
+    badge_detail: models.translateModelText(c.BadgeDetail || ''),
     year: c.FormYear ? Number(c.FormYear) : Math.floor((c.Year || 0) / 100),
     price: c.Price ? c.Price * 10000 : 0, // KRW
     currency: 'KRW',
