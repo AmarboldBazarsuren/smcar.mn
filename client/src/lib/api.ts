@@ -232,5 +232,11 @@ export function getImageUrl(url: string): string {
   if (!url) return ''
   // Local uploads (manual cars)
   if (url.startsWith('/uploads')) return `${BASE}${url}`
-  return `${BASE}/api/image-proxy?url=${encodeURIComponent(url)}`
+  // Our own opaque photo proxy URLs (/api/p/<b64>.jpg) — prefix base only.
+  if (url.startsWith('/api/p/')) return `${BASE}${url}`
+  // Already absolute (legacy apicars URLs) — route through CORS proxy.
+  if (url.startsWith('http')) {
+    return `${BASE}/api/image-proxy?url=${encodeURIComponent(url)}`
+  }
+  return url
 }

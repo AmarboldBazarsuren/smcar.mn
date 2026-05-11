@@ -11,6 +11,7 @@ const path = require('path')
 const tx = require('../lib/encarTranslate')
 const opts = require('../lib/encarOptions')
 const models = require('../lib/encarModels')
+const { encarPathToProxyUrl } = require('./photoProxy')
 
 const router = express.Router()
 
@@ -113,19 +114,11 @@ async function cachedGet(url) {
   return p
 }
 
-const CDN = 'https://ci.encar.com'
-// Encar's image-resize endpoint. The bare URL serves a 28KB thumbnail.
-// With these params we get a high-quality 1920×1080 image — same
-// resolution Encar uses on its own desktop detail page (293KB).
-const IMG_QUERY = '?impolicy=heightRate&rh=1080&cw=1920&ch=1080&cg=Center'
-
+// All photo URLs we return go through our opaque proxy at /api/p/...
+// so DevTools never reveals ci.encar.com. The proxy on the backend
+// resolves the base64 path and fetches the 1920x1080 HD version.
 function imageUrl(path) {
-  if (!path) return ''
-  if (path.startsWith('http')) return path
-  // Encar's resize endpoint requires '/carpicture/' prefix even if the
-  // original path already starts with '/carpicture##/...'.
-  const normalized = path.startsWith('/carpicture') ? '/carpicture' + path : path
-  return CDN + normalized + IMG_QUERY
+  return encarPathToProxyUrl(path)
 }
 
 function pickListPhotos(photos = []) {
