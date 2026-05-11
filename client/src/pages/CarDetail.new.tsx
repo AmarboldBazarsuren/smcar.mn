@@ -5,7 +5,6 @@ import {
   fetchCarFull,
   fetchExchangeRate,
   fetchFeeSettings,
-  fetchEncarInfo,
   getImageUrl,
 } from '../lib/api'
 import { formatNumber } from '../lib/utils'
@@ -33,13 +32,9 @@ export default function CarDetailNew() {
   })
   const { data: rates } = useQuery({ queryKey: ['exchangeRate'], queryFn: fetchExchangeRate })
   const { data: fees } = useQuery({ queryKey: ['feeSettings'], queryFn: fetchFeeSettings })
-  const { data: encarInfo } = useQuery({
-    queryKey: ['encarInfo', car?.encar_id],
-    queryFn: () => fetchEncarInfo(car!.encar_id),
-    enabled: !!car?.encar_id,
-  })
-  const cc = encarInfo?.cc ?? car?.displacement ?? null
-  const encarPrice = encarInfo?.price ?? null
+  // CC + canonical price come from the active data source (Carapis) — no
+  // longer fetched from a separate Encar helper.
+  const cc = car?.displacement ?? null
 
   const imgs: string[] = car?.images?.length ? car.images : car?.image ? [car.image] : []
   const prevImg = useCallback(() => setSelectedImg((p) => (p > 0 ? p - 1 : imgs.length - 1)), [imgs.length])
@@ -102,7 +97,7 @@ export default function CarDetailNew() {
     rates,
     fees,
     Number(car.original_price_krw || 0),
-    encarPrice,
+    null,
     cc,
     car.year,
     car.fuelType || car.fuel_type,

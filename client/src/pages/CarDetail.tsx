@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { fetchCarFull, fetchExchangeRate, fetchFeeSettings, fetchEncarInfo, getImageUrl } from '../lib/api'
+import { fetchCarFull, fetchExchangeRate, fetchFeeSettings, getImageUrl } from '../lib/api'
 import { formatNumber, fuelLabel } from '../lib/utils'
 import ReservationModal from '../components/cars/ReservationModal'
 import type { ExchangeRate, FeeSettings } from '../types'
@@ -22,14 +22,9 @@ export default function CarDetail() {
   })
   const { data: rates } = useQuery({ queryKey: ['exchangeRate'], queryFn: fetchExchangeRate })
   const { data: fees } = useQuery({ queryKey: ['feeSettings'], queryFn: fetchFeeSettings })
-  const { data: encarInfo } = useQuery({
-    queryKey: ['encarInfo', car?.encar_id],
-    queryFn: () => fetchEncarInfo(car!.encar_id),
-    enabled: !!car?.encar_id,
-  })
-  const cc = encarInfo?.cc ?? null
-  // encar.com-ын бодит үнэ (만원 нэгж)
-  const encarPrice = encarInfo?.price ?? null
+  // CC comes directly from the active data source (Carapis) now.
+  const cc = (car as any)?.displacement ?? null
+  const encarPrice: number | null = null
 
   const imgs = car?.images?.length ? car.images : car?.image ? [car.image] : []
 

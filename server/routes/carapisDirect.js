@@ -10,7 +10,6 @@
 const express = require('express')
 const fs = require('fs')
 const path = require('path')
-const tx = require('../lib/encarTranslate')
 const { absoluteUrlToProxyUrl } = require('./photoProxy')
 
 const router = express.Router()
@@ -389,8 +388,5 @@ router.post('/pricing-breakdown', (req, res) => {
     commissionFee: 0, extraFee: 0, discount: 0, totalPrice: price,
   })
 })
-
-// `tx` may not be needed here but keeping import in case we add brand fallback
-void tx
 
 module.exports = router

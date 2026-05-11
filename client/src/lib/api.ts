@@ -195,17 +195,6 @@ export async function removeFeaturedCar(position: string): Promise<void> {
   await api.delete(`/featured-car/${position}`)
 }
 
-// ============ ENCAR CC ============
-
-export async function fetchEncarInfo(encarId: string): Promise<{ cc: number | null; price: number | null }> {
-  try {
-    const { data } = await api.get(`/encar/${encarId}/info`)
-    return { cc: data.cc, price: data.price }
-  } catch {
-    return { cc: null, price: null }
-  }
-}
-
 // ============ ГАРААР ОРУУЛСАН МАШИН ============
 
 export async function fetchManualCars(): Promise<any[]> {

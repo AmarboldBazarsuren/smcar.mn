@@ -1,11 +1,15 @@
 // Opaque photo proxy: serves images from our own domain so DevTools
 // Network tab shows only api.smcar.mn URLs, never the underlying CDN.
 //
-// URL format: GET /api/p/<base64-url-encoded-path>.jpg
+// URL format: GET /api/p/<base64-url-encoded-host+path>.jpg
 //
-// Disk cache: every fetched image is written to /var/www/smcar/server/
-// .cache/photos/<sha1>.jpg. Subsequent requests stream the file from
-// disk (~5ms) instead of round-tripping to the upstream CDN (~1s).
+// The base64 payload encodes the original host+path as a single string
+// (e.g. "api.example.com/path/to/image.jpg"). We prepend https:// and
+// fetch — no upstream-specific logic in this file.
+//
+// Disk cache: every fetched image is written to .cache/photos/<sha1>.jpg
+// Subsequent requests stream the file from disk (~5ms) instead of
+// round-tripping to the upstream CDN (~1s).
 
 const express = require('express')
 const fs = require('fs')
@@ -14,8 +18,6 @@ const crypto = require('crypto')
 
 const router = express.Router()
 
-const ENCAR_CDN = 'https://ci.encar.com'
-const ENCAR_RESIZE = '?impolicy=heightRate&rh=1080&cw=1920&ch=1080&cg=Center'
 const PHOTO_DIR = path.join(__dirname, '..', '.cache', 'photos')
 
 try {
@@ -23,7 +25,6 @@ try {
 } catch {}
 
 const FETCH_HEADERS = {
-  referer: 'https://www.encar.com/',
   'user-agent':
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
 }
@@ -45,23 +46,23 @@ function diskKey(b64) {
 const CACHE_CONTROL =
   'public, max-age=604800, stale-while-revalidate=2592000, immutable'
 
-// Decode the base64 path and resolve to the actual upstream URL.
-// - If it starts with 'carpicture' it's an Encar CDN path.
-// - If it starts with 'carapis:' it's a Carapis photo UUID URL.
+// Decoded payload looks like: "host.example.com/path/to/file.jpg"
+// We accept any host so the proxy stays generic; the host is implicit
+// in the payload, not in the URL.
 function resolveUpstream(decoded) {
-  if (decoded.startsWith('carpicture')) {
-    return `${ENCAR_CDN}/carpicture/${decoded}${ENCAR_RESIZE}`
-  }
-  if (decoded.startsWith('carapis:')) {
-    return 'https://' + decoded.slice('carapis:'.length)
-  }
-  return null
+  if (!decoded) return null
+  // Strip legacy "carapis:" prefix (kept for back-compat with old URLs)
+  const cleaned = decoded.startsWith('carapis:')
+    ? decoded.slice('carapis:'.length)
+    : decoded
+  if (!cleaned.includes('/')) return null
+  return 'https://' + cleaned
 }
 
 router.get('/:b64.jpg', async (req, res) => {
   const { b64 } = req.params
   const decoded = decodePath(b64)
-  const upstreamUrl = decoded ? resolveUpstream(decoded) : null
+  const upstreamUrl = resolveUpstream(decoded)
   if (!upstreamUrl) return res.status(400).end()
 
   const diskPath = path.join(PHOTO_DIR, diskKey(b64) + '.jpg')
@@ -97,22 +98,13 @@ function encodeProxy(payload) {
     .replace(/=+$/, '')
 }
 
-function encarPathToProxyUrl(p) {
-  if (!p) return ''
-  if (p.startsWith('http')) return p
-  return `/api/p/${encodeProxy(p.replace(/^\/+/, ''))}.jpg`
-}
-
-// For Carapis (or any other absolute https:// photo URL) we encode the
-// whole URL minus the scheme behind a 'carapis:' prefix so the resolver
-// knows to fetch it directly without applying Encar resize params.
+// Turn any absolute https?:// URL into our opaque proxy form.
 function absoluteUrlToProxyUrl(url) {
   if (!url) return ''
   if (!url.startsWith('https://') && !url.startsWith('http://')) return url
   const stripped = url.replace(/^https?:\/\//, '')
-  return `/api/p/${encodeProxy('carapis:' + stripped)}.jpg`
+  return `/api/p/${encodeProxy(stripped)}.jpg`
 }
 
 module.exports = router
-module.exports.encarPathToProxyUrl = encarPathToProxyUrl
 module.exports.absoluteUrlToProxyUrl = absoluteUrlToProxyUrl
