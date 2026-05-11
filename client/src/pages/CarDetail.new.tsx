@@ -120,9 +120,7 @@ export default function CarDetailNew() {
               </p>
 
               <div className="flex flex-wrap items-center gap-3 text-[13px] text-gray-500 mt-3">
-                <span>Эх сурвалж: <span className="text-gray-700 font-medium">Encar</span></span>
-                {car.encar_id && <span>· ID: <span className="text-gray-700 font-mono">{car.encar_id}</span></span>}
-                {car.scraped_at && <span>· Шинэчлэгдсэн: {timeAgoMn(car.scraped_at)}</span>}
+                {car.scraped_at && <span>Шинэчлэгдсэн: {timeAgoMn(car.scraped_at)}</span>}
                 <span className="ml-auto inline-flex items-center gap-1.5 bg-green-100 text-green-700 px-2.5 py-1 rounded-full text-[12px] font-semibold">
                   <span className="w-1.5 h-1.5 rounded-full bg-green-500" /> Идэвхтэй
                 </span>
@@ -335,7 +333,7 @@ function PhotoMosaic({ imgs, onImageClick }: { imgs: string[]; onImageClick: (i:
 
 function SpecGrid({ car, cc }: { car: any; cc: number | null }) {
   const dealerLabel = car.dealer_type === 'DEALER' ? 'Автомашины дилер' : car.dealer_type === 'PERSONAL' ? 'Хувь хүн' : car.dealer_type || '—'
-  const statusLabel = car.advertisement_status === 'ADVERTISE' ? 'Бэлэн байгаа' : car.advertisement_status || '—'
+  const statusLabel = (car.status || car.advertisement_status) === 'ADVERTISE' ? 'Бэлэн байгаа' : (car.status || car.advertisement_status) || '—'
   const items = [
     { icon: '📅', label: 'Үйлдвэрлэсэн он', value: car.year || '—' },
     { icon: '🛣', label: 'Явсан км', value: car.mileage ? `${formatNumber(car.mileage)} км` : '—' },

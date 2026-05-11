@@ -274,10 +274,8 @@ function normalizeDetail(d) {
     pre_verified: !!ad.preVerified,
     extend_warranty: !!ad.extendWarranty,
     warranty: cat.warranty || null,
-    advertisement_status: ad.status || '',
+    status: ad.status || '',
     one_line: ad.oneLineText || '',
-    raw_korean_manufacturer: cat.manufacturerName,
-    raw_korean_model: cat.modelName,
     scraped_at: d.manage && d.manage.modifyDateTime,
   }
 }
