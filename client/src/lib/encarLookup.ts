@@ -1,13 +1,18 @@
 // Browser-side reverse lookup: given a Carapis vehicle (which hides the
-// real Encar listing_id on the free tier), search api.encar.com for a
-// close match by brand + year + mileage and return Encar's carId. This
-// works only from the user's browser because Encar's CORS policy
-// specifically allows https://smcar.mn and the user's IP isn't blocked
-// (our VPS IP is).
+// real Encar listing_id on the free tier), search api.encar.com for an
+// exact match by brand + year + mileage + price and return Encar's carId.
+//
+// Encar's CORS policy specifically allows https://smcar.mn so the
+// user's browser can hit api.encar.com directly while our VPS IP is
+// blocked.
+//
+// Match philosophy: prefer FALSE NEGATIVES over false positives. If we
+// can't confidently identify the listing we return null and let the UI
+// fall back to a search URL — much better than deep-linking to the
+// wrong car.
 
-// English brand → Korean name as it appears in Encar's Manufacturer field.
-// Foreign brands ("BMW", "Audi", ...) stay in Latin — Encar indexes them
-// that way.
+// English brand → Korean name as it appears in Encar's Manufacturer
+// field. Foreign brands ("BMW", "Audi") stay in Latin.
 const KOREAN_BRAND: Record<string, string> = {
   Hyundai: '현대',
   Kia: '기아',
@@ -16,8 +21,9 @@ const KOREAN_BRAND: Record<string, string> = {
   Ssangyong: '쌍용',
   'Renault Samsung': '르노삼성',
   'Renault Korea': '르노코리아',
+  'Renault Korea Motors': '르노코리아',
   Daewoo: '대우',
-  Chevrolet: '쉐보레',
+  Chevrolet: '쉐보레(GM대우)',
   Samsung: '삼성',
 }
 
@@ -26,7 +32,7 @@ interface Car {
   model?: string
   year?: number
   mileage?: number
-  price?: number // 만원
+  price?: number // 万원
 }
 
 interface SearchHit {
@@ -42,7 +48,6 @@ interface SearchHit {
 
 function buildDslQuery(car: Car, range: { miMin: number; miMax: number }): string {
   const mfg = (car.brand && KOREAN_BRAND[car.brand]) || car.brand || ''
-  // Year is yyyyMM in Encar
   const yearFrom = `${car.year}01`
   const yearTo = `${car.year}12`
   const parts = [`CarType.A.`]
@@ -54,7 +59,7 @@ function buildDslQuery(car: Car, range: { miMin: number; miMax: number }): strin
 
 async function fetchEncarMatches(car: Car, range: { miMin: number; miMax: number }): Promise<SearchHit[]> {
   const q = buildDslQuery(car, range)
-  const sr = '|ModifiedDate|0|50'
+  const sr = '|ModifiedDate|0|100'
   const url = `https://api.encar.com/search/car/list/general?count=true&q=${encodeURIComponent(q)}&sr=${encodeURIComponent(sr)}`
   try {
     const res = await fetch(url, { credentials: 'omit' })
@@ -66,70 +71,39 @@ async function fetchEncarMatches(car: Car, range: { miMin: number; miMax: number
   }
 }
 
-function normalize(s: string | undefined | null): string {
-  return (s || '').toLowerCase().replace(/[^a-z0-9가-힣\s]/g, '').trim()
+// A "strong" match must hit both mileage AND price closely. One alone
+// is not enough — there are plenty of listings sharing one or the other.
+const MILEAGE_TOLERANCE = 200       // km
+const PRICE_TOLERANCE_MANWON = 10   // 100,000 KRW
+
+function isStrongMatch(car: Car, hit: SearchHit): boolean {
+  if (!car.mileage || !car.price || !hit.Mileage || !hit.Price) return false
+  const kmDiff = Math.abs(hit.Mileage - car.mileage)
+  const priceDiff = Math.abs(hit.Price - car.price)
+  return kmDiff <= MILEAGE_TOLERANCE && priceDiff <= PRICE_TOLERANCE_MANWON
 }
 
-function modelMatchScore(carModel: string, hit: SearchHit): number {
-  const a = normalize(carModel)
-  const b = normalize(hit.Model)
-  if (!a || !b) return 0
-  if (a === b) return 100
-  // Word-overlap heuristic
-  const wordsA = new Set(a.split(/\s+/))
-  const wordsB = new Set(b.split(/\s+/))
-  let overlap = 0
-  wordsA.forEach((w) => { if (wordsB.has(w)) overlap++ })
-  return (overlap / Math.max(wordsA.size, wordsB.size)) * 80
-}
-
-function priceMatchScore(targetManwon: number | undefined, hit: SearchHit): number {
-  if (!targetManwon || !hit.Price) return 0
-  const diff = Math.abs(hit.Price - targetManwon)
-  if (diff <= 5) return 50  // within 50,000 KRW
-  if (diff <= 50) return 30
-  if (diff <= 200) return 15
-  return 0
-}
-
-function mileageMatchScore(targetKm: number | undefined, hit: SearchHit): number {
-  if (!targetKm || !hit.Mileage) return 0
-  const diff = Math.abs(hit.Mileage - targetKm)
-  if (diff <= 100) return 30
-  if (diff <= 500) return 20
-  if (diff <= 2000) return 10
-  return 0
+// Combined distance for picking between several strong matches.
+function distance(car: Car, hit: SearchHit): number {
+  const kmDiff = Math.abs((hit.Mileage || 0) - (car.mileage || 0))
+  const priceDiff = Math.abs((hit.Price || 0) - (car.price || 0))
+  // Weight km and price comparably (1 만원 ≈ 200 km of value)
+  return kmDiff / 200 + priceDiff / 1
 }
 
 export async function findEncarCarId(car: Car): Promise<string | null> {
-  if (!car?.year) return null
-  const targetKm = car.mileage || 0
-  // Try progressively widening mileage windows
-  const windows = [
-    { miMin: Math.max(0, targetKm - 200), miMax: targetKm + 200 },
-    { miMin: Math.max(0, targetKm - 2000), miMax: targetKm + 2000 },
-    { miMin: Math.max(0, targetKm - 10000), miMax: targetKm + 10000 },
-  ]
-  for (const win of windows) {
-    const hits = await fetchEncarMatches(car, win)
-    if (!hits.length) continue
-    // Score each hit
-    const scored = hits
-      .map((h) => ({
-        h,
-        score:
-          (h.Mileage === targetKm ? 100 : 0) +
-          modelMatchScore(car.model || '', h) +
-          priceMatchScore(car.price, h) +
-          mileageMatchScore(targetKm, h),
-      }))
-      .sort((a, b) => b.score - a.score)
-    if (scored.length === 0) continue
-    const best = scored[0]
-    // Require some level of confidence
-    if (best.score >= 30) return best.h.Id
-  }
-  return null
+  if (!car?.year || !car?.mileage || !car?.price) return null
+  const targetKm = car.mileage
+  // Cast a slightly wider net than MILEAGE_TOLERANCE so we don't miss
+  // listings whose mileage drifted a bit since Carapis last scraped.
+  const range = { miMin: Math.max(0, targetKm - 500), miMax: targetKm + 500 }
+  const hits = await fetchEncarMatches(car, range)
+  if (hits.length === 0) return null
+  const strong = hits.filter((h) => isStrongMatch(car, h))
+  if (strong.length === 0) return null
+  // Pick the one closest in combined km+price distance.
+  strong.sort((a, b) => distance(car, a) - distance(car, b))
+  return strong[0].Id
 }
 
 export function encarDetailUrl(carId: string): string {
