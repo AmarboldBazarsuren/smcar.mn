@@ -30,12 +30,12 @@ export default function Header() {
     return location.pathname === path && searchParams.toString() === ''
   }
 
-  // Hero дээр улаан-руу нийлсэн gradient, scroll хийхэд цайвар
+  // Hero дээр бүрэн ил тод (зураг шууд харагдана), scroll хийхэд цайвар
   const headerBg = transparent
-    ? 'bg-gradient-to-b from-[#1a0608] via-[#1a0608]/85 to-transparent border-transparent'
+    ? 'bg-transparent border-transparent'
     : 'bg-white border-gray-200 shadow-sm'
   const navText = transparent
-    ? 'text-white drop-shadow-md hover:text-red-200'
+    ? 'text-white [text-shadow:_0_2px_8px_rgb(0_0_0_/_80%)] hover:text-red-200'
     : 'text-gray-700 hover:text-red-600'
   const navActive = transparent ? 'border-red-300 text-white' : 'border-red-500 text-red-600'
 
