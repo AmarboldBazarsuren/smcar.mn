@@ -15,6 +15,105 @@ const { absoluteUrlToProxyUrl } = require('./photoProxy')
 
 const router = express.Router()
 
+// ===== English → Mongolian / cleaned-up English value maps =====
+// Carapis returns lower-case English values (gasoline / auto / sedan / white).
+
+const FUEL_MN = {
+  gasoline: 'Бензин',
+  diesel: 'Дизель',
+  hybrid: 'Hybrid',
+  electric: 'Цахилгаан',
+  lpg: 'Газ',
+  hydrogen: 'Устөрөгч',
+  cng: 'Газ (CNG)',
+}
+const FUEL_EN = {
+  gasoline: 'Gasoline', diesel: 'Diesel', hybrid: 'Hybrid',
+  electric: 'Electric', lpg: 'LPG', hydrogen: 'Hydrogen', cng: 'CNG',
+}
+const TRANS_MN = {
+  auto: 'Автомат',
+  manual: 'Механик',
+  cvt: 'CVT',
+  semi_auto: 'Хагас автомат',
+  dct: 'DCT',
+}
+const TRANS_EN = { auto: 'Auto', manual: 'Manual', cvt: 'CVT', semi_auto: 'Semi-Auto', dct: 'DCT' }
+const BODY_MN = {
+  sedan: 'Седан',
+  suv: 'SUV',
+  hatchback: 'Хэтчбэк',
+  coupe: 'Купе',
+  wagon: 'Вагон',
+  minivan: 'Мини вэн',
+  van: 'Вэн',
+  truck: 'Ачааны',
+  convertible: 'Кабриолет',
+  crossover: 'Кроссовер',
+  pickup: 'Пикап',
+  bus: 'Автобус',
+  compact: 'Жижиг',
+  midsize: 'Дунд хэмжээний седан',
+  fullsize: 'Том седан',
+  mini: 'Мини / Хотын жижиг',
+  sports: 'Спорт',
+  unknown: '—',
+}
+const BODY_EN = {
+  sedan: 'Sedan', suv: 'SUV', hatchback: 'Hatchback', coupe: 'Coupe',
+  wagon: 'Wagon', minivan: 'Minivan', van: 'Van', truck: 'Truck',
+  convertible: 'Convertible', crossover: 'Crossover', pickup: 'Pickup',
+  bus: 'Bus', compact: 'Compact', midsize: 'Midsize Sedan',
+  fullsize: 'Full-size Sedan', mini: 'Mini', sports: 'Sports', unknown: '—',
+}
+const COLOR_MN = {
+  white: 'Цагаан', black: 'Хар', gray: 'Саарал', silver: 'Мөнгөн',
+  blue: 'Хөх', red: 'Улаан', orange: 'Улбар шар', brown: 'Бор',
+  beige: 'Беж', yellow: 'Шар', green: 'Ногоон', purple: 'Нил',
+  pink: 'Ягаан', gold: 'Алтан', pearl: 'Сувдан цагаан',
+  navy: 'Гүн хөх', maroon: 'Бордов', tan: 'Шаргал', burgundy: 'Бордов',
+  unknown: '—',
+}
+const COLOR_EN = {
+  white: 'White', black: 'Black', gray: 'Gray', silver: 'Silver',
+  blue: 'Blue', red: 'Red', orange: 'Orange', brown: 'Brown',
+  beige: 'Beige', yellow: 'Yellow', green: 'Green', purple: 'Purple',
+  pink: 'Pink', gold: 'Gold', pearl: 'Pearl', navy: 'Navy',
+  maroon: 'Maroon', tan: 'Tan', burgundy: 'Burgundy', unknown: '—',
+}
+const REGION_MN = {
+  Seoul: 'Сөүл', Busan: 'Бусан', Daegu: 'Тэгү', Incheon: 'Инчон',
+  Daejeon: 'Тэжон', Gwangju: 'Гванжү', Ulsan: 'Ульсан', Sejong: 'Сэжон',
+  Gyeonggi: 'Кёнги', Gangwon: 'Канвон', Jeju: 'Жэжү',
+}
+
+const lc = (s) => (s == null ? '' : String(s).toLowerCase())
+const fuel = (v, lang) => (lang === 'mn' ? FUEL_MN : FUEL_EN)[lc(v)] || titleCase(v)
+const trans = (v, lang) => (lang === 'mn' ? TRANS_MN : TRANS_EN)[lc(v)] || titleCase(v)
+const body = (v, lang) => (lang === 'mn' ? BODY_MN : BODY_EN)[lc(v)] || titleCase(v)
+const color = (v, lang) => (lang === 'mn' ? COLOR_MN : COLOR_EN)[lc(v)] || titleCase(v)
+const region = (v, lang) => {
+  if (!v) return ''
+  const friendly = (lang === 'mn' ? REGION_MN : null)?.[v] || v
+  return lang === 'mn' ? `БНСУ, ${friendly}` : `${friendly}, South Korea`
+}
+
+// Carapis brand/model come in mixed case (e.g. "Bmw"). Convert to nice
+// Title Case but keep all-caps brands (BMW, KGM, GMC) properly.
+function titleCase(s) {
+  if (!s) return s
+  const ALL_CAPS = new Set(['BMW', 'GMC', 'KGM', 'BYD', 'DS'])
+  return String(s)
+    .split(/\s+/)
+    .map((w) => {
+      if (!w) return w
+      const upper = w.toUpperCase()
+      if (ALL_CAPS.has(upper)) return upper
+      return w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()
+    })
+    .join(' ')
+}
+
 const CARAPIS_BASE = 'https://api.carapis.com/apix/catalog_public'
 
 // ===== Cache layer (48h fresh / 14d stale / disk-persisted) =====
@@ -94,18 +193,16 @@ async function cachedGet(url) {
 
 // ===== Normalisation =====
 
-function cap(s) {
-  if (!s) return s
-  return String(s).charAt(0).toUpperCase() + String(s).slice(1)
-}
-
 function normalizeList(v) {
+  const brand = titleCase(v.brand?.name || '')
+  const model = titleCase(v.model?.name || '')
+  const displayName = v.display_name ? titleCase(v.display_name.replace(/\(\d+\)/, '').trim()) + (v.year ? ` (${v.year})` : '') : `${brand} ${model}`.trim()
   return {
     id: v.id,
-    encar_id: v.listing_id || v.id, // listing_id only on paid tier
-    title: v.display_name || `${v.brand?.name || ''} ${v.model?.name || ''}`.trim(),
-    brand: v.brand?.name || '',
-    model: v.model?.name || '',
+    encar_id: v.listing_id || v.id,
+    title: displayName,
+    brand,
+    model,
     badge: v.trim || '',
     badge_detail: v.generation || '',
     year: v.year || 0,
@@ -115,30 +212,33 @@ function normalizeList(v) {
     currency: 'KRW',
     mileage: v.mileage || 0,
     displacement: v.engine_cc || 0,
-    fuelType: cap(v.fuel_type),
-    fuel_type: cap(v.fuel_type),
-    fuel_mn: cap(v.fuel_type),
-    transmission: cap(v.transmission),
-    transmission_mn: cap(v.transmission),
-    color: cap(v.color),
-    color_mn: cap(v.color),
-    body_type: cap(v.body_type),
-    body_type_mn: cap(v.body_type),
+    fuelType: fuel(v.fuel_type, 'en'),
+    fuel_type: fuel(v.fuel_type, 'en'),
+    fuel_mn: fuel(v.fuel_type, 'mn'),
+    transmission: trans(v.transmission, 'en'),
+    transmission_mn: trans(v.transmission, 'mn'),
+    color: color(v.color, 'en'),
+    color_mn: color(v.color, 'mn'),
+    body_type: body(v.body_type, 'en'),
+    body_type_mn: body(v.body_type, 'mn'),
     seat_count: v.seat_count || 0,
-    location: v.region || '',
-    location_mn: v.region ? `БНСУ, ${v.region}` : '',
+    location: region(v.region, 'en'),
+    location_mn: region(v.region, 'mn'),
     image: absoluteUrlToProxyUrl(v.main_photo_url || v.preview_photos?.[0]?.url || ''),
     images: (v.preview_photos || []).map((p) => absoluteUrlToProxyUrl(p.url)),
   }
 }
 
 function normalizeDetail(v) {
+  const brand = titleCase(v.brand?.name || '')
+  const model = titleCase(v.model?.name || '')
+  const displayName = v.display_name ? titleCase(v.display_name.replace(/\(\d+\)/, '').trim()) + (v.year ? ` (${v.year})` : '') : `${brand} ${model}`.trim()
   return {
     id: v.id,
     encar_id: v.listing_id || v.id,
-    title: v.display_name || `${v.brand?.name || ''} ${v.model?.name || ''}`.trim(),
-    brand: v.brand?.name || '',
-    model: v.model?.name || '',
+    title: displayName,
+    brand,
+    model,
     grade: v.trim || '',
     trim: v.trim || '',
     badge: v.trim || '',
@@ -149,19 +249,19 @@ function normalizeDetail(v) {
     currency: 'KRW',
     mileage: v.mileage || 0,
     displacement: v.engine_cc || 0,
-    fuelType: cap(v.fuel_type),
-    fuel_type: cap(v.fuel_type),
-    fuel_mn: cap(v.fuel_type),
-    transmission: cap(v.transmission),
-    transmission_mn: cap(v.transmission),
-    color: cap(v.color),
-    color_mn: cap(v.color),
-    body_type: cap(v.body_type),
-    body_type_mn: cap(v.body_type),
+    fuelType: fuel(v.fuel_type, 'en'),
+    fuel_type: fuel(v.fuel_type, 'en'),
+    fuel_mn: fuel(v.fuel_type, 'mn'),
+    transmission: trans(v.transmission, 'en'),
+    transmission_mn: trans(v.transmission, 'mn'),
+    color: color(v.color, 'en'),
+    color_mn: color(v.color, 'mn'),
+    body_type: body(v.body_type, 'en'),
+    body_type_mn: body(v.body_type, 'mn'),
     seat_count: v.seat_count || 0,
     vin: v.vin || '',
-    location: v.region || '',
-    location_mn: v.region ? `БНСУ, ${v.region}` : '',
+    location: region(v.region, 'en'),
+    location_mn: region(v.region, 'mn'),
     dealer_type: v.seller_type === 'private' ? 'PERSONAL' : 'DEALER',
     image: absoluteUrlToProxyUrl(v.photos?.[0]?.url || ''),
     images: (v.photos || []).map((p) => absoluteUrlToProxyUrl(p.url)),
