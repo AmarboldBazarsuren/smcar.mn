@@ -533,6 +533,12 @@ function buildListUrl(query, opts = {}) {
   const limit = Math.min(100, Math.max(1, Number(query.limit || 20)))
   u.searchParams.set('page', page)
   u.searchParams.set('page_size', limit)
+  // We only want Encar listings. Carapis aggregates from a bunch of
+  // Korean and Japanese platforms (kbchachacha, goonet_exchange,
+  // carsensor, …); without this filter a search for e.g. Lexus NX
+  // returns rivers and gulliver listings the user can't actually
+  // buy from us. Drops the catalog from 26,863 to 20,638 cars.
+  u.searchParams.set('source', 'encar')
   if (query.brand) u.searchParams.set('brand', slugifyBrand(query.brand))
   if (query.model) u.searchParams.set('model', String(query.model).toLowerCase().replace(/\s+/g, '-'))
   if (query.yearFrom) u.searchParams.set('min_year', query.yearFrom)
@@ -597,7 +603,7 @@ router.get('/', async (req, res) => {
 
 router.get('/stats', async (req, res) => {
   try {
-    const u = `${CARAPIS_BASE}/vehicles/?page_size=1`
+    const u = `${CARAPIS_BASE}/vehicles/?source=encar&page_size=1`
     const raw = await cachedGet(u)
     res.set('Cache-Control', CACHE_HEADER)
     res.json({ totalCars: raw.count || 0, highestCarNumber: raw.count || 0, carsByWebsite: [{ website: 'carapis', count: raw.count || 0 }] })
