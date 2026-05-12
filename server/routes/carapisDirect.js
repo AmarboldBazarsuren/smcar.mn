@@ -220,7 +220,7 @@ function isStale(it) { return it && Date.now() - it.time < STALE_TTL }
 
 async function fetchCarapis(url) {
   const headers = { accept: 'application/json' }
-  if (process.env.CARAPIS_API_KEY) headers.authorization = `ApiKey ${process.env.CARAPIS_API_KEY}`
+  if (process.env.CARAPIS_API_KEY) headers.authorization = `Bearer ${process.env.CARAPIS_API_KEY}`
   const r = await fetch(url, { headers, signal: AbortSignal.timeout(15000) })
   if (!r.ok) throw new Error(`carapis ${r.status}`)
   return r.json()
@@ -317,6 +317,15 @@ function normalizeDetail(v) {
   const brand = titleCase(v.brand?.name || '')
   const model = titleCase(v.model?.name || '')
   const displayName = v.display_name ? titleCase(v.display_name.replace(/\(\d+\)/, '').trim()) + (v.year ? ` (${v.year})` : '') : `${brand} ${model}`.trim()
+  // Carapis sometimes returns an absurdly low `price` for near-new listings
+  // (e.g. ₩2.88M for a 2026 Kia Morning with 6 km). When that happens
+  // `original_msrp` carries the real factory price. Fall back to MSRP only
+  // when mileage is tiny AND the gap is huge — leave normal used-car
+  // discounts alone.
+  const rawPrice = Number(v.price) || 0
+  const msrp = Number(v.original_msrp) || 0
+  const mileage = Number(v.mileage) || 0
+  const effectivePrice = (mileage <= 1000 && msrp > 0 && rawPrice > 0 && rawPrice < msrp * 0.3) ? msrp : rawPrice
   return {
     id: v.id,
     encar_id: v.listing_id || v.id,
@@ -328,8 +337,8 @@ function normalizeDetail(v) {
     badge: v.trim || '',
     badge_detail: v.generation || '',
     year: v.year || 0,
-    price: v.price ? Math.round(Number(v.price) / 10000) : 0,
-    original_price_krw: Number(v.price) || 0,
+    price: effectivePrice ? Math.round(effectivePrice / 10000) : 0,
+    original_price_krw: effectivePrice,
     currency: 'KRW',
     mileage: v.mileage || 0,
     displacement: v.engine_cc || 0,
