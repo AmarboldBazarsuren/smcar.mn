@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { fetchCars } from '../../lib/api'
+import { fetchCars, fetchExchangeRate } from '../../lib/api'
 import type { CarFilters } from '../../types'
 
 const BRANDS = [
@@ -16,6 +16,34 @@ const FUEL_TYPES = [
   { value: 'Electric', label: 'Цахилгаан' },
   { value: 'Hybrid', label: 'Хайбрид' },
 ]
+const COLORS = [
+  { value: 'white', label: 'Цагаан' },
+  { value: 'black', label: 'Хар' },
+  { value: 'gray', label: 'Саарал' },
+  { value: 'silver', label: 'Мөнгөлөг' },
+  { value: 'red', label: 'Улаан' },
+  { value: 'blue', label: 'Цэнхэр' },
+  { value: 'yellow', label: 'Шар' },
+  { value: 'green', label: 'Ногоон' },
+  { value: 'brown', label: 'Хүрэн' },
+  { value: 'purple', label: 'Ягаан' },
+  { value: 'orange', label: 'Улбар шар' },
+  { value: 'gold', label: 'Алтлаг' },
+  { value: 'beige', label: 'Цөөвөр' },
+]
+const BODY_TYPES = [
+  { value: 'sedan', label: 'Седан' },
+  { value: 'suv', label: 'SUV' },
+  { value: 'hatchback', label: 'Хетчбэк' },
+  { value: 'coupe', label: 'Купе' },
+  { value: 'convertible', label: 'Кабриолет' },
+  { value: 'wagon', label: 'Вагон' },
+  { value: 'pickup', label: 'Пикап' },
+  { value: 'van', label: 'Вэн' },
+  { value: 'minivan', label: 'Минивэн' },
+  { value: 'crossover', label: 'Кроссовер' },
+  { value: 'truck', label: 'Ачааны' },
+]
 
 interface Props {
   filters: CarFilters
@@ -25,22 +53,39 @@ interface Props {
 }
 
 export default function CarFilter({ filters, onFilterChange, availableBrands, availableModels }: Props) {
-  // Брэнд сонгогдсон бол тухайн брэндийн загваруудыг авах
   const { data: modelData } = useQuery({
     queryKey: ['brandModels', filters.brand],
     queryFn: () => fetchCars({ brand: filters.brand, limit: 500 }),
     enabled: !!filters.brand,
   })
+  const { data: rates } = useQuery({ queryKey: ['exchangeRate'], queryFn: fetchExchangeRate })
 
   const models = modelData?.cars
     ? [...new Set(modelData.cars.map((c) => c.model).filter(Boolean))].sort()
     : []
 
-  const selectClass = "w-full text-[18px] text-gray-700 border border-gray-200 rounded-lg px-3 py-2.5 bg-white focus:outline-none focus:border-gray-400 transition"
-  const inputClass = "w-full text-[18px] text-gray-700 border border-gray-200 rounded-lg px-3 py-2.5 bg-white focus:outline-none focus:border-gray-400 transition placeholder-gray-400"
+  // MNT (сая ₮) ↔ USD conversion. Backend нь min_price/max_price-ыг USD-аар хүлээж байна.
+  const usdPerMillionMnt = rates ? 1_000_000 / rates.usdToMnt : 0
+  const mntMillionToUsd = (m: number | undefined) => (m && usdPerMillionMnt ? Math.round(m * usdPerMillionMnt) : undefined)
+  const usdToMntMillion = (u: number | undefined) => (u && usdPerMillionMnt ? Math.round(u / usdPerMillionMnt) : '')
+
+  const selectClass = 'w-full text-[18px] text-gray-700 border border-gray-200 rounded-lg px-3 py-2.5 bg-white focus:outline-none focus:border-gray-400 transition'
+  const inputClass = 'w-full text-[18px] text-gray-700 border border-gray-200 rounded-lg px-3 py-2.5 bg-white focus:outline-none focus:border-gray-400 transition placeholder-gray-400'
 
   return (
     <div className="space-y-5">
+      {/* Search */}
+      <div>
+        <label className="block text-[14px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Хайх</label>
+        <input
+          type="text"
+          placeholder="Брэнд, загвар, хувилбар"
+          value={filters.search || ''}
+          onChange={(e) => onFilterChange({ search: e.target.value || undefined })}
+          className={inputClass}
+        />
+      </div>
+
       {/* Brand */}
       <div>
         <label className="block text-[14px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Брэнд</label>
@@ -54,7 +99,7 @@ export default function CarFilter({ filters, onFilterChange, availableBrands, av
         </select>
       </div>
 
-      {/* Model (dynamic based on brand, or fixed list for special vehicles) */}
+      {/* Model */}
       {(availableModels || (filters.brand && models.length > 0)) && (
         <div>
           <label className="block text-[14px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Загвар</label>
@@ -65,6 +110,21 @@ export default function CarFilter({ filters, onFilterChange, availableBrands, av
           >
             <option value="">Бүгд</option>
             {(availableModels || models).map((m) => <option key={m} value={m}>{m}</option>)}
+          </select>
+        </div>
+      )}
+
+      {/* Body type */}
+      {!availableModels && (
+        <div>
+          <label className="block text-[14px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Кузов</label>
+          <select
+            value={filters.body_type || ''}
+            onChange={(e) => onFilterChange({ body_type: e.target.value || undefined })}
+            className={selectClass}
+          >
+            <option value="">Бүгд</option>
+            {BODY_TYPES.map((b) => <option key={b.value} value={b.value}>{b.label}</option>)}
           </select>
         </div>
       )}
@@ -97,23 +157,23 @@ export default function CarFilter({ filters, onFilterChange, availableBrands, av
         </div>
       </div>
 
-      {/* Price range (MNT) */}
+      {/* Price range (MNT сая → USD backend) */}
       <div>
         <label className="block text-[14px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Үнэ (сая ₮)</label>
         <div className="flex gap-2">
           <input
             type="number"
             placeholder="Доод"
-            value={filters.priceFrom || ''}
-            onChange={(e) => onFilterChange({ priceFrom: e.target.value ? Number(e.target.value) : undefined })}
+            value={usdToMntMillion(filters.priceFrom)}
+            onChange={(e) => onFilterChange({ priceFrom: e.target.value ? mntMillionToUsd(Number(e.target.value)) : undefined })}
             className={inputClass}
           />
           <span className="text-gray-300 self-center">—</span>
           <input
             type="number"
             placeholder="Дээд"
-            value={filters.priceTo || ''}
-            onChange={(e) => onFilterChange({ priceTo: e.target.value ? Number(e.target.value) : undefined })}
+            value={usdToMntMillion(filters.priceTo)}
+            onChange={(e) => onFilterChange({ priceTo: e.target.value ? mntMillionToUsd(Number(e.target.value)) : undefined })}
             className={inputClass}
           />
         </div>
@@ -159,31 +219,93 @@ export default function CarFilter({ filters, onFilterChange, availableBrands, av
         </div>
       </div>
 
-      {/* Mileage */}
+      {/* Color */}
       <div>
-        <label className="block text-[14px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Макс гүйлт</label>
-        <input
-          type="number"
-          placeholder="км"
-          value={filters.maxMileage || ''}
-          onChange={(e) => onFilterChange({ maxMileage: e.target.value ? Number(e.target.value) : undefined })}
-          className={inputClass}
-        />
+        <label className="block text-[14px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Өнгө</label>
+        <select
+          value={filters.color || ''}
+          onChange={(e) => onFilterChange({ color: e.target.value || undefined })}
+          className={selectClass}
+        >
+          <option value="">Бүгд</option>
+          {COLORS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+        </select>
+      </div>
+
+      {/* Mileage range */}
+      <div>
+        <label className="block text-[14px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Гүйлт (км)</label>
+        <div className="flex gap-2">
+          <input
+            type="number"
+            placeholder="Доод"
+            value={filters.minMileage || ''}
+            onChange={(e) => onFilterChange({ minMileage: e.target.value ? Number(e.target.value) : undefined })}
+            className={inputClass}
+          />
+          <span className="text-gray-300 self-center">—</span>
+          <input
+            type="number"
+            placeholder="Дээд"
+            value={filters.maxMileage || ''}
+            onChange={(e) => onFilterChange({ maxMileage: e.target.value ? Number(e.target.value) : undefined })}
+            className={inputClass}
+          />
+        </div>
+      </div>
+
+      {/* Quality checkboxes */}
+      <div className="space-y-2.5">
+        <label className="block text-[14px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Шалгуур</label>
+        <label className="flex items-center gap-2.5 cursor-pointer group">
+          <input
+            type="checkbox"
+            checked={filters.hasAccident === false}
+            onChange={(e) => onFilterChange({ hasAccident: e.target.checked ? false : undefined })}
+            className="w-4 h-4 accent-primary"
+          />
+          <span className="text-[18px] text-gray-600 group-hover:text-dark transition">Зөвхөн осолгүй</span>
+        </label>
+        <label className="flex items-center gap-2.5 cursor-pointer group">
+          <input
+            type="checkbox"
+            checked={filters.inspectionPassed === true}
+            onChange={(e) => onFilterChange({ inspectionPassed: e.target.checked ? true : undefined })}
+            className="w-4 h-4 accent-primary"
+          />
+          <span className="text-[18px] text-gray-600 group-hover:text-dark transition">Үзлэг хийгдсэн</span>
+        </label>
+        <label className="flex items-center gap-2.5 cursor-pointer group">
+          <input
+            type="checkbox"
+            checked={filters.isNewVehicle === true}
+            onChange={(e) => onFilterChange({ isNewVehicle: e.target.checked ? true : undefined })}
+            className="w-4 h-4 accent-primary"
+          />
+          <span className="text-[18px] text-gray-600 group-hover:text-dark transition">Зөвхөн шинэ машин</span>
+        </label>
       </div>
 
       {/* Reset */}
       <button
         onClick={() =>
           onFilterChange({
+            search: undefined,
             brand: undefined,
             model: undefined,
+            body_type: undefined,
             yearFrom: undefined,
             yearTo: undefined,
             priceFrom: undefined,
             priceTo: undefined,
             fuelType: undefined,
             transmission: undefined,
+            color: undefined,
+            minMileage: undefined,
             maxMileage: undefined,
+            hasAccident: undefined,
+            inspectionPassed: undefined,
+            isNewVehicle: undefined,
           })
         }
         className="w-full text-[16px] font-medium text-gray-500 hover:text-primary underline underline-offset-2 transition py-1"

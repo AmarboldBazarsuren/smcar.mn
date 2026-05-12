@@ -148,17 +148,26 @@ export default function CarDetailNew() {
               {car.is_undervalued && <Tag tone="blue">💎 Зах зээлээс хямд</Tag>}
             </div>
 
-            {car.original_msrp && (
-              <div className="bg-gray-50 border border-gray-200 rounded-2xl p-5">
-                <p className="text-[12px] uppercase tracking-wider text-gray-500 mb-1">Үйлдвэрийн жагсаалтын үнэ (MSRP)</p>
-                <p className="text-[18px] font-semibold text-gray-800">{formatNumber(car.original_msrp)}₩</p>
-              </div>
-            )}
 
             {car.vin && (
               <div className="bg-gray-50 border border-gray-200 rounded-2xl p-5">
                 <p className="text-[12px] uppercase tracking-wider text-gray-500 mb-1">VIN</p>
                 <p className="text-[15px] font-mono text-gray-800">{car.vin}</p>
+              </div>
+            )}
+
+            {/* AI valuation block — Carapis-ийн /catalog_analytics/public хариу */}
+            {car.valuation && car.valuation.has_analysis && (
+              <ValuationBlock valuation={car.valuation} priceUsd={car.price} />
+            )}
+
+            {/* Description — Carapis-аас markdown текст ирдэг */}
+            {car.description && (
+              <div>
+                <h2 className="text-[20px] font-bold mb-4">Дэлгэрэнгүй</h2>
+                <div className="bg-white border border-gray-200 rounded-2xl p-5">
+                  <pre className="text-[14px] text-gray-700 leading-relaxed whitespace-pre-wrap font-sans">{car.description}</pre>
+                </div>
               </div>
             )}
 
@@ -400,6 +409,84 @@ function SpecGrid({ car, cc }: { car: any; cc: number | null }) {
           </div>
         ))}
       </div>
+    </div>
+  )
+}
+
+function ValuationBlock({ valuation, priceUsd }: { valuation: any; priceUsd: number }) {
+  const status = valuation.price_status || ''
+  const statusLabel = status === 'undervalued' ? 'Зах зээлээс хямд' : status === 'overvalued' ? 'Зах зээлээс үнэтэй' : status === 'fair' ? 'Зах зээлийн дунд' : status
+  const statusTone = status === 'undervalued' ? 'text-green-700 bg-green-50 border-green-200' : status === 'overvalued' ? 'text-red-700 bg-red-50 border-red-200' : 'text-gray-700 bg-gray-50 border-gray-200'
+  const pct = valuation.percentile_rank
+  const est = valuation.estimated_price
+  const low = valuation.price_low
+  const high = valuation.price_high
+  const conf = valuation.confidence
+  const llm = valuation.llm_analysis || {}
+  const diff = est && priceUsd ? Math.round(((est - priceUsd) / est) * 100) : null
+  return (
+    <div className={`border rounded-2xl p-5 space-y-4 ${statusTone}`}>
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <p className="text-[12px] uppercase tracking-wider opacity-70 mb-1">AI үнэлгээ</p>
+          <p className="text-[18px] font-bold">{statusLabel || '—'}</p>
+        </div>
+        {typeof pct === 'number' && (
+          <div className="text-right">
+            <p className="text-[12px] opacity-70">Үнэлгээний хувь</p>
+            <p className="text-[20px] font-extrabold">{pct}%</p>
+          </div>
+        )}
+      </div>
+      {(est || low || high) && (
+        <div className="grid grid-cols-3 gap-3 text-center bg-white/50 rounded-xl p-3">
+          {low ? (
+            <div>
+              <p className="text-[11px] opacity-70 mb-0.5">Доод хязгаар</p>
+              <p className="text-[14px] font-semibold">${formatNumber(low)}</p>
+            </div>
+          ) : null}
+          {est ? (
+            <div>
+              <p className="text-[11px] opacity-70 mb-0.5">Тооцоолсон үнэ</p>
+              <p className="text-[14px] font-extrabold">${formatNumber(est)}</p>
+            </div>
+          ) : null}
+          {high ? (
+            <div>
+              <p className="text-[11px] opacity-70 mb-0.5">Дээд хязгаар</p>
+              <p className="text-[14px] font-semibold">${formatNumber(high)}</p>
+            </div>
+          ) : null}
+        </div>
+      )}
+      {diff != null && (
+        <p className="text-[13px] opacity-80">
+          Энэ машин зах зээлийн тооцоолсон үнээс <span className="font-bold">{Math.abs(diff)}% {diff > 0 ? 'хямд' : 'үнэтэй'}</span> байна
+          {typeof conf === 'number' ? ` (итгэлийн оноо: ${conf}%)` : ''}.
+        </p>
+      )}
+      {llm.summary && (
+        <div className="bg-white/60 rounded-xl p-3 text-[13px] leading-relaxed">
+          <p>{llm.summary}</p>
+        </div>
+      )}
+      {Array.isArray(llm.highlights) && llm.highlights.length > 0 && (
+        <div>
+          <p className="text-[12px] uppercase tracking-wider opacity-70 mb-1.5">Давуу тал</p>
+          <ul className="space-y-1 text-[13px]">
+            {llm.highlights.map((h: string, i: number) => <li key={i}>✓ {h}</li>)}
+          </ul>
+        </div>
+      )}
+      {Array.isArray(llm.risks) && llm.risks.length > 0 && (
+        <div>
+          <p className="text-[12px] uppercase tracking-wider opacity-70 mb-1.5">Эрсдэл</p>
+          <ul className="space-y-1 text-[13px]">
+            {llm.risks.map((r: string, i: number) => <li key={i}>⚠ {r}</li>)}
+          </ul>
+        </div>
+      )}
     </div>
   )
 }
