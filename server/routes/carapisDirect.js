@@ -165,6 +165,26 @@ function normalize(v) {
 //   min_price, min_year, model, ordering, page, page_size, search,
 //   source, transmission
 
+// Frontend нь "Mercedes" эсвэл "Mercedes-Benz" дамжуулдаг. Carapis нь
+// slug — lowercase, space → dash — хүлээж байна. Богино alias-уудыг
+// official slug-руу зураглаж нэмэгдсэн нэрсийг dashify.
+const BRAND_ALIAS = {
+  mercedes: 'mercedes-benz',
+  benz: 'mercedes-benz',
+  vw: 'volkswagen',
+  'rolls royce': 'rolls-royce',
+  rollsroyce: 'rolls-royce',
+  'land rover': 'land-rover',
+  'aston martin': 'aston-martin',
+  'renault samsung': 'renault-samsung',
+  'renault korea': 'renault-korea',
+}
+function slugifyBrand(s) {
+  const lower = String(s || '').trim().toLowerCase()
+  if (BRAND_ALIAS[lower]) return BRAND_ALIAS[lower]
+  return lower.replace(/\s+/g, '-')
+}
+
 function passthroughBool(v) {
   if (v === undefined || v === '') return undefined
   if (v === true || v === 'true' || v === '1') return 'true'
@@ -178,7 +198,7 @@ function buildCarapisParams(q) {
     page_size: Math.min(100, Math.max(1, Number(q.limit || 20))),
     source: q.source || 'encar',
   }
-  if (q.brand) params.brand = String(q.brand).toLowerCase()
+  if (q.brand) params.brand = slugifyBrand(q.brand)
   if (q.model) params.model = q.model
   if (q.color) params.color = String(q.color).toLowerCase()
   if (q.yearFrom) params.min_year = q.yearFrom

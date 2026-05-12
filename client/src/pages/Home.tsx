@@ -272,7 +272,7 @@ export default function Home() {
   // Брэнд бүрийн машинууд (тусдаа query)
   const { data: mercedesData, isLoading: mercedesLoading } = useQuery({
     queryKey: ['featuredBrandCars', 'Mercedes'],
-    queryFn: () => fetchCars({ brand: 'Mercedes', limit: 4, sortBy: 'scraped_at', sortOrder: 'desc' }),
+    queryFn: () => fetchCars({ brand: 'Mercedes-Benz', limit: 4, sortBy: 'scraped_at', sortOrder: 'desc' }),
     staleTime: 10 * 60 * 1000,
   })
   const { data: bmwData, isLoading: bmwLoading } = useQuery({
@@ -281,8 +281,8 @@ export default function Home() {
     staleTime: 10 * 60 * 1000,
   })
   const brandQueries = [
-    { brand: 'Mercedes', data: mercedesData, isLoading: mercedesLoading },
-    { brand: 'BMW', data: bmwData, isLoading: bmwLoading },
+    { brand: 'Mercedes-Benz', label: 'Mercedes-Benz', data: mercedesData, isLoading: mercedesLoading },
+    { brand: 'BMW', label: 'BMW', data: bmwData, isLoading: bmwLoading },
   ]
 
   // Гараар оруулсан машинууд
@@ -589,13 +589,13 @@ export default function Home() {
       )}
 
       {/* ===== FEATURED BRAND SECTIONS (Mercedes, BMW, Jeep - 4 ширхэг тус бүр) ===== */}
-      {brandQueries.map(({ brand, data: bData, isLoading: bLoading }) => (
+      {brandQueries.map(({ brand, label, data: bData, isLoading: bLoading }) => (
         <section key={brand} className="bg-white border-t border-gray-100">
           <div className="max-w-[1400px] mx-auto px-4 lg:px-8 py-10">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-[28px] font-bold text-dark">{brand}</h2>
+              <h2 className="text-[28px] font-bold text-dark">{label}</h2>
               <Link
-                to={`/cars?brand=${brand}`}
+                to={`/cars?brand=${encodeURIComponent(brand)}`}
                 className="text-[18px] font-semibold text-gray-500 hover:text-dark transition"
               >
                 Бүгдийг харах →
