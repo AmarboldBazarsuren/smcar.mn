@@ -92,12 +92,16 @@ export default function CarDetailNew() {
   // Prefer Mongolian options; fall back to English when not available.
   const optionsGroups: OptionGroup[] = (car.options_mn && car.options_mn.groups) || (car.options && car.options.groups) || []
 
+  // priceKrw нь Encar-аас ирсэн жинхэнэ зар үнэ (KRW-аар). Хэрэв ирсэн бол
+  // calcPrice-руу `originalPriceKrw` гэж шилжүүлж тэр шууд ашиглана.
+  // Хэрэв Encar fetch амжилтгүй (Carapis-ээс л үнэ) бол price + currency
+  // (USD)-аар convert хийнэ.
   const priceInfo = calcPrice(
-    Number(car.price || car.original_price_krw || 0),
-    car.currency || 'KRW',
+    Number(car.price || 0),
+    car.currency || 'USD',
     rates,
     fees,
-    Number(car.original_price_krw || 0),
+    Number(car.price_krw || car.original_price_krw || 0),
     null,
     cc,
     car.year,
@@ -161,15 +165,6 @@ export default function CarDetailNew() {
               <ValuationBlock valuation={car.valuation} priceUsd={car.price} />
             )}
 
-            {/* Description — Carapis-аас markdown текст ирдэг */}
-            {car.description && (
-              <div>
-                <h2 className="text-[20px] font-bold mb-4">Дэлгэрэнгүй</h2>
-                <div className="bg-white border border-gray-200 rounded-2xl p-5">
-                  <pre className="text-[14px] text-gray-700 leading-relaxed whitespace-pre-wrap font-sans">{car.description}</pre>
-                </div>
-              </div>
-            )}
 
 
             {optionsGroups.length > 0 && (

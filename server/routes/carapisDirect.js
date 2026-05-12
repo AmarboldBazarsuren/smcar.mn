@@ -1,5 +1,6 @@
 const express = require('express')
 const { listVehicles, getVehicle, getValuation } = require('../lib/carapis')
+const { getEncarPrice } = require('../lib/encarPrice')
 
 const router = express.Router()
 const CACHE_HEADER = 'public, max-age=300, stale-while-revalidate=86400'
@@ -268,15 +269,29 @@ router.get('/stats', async (_req, res) => {
   }
 })
 
-// GET /api/cars/:id — detail (id нь UUID эсвэл Encar listing_id)
+// Encar-аас priceKrw татаж нэг машины normalize хариунд нэмж буцаа.
+// Carapis-ийн price_usd нь Encar 만원 утгыг "USD" гэж buруу label хийдэг
+// machines-тэй учир жинхэнэ KRW үнэ хэрэгтэй. Encar амжилтгүй бол
+// fallback — Carapis price хэвээр.
+function applyEncarPrice(base, encar) {
+  if (!encar) return base
+  const out = { ...base, price_krw: encar.priceKrw }
+  if (encar.originPriceKrw) out.origin_price_krw = encar.originPriceKrw
+  if (encar.oneLineText) out.encar_tagline = encar.oneLineText
+  return out
+}
+
+// GET /api/cars/:id — detail (id нь UUID эсвэл Encar listing_id) + Encar price
 router.get('/:id', async (req, res) => {
   try {
     const uuid = resolveCarId(req.params.id)
     if (!uuid) return res.status(404).json({ error: 'unknown carId' })
     const raw = await getVehicle(uuid)
     rememberListing(raw)
+    const base = normalize(raw)
+    const encar = await getEncarPrice(base.encar_id).catch(() => null)
     res.set('Cache-Control', CACHE_HEADER)
-    res.json(normalize(raw))
+    res.json(applyEncarPrice(base, encar))
   } catch (err) {
     if (/404/.test(err.message)) return res.status(404).json({ error: 'unknown carId' })
     console.error('carapis detail error:', err.message)
@@ -284,21 +299,23 @@ router.get('/:id', async (req, res) => {
   }
 })
 
-// GET /api/cars/:id/full — detail + AI valuation (parallel + valuation timeout 3s)
+// GET /api/cars/:id/full — detail + Encar price + AI valuation
 router.get('/:id/full', async (req, res) => {
   try {
     const uuid = resolveCarId(req.params.id)
     if (!uuid) return res.status(404).json({ error: 'unknown carId' })
-    const [raw, valuation] = await Promise.all([
-      getVehicle(uuid),
+    const raw = await getVehicle(uuid)
+    rememberListing(raw)
+    const base = normalize(raw)
+    const [encar, valuation] = await Promise.all([
+      getEncarPrice(base.encar_id).catch(() => null),
       getValuation(uuid).catch((e) => {
         if (!/timeout/i.test(e.message)) console.warn('valuation fail:', e.message)
         return null
       }),
     ])
-    rememberListing(raw)
     res.set('Cache-Control', CACHE_HEADER)
-    res.json({ ...normalize(raw), valuation })
+    res.json({ ...applyEncarPrice(base, encar), valuation })
   } catch (err) {
     if (/404/.test(err.message)) return res.status(404).json({ error: 'unknown carId' })
     console.error('carapis detail/full error:', err.message)
