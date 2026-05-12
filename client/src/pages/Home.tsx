@@ -244,25 +244,27 @@ export default function Home() {
   const heroFeaturedId = featuredList?.find((f) => f.position === 'hero')?.carId
   const middleFeaturedId = featuredList?.find((f) => f.position === 'middle')?.carId
 
-  // Hero featured car data
+  // Hero featured car data — featured carId Carapis-аас 404 ирвэл fallback-руу
+  // унаагуй, шууд null болгоно.
   const { data: heroCarData } = useQuery({
     queryKey: ['car', heroFeaturedId],
-    queryFn: () => fetchCarFull(heroFeaturedId!),
+    queryFn: () => fetchCarFull(heroFeaturedId!).catch(() => null),
     enabled: !!heroFeaturedId,
+    retry: false,
   })
 
-  // Middle featured car data
   const { data: middleCarData } = useQuery({
     queryKey: ['car', middleFeaturedId],
-    queryFn: () => fetchCarFull(middleFeaturedId!),
+    queryFn: () => fetchCarFull(middleFeaturedId!).catch(() => null),
     enabled: !!middleFeaturedId,
+    retry: false,
   })
 
   // Fallback featured (хамгийн үнэтэй машин)
   const { data: fallbackFeatured } = useQuery({
     queryKey: ['fallbackFeatured'],
     queryFn: () => fetchCars({ sortBy: 'price', sortOrder: 'desc', limit: 1 }),
-    enabled: !heroFeaturedId,
+    enabled: !heroFeaturedId || heroCarData === null,
   })
 
   const heroCar = heroCarData || fallbackFeatured?.cars?.[0]
@@ -670,7 +672,7 @@ function HeroFeaturedCard({ car, rates }: { car: Car; rates?: ExchangeRate }) {
 
   return (
     <Link
-      to={`/cars/${car.id}`}
+      to={`/cars/${car.encar_id || car.id}`}
       className="block bg-gray-900 rounded-xl overflow-hidden h-full relative group"
     >
       {imgs.length > 0 && (
@@ -734,7 +736,7 @@ function MiddleFeaturedCard({ car, rates }: { car: Car; rates?: ExchangeRate }) 
 
   return (
     <Link
-      to={`/cars/${car.id}`}
+      to={`/cars/${car.encar_id || car.id}`}
       className="block rounded-xl overflow-hidden relative group"
     >
       <div className="grid grid-cols-1 lg:grid-cols-2 bg-gray-900 rounded-xl overflow-hidden">
@@ -800,7 +802,7 @@ function MiddleFeaturedCard({ car, rates }: { car: Car; rates?: ExchangeRate }) 
 /* ===== Compact Car Card ===== */
 function CompactCarCard({ car, rates }: { car: Car; rates?: ExchangeRate }) {
   return (
-    <Link to={`/cars/${car.id}`} className="group bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+    <Link to={`/cars/${car.encar_id || car.id}`} className="group bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow">
       <div className="relative bg-gray-50 aspect-[4/3] overflow-hidden">
         <img
           src={getImageUrl(car.image)}

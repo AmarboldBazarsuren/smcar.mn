@@ -4,6 +4,30 @@ const { listVehicles, getVehicle, getValuation } = require('../lib/carapis')
 const router = express.Router()
 const CACHE_HEADER = 'public, max-age=300, stale-while-revalidate=86400'
 
+// Encar listing_id (8-9 digit) ↔ Carapis UUID resolver.
+// Carapis нь listing_id-аар хайх боломжгүй (filter ажиллахгүй, search нь
+// text field-ээр хайдаг). Тиймээс жагсаалт буцаах болгонд бүх машинд
+// map-аа шинэчилнэ. Хэрэглэгч жагсаалтаас машин сонгох тохиолдолд
+// resolve амжилттай. Direct deep-link (refresh, share) үед map дотор
+// байхгүй машинд 404 буцаана.
+const listingToUuid = new Map()
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const LISTING_RE = /^\d{6,}$/
+
+function rememberListing(carapisVehicle) {
+  if (!carapisVehicle) return
+  const lid = carapisVehicle.listing_id
+  const uuid = carapisVehicle.id
+  if (lid && uuid) listingToUuid.set(String(lid), uuid)
+}
+
+function resolveCarId(raw) {
+  if (!raw) return null
+  if (UUID_RE.test(raw)) return raw
+  if (LISTING_RE.test(raw)) return listingToUuid.get(raw) || null
+  return null
+}
+
 // ===== Normalisation =====
 
 function titleCase(s) {
@@ -98,6 +122,7 @@ function buildCarapisParams(q) {
     source: q.source || 'encar',
   }
   if (q.brand) params.brand = String(q.brand).toLowerCase()
+  if (q.model) params.model = q.model
   if (q.yearFrom) params.min_year = q.yearFrom
   if (q.yearTo) params.max_year = q.yearTo
   if (q.priceFrom) params.min_price = q.priceFrom
@@ -130,9 +155,11 @@ function buildCarapisParams(q) {
 router.get('/', async (req, res) => {
   try {
     const raw = await listVehicles(buildCarapisParams(req.query))
+    const results = raw.results || []
+    results.forEach(rememberListing)
     res.set('Cache-Control', CACHE_HEADER)
     res.json({
-      cars: (raw.results || []).map(normalize),
+      cars: results.map(normalize),
       total: raw.count || 0,
       page: raw.page || 1,
       totalPages: raw.pages || 1,
@@ -158,10 +185,13 @@ router.get('/stats', async (_req, res) => {
   }
 })
 
-// GET /api/cars/:id — detail
+// GET /api/cars/:id — detail (id нь UUID эсвэл Encar listing_id)
 router.get('/:id', async (req, res) => {
   try {
-    const raw = await getVehicle(req.params.id)
+    const uuid = resolveCarId(req.params.id)
+    if (!uuid) return res.status(404).json({ error: 'unknown carId' })
+    const raw = await getVehicle(uuid)
+    rememberListing(raw)
     res.set('Cache-Control', CACHE_HEADER)
     res.json(normalize(raw))
   } catch (err) {
@@ -171,19 +201,18 @@ router.get('/:id', async (req, res) => {
   }
 })
 
-// GET /api/cars/:id/full — detail + AI valuation
+// GET /api/cars/:id/full — detail + AI valuation (parallel fetch)
 router.get('/:id/full', async (req, res) => {
   try {
-    const raw = await getVehicle(req.params.id)
-    const base = normalize(raw)
-    let valuation = null
-    try {
-      valuation = await getValuation(req.params.id)
-    } catch (e) {
-      console.warn('valuation fail:', e.message)
-    }
+    const uuid = resolveCarId(req.params.id)
+    if (!uuid) return res.status(404).json({ error: 'unknown carId' })
+    const [raw, valuation] = await Promise.all([
+      getVehicle(uuid),
+      getValuation(uuid).catch((e) => { console.warn('valuation fail:', e.message); return null }),
+    ])
+    rememberListing(raw)
     res.set('Cache-Control', CACHE_HEADER)
-    res.json({ ...base, valuation })
+    res.json({ ...normalize(raw), valuation })
   } catch (err) {
     if (/404/.test(err.message)) return res.status(404).json({ error: 'unknown carId' })
     console.error('carapis detail/full error:', err.message)

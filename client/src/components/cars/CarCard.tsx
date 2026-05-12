@@ -11,7 +11,7 @@ interface CarCardProps {
 export default function CarCard({ car, rates }: CarCardProps) {
   return (
     <Link
-      to={`/cars/${car.id}`}
+      to={`/cars/${car.encar_id || car.id}`}
       className="group bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-200"
     >
       {/* Image */}
