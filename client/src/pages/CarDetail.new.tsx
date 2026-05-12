@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
   fetchCarFull,
+  fetchCarValuation,
   fetchExchangeRate,
   fetchFeeSettings,
   getImageUrl,
@@ -29,6 +30,16 @@ export default function CarDetailNew() {
     queryKey: ['car', id],
     queryFn: () => fetchCarFull(id!),
     enabled: !!id,
+  })
+
+  // AI valuation tail-load (Carapis LLM cold-start 30+ секунд).
+  // Detail хурдан ирэх ёстой, valuation сүүлдээ.
+  const { data: valuation } = useQuery({
+    queryKey: ['carValuation', id],
+    queryFn: () => fetchCarValuation(id!).catch(() => null),
+    enabled: !!id,
+    staleTime: 5 * 60 * 1000,
+    retry: false,
   })
 
   const { data: rates } = useQuery({ queryKey: ['exchangeRate'], queryFn: fetchExchangeRate })
@@ -160,9 +171,9 @@ export default function CarDetailNew() {
               </div>
             )}
 
-            {/* AI valuation block — Carapis-ийн /catalog_analytics/public хариу */}
-            {car.valuation && car.valuation.has_analysis && (
-              <ValuationBlock valuation={car.valuation} priceUsd={car.price} />
+            {/* AI valuation block — async tail load */}
+            {valuation && valuation.has_analysis && (
+              <ValuationBlock valuation={valuation} priceUsd={car.price} />
             )}
 
 

@@ -60,9 +60,15 @@ export async function fetchCar(id: string): Promise<Car> {
   return data
 }
 
-// Машины бүрэн мэдээлэл авах
+// Машины бүрэн мэдээлэл авах (Encar-ийн жинхэнэ KRW үнэ-тэй, valuation БУС)
 export async function fetchCarFull(id: string): Promise<Car> {
   const { data } = await api.get(`/cars/${id}/full`)
+  return data
+}
+
+// AI valuation lazy fetch — анх удаа LLM-аар 30+ секунд авч магадгүй.
+export async function fetchCarValuation(id: string) {
+  const { data } = await api.get(`/cars/${id}/valuation`)
   return data
 }
 

@@ -299,7 +299,9 @@ router.get('/:id', async (req, res) => {
   }
 })
 
-// GET /api/cars/:id/full — detail + Encar price + AI valuation
+// GET /api/cars/:id/full — back-compat alias of detail
+// Valuation-ыг хасч хэрэглэгчид хариу хурдан өгнө. AI valuation-ыг
+// frontend нь /api/cars/:id/valuation-аар async/lazy дуудна.
 router.get('/:id/full', async (req, res) => {
   try {
     const uuid = resolveCarId(req.params.id)
@@ -307,18 +309,30 @@ router.get('/:id/full', async (req, res) => {
     const raw = await getVehicle(uuid)
     rememberListing(raw)
     const base = normalize(raw)
-    const [encar, valuation] = await Promise.all([
-      getEncarPrice(base.encar_id).catch(() => null),
-      getValuation(uuid).catch((e) => {
-        if (!/timeout/i.test(e.message)) console.warn('valuation fail:', e.message)
-        return null
-      }),
-    ])
+    const encar = await getEncarPrice(base.encar_id).catch(() => null)
     res.set('Cache-Control', CACHE_HEADER)
-    res.json({ ...applyEncarPrice(base, encar), valuation })
+    res.json({ ...applyEncarPrice(base, encar), valuation: null })
   } catch (err) {
     if (/404/.test(err.message)) return res.status(404).json({ error: 'unknown carId' })
     console.error('carapis detail/full error:', err.message)
+    res.status(502).json({ error: err.message })
+  }
+})
+
+// GET /api/cars/:id/valuation — AI valuation (separate slow endpoint).
+// Анх удаа машин дээр Carapis LLM 30+ секунд cold-start болдог; frontend
+// нь үүнийг tail-load хийж detail хариунд хүлэлцэхгүй.
+router.get('/:id/valuation', async (req, res) => {
+  try {
+    const uuid = resolveCarId(req.params.id)
+    if (!uuid) return res.status(404).json({ error: 'unknown carId' })
+    const val = await getValuation(uuid).catch((e) => {
+      if (!/timeout/i.test(e.message)) console.warn('valuation fail:', e.message)
+      return null
+    })
+    res.set('Cache-Control', CACHE_HEADER)
+    res.json(val || { has_analysis: false })
+  } catch (err) {
     res.status(502).json({ error: err.message })
   }
 })
