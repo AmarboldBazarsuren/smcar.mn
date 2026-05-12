@@ -169,6 +169,35 @@ async function fetchEncarDetail(carId) {
   }
 }
 
+// Synchronous map-only lookup. Use this in hot paths like normalizeList
+// where calling Encar's search per car would be way too slow. Returns
+// null both when the mapping is unknown and when a previous lookup
+// already determined the car has no match.
+function getCachedEncarCarId(uuid) {
+  if (!uuid) return null
+  return map[uuid] || null
+}
+
+// Reverse index (Encar carId → Carapis UUID) for resolving short
+// `/cars/<carId>` URLs back to the Carapis UUID we actually need to
+// fetch detail from. The forward map is the source of truth; we
+// rebuild the inverse lazily and invalidate whenever forward map
+// changes via the `inverseStale` flag.
+let inverse = null
+let inverseStale = true
+function rebuildInverse() {
+  inverse = {}
+  for (const [uuid, cid] of Object.entries(map)) {
+    if (cid) inverse[String(cid)] = uuid
+  }
+  inverseStale = false
+}
+function findUuidByEncarCarId(carId) {
+  if (!carId) return null
+  if (inverseStale) rebuildInverse()
+  return inverse[String(carId)] || null
+}
+
 // Public: given a normalized Carapis car object, return the matching
 // Encar carId (cached forever on disk). Returns null when no match.
 async function resolveEncarCarId(car) {
@@ -177,6 +206,7 @@ async function resolveEncarCarId(car) {
   const carId = await findEncarCarId(car)
   map[car.id] = carId // store null too, so we don't keep retrying misses
   dirty = true
+  inverseStale = true
   return carId
 }
 
@@ -220,4 +250,6 @@ module.exports = {
   fetchEncarDetail,
   fetchEncarForCar,
   fetchEncarOptions,
+  getCachedEncarCarId,
+  findUuidByEncarCarId,
 }

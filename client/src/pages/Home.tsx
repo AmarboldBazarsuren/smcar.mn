@@ -670,7 +670,7 @@ function HeroFeaturedCard({ car, rates }: { car: Car; rates?: ExchangeRate }) {
 
   return (
     <Link
-      to={`/cars/${car.id}`}
+      to={`/cars/${car.encar_id || car.id}`}
       className="block bg-gray-900 rounded-xl overflow-hidden h-full relative group"
     >
       {imgs.length > 0 && (
@@ -734,7 +734,7 @@ function MiddleFeaturedCard({ car, rates }: { car: Car; rates?: ExchangeRate }) 
 
   return (
     <Link
-      to={`/cars/${car.id}`}
+      to={`/cars/${car.encar_id || car.id}`}
       className="block rounded-xl overflow-hidden relative group"
     >
       <div className="grid grid-cols-1 lg:grid-cols-2 bg-gray-900 rounded-xl overflow-hidden">
@@ -800,7 +800,7 @@ function MiddleFeaturedCard({ car, rates }: { car: Car; rates?: ExchangeRate }) 
 /* ===== Compact Car Card ===== */
 function CompactCarCard({ car, rates }: { car: Car; rates?: ExchangeRate }) {
   return (
-    <Link to={`/cars/${car.id}`} className="group bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+    <Link to={`/cars/${car.encar_id || car.id}`} className="group bg-white rounded-lg overflow-hidden hover:shadow-md transition-shadow">
       <div className="relative bg-gray-50 aspect-[4/3] overflow-hidden">
         <img
           src={getImageUrl(car.image)}

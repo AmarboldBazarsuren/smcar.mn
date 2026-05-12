@@ -11,7 +11,14 @@ const express = require('express')
 const fs = require('fs')
 const path = require('path')
 const { absoluteUrlToProxyUrl } = require('./photoProxy')
-const { fetchEncarForCar, fetchEncarOptions } = require('../lib/encarLookup')
+const { fetchEncarForCar, fetchEncarOptions, getCachedEncarCarId, findUuidByEncarCarId } = require('../lib/encarLookup')
+
+// Carapis IDs are UUIDs ("d1b31a20-1e6d-…"); Encar carIds are pure
+// digits ("41992910"). Use the shape to decide which lookup to run.
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+function looksLikeEncarCarId(id) {
+  return typeof id === 'string' && /^\d+$/.test(id)
+}
 
 const router = express.Router()
 
@@ -255,9 +262,12 @@ function normalizeList(v) {
   const brand = titleCase(v.brand?.name || '')
   const model = titleCase(v.model?.name || '')
   const displayName = v.display_name ? titleCase(v.display_name.replace(/\(\d+\)/, '').trim()) + (v.year ? ` (${v.year})` : '') : `${brand} ${model}`.trim()
+  // Prefer a cached Encar carId for clean numeric URLs; the UUID is
+  // still the canonical Carapis id and gets returned separately.
+  const cachedCarId = getCachedEncarCarId(v.id)
   return {
     id: v.id,
-    encar_id: v.listing_id || v.id,
+    encar_id: v.listing_id || cachedCarId || v.id,
     title: displayName,
     brand,
     model,
@@ -559,9 +569,22 @@ router.get('/stats', async (req, res) => {
   }
 })
 
+// Detail routes accept either a Carapis UUID or an Encar carId (pure
+// digits). When the request comes in with an Encar carId we look up
+// the matching UUID from our reverse map and fetch Carapis with that.
+// If the carId isn't in the map yet, return 404 — only cars whose
+// lookup already ran can be reached via the short URL.
+function resolveCarapisUuid(rawId) {
+  if (!rawId) return null
+  if (looksLikeEncarCarId(rawId)) return findUuidByEncarCarId(rawId)
+  return rawId // assume it's already a UUID (or whatever Carapis expects)
+}
+
 router.get('/:id', async (req, res) => {
   try {
-    const raw = await cachedGet(`${CARAPIS_BASE}/vehicles${DETAIL_PATH}/${req.params.id}/`)
+    const uuid = resolveCarapisUuid(req.params.id)
+    if (!uuid) return res.status(404).json({ error: 'unknown carId' })
+    const raw = await cachedGet(`${CARAPIS_BASE}/vehicles${DETAIL_PATH}/${uuid}/`)
     res.set('Cache-Control', CACHE_HEADER)
     res.json(normalizeDetail(raw))
   } catch (err) {
@@ -572,7 +595,9 @@ router.get('/:id', async (req, res) => {
 
 router.get('/:id/full', async (req, res) => {
   try {
-    const raw = await cachedGet(`${CARAPIS_BASE}/vehicles${DETAIL_PATH}/${req.params.id}/`)
+    const uuid = resolveCarapisUuid(req.params.id)
+    if (!uuid) return res.status(404).json({ error: 'unknown carId' })
+    const raw = await cachedGet(`${CARAPIS_BASE}/vehicles${DETAIL_PATH}/${uuid}/`)
     const base = normalizeDetail(raw)
     const enriched = await enrichDetail(base)
     res.set('Cache-Control', CACHE_HEADER)

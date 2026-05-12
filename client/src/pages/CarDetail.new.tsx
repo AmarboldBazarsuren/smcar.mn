@@ -31,6 +31,17 @@ export default function CarDetailNew() {
     enabled: !!id,
   })
 
+  // Canonicalize the URL: if we landed on /cars/<uuid> but Carapis-side
+  // enrichment has resolved a clean Encar carId, silently rewrite the
+  // address bar so sharing the URL gives the short form.
+  useEffect(() => {
+    if (!car?.encar_id || !id) return
+    const ecId = String(car.encar_id)
+    if (/^\d+$/.test(ecId) && id !== ecId) {
+      window.history.replaceState(null, '', `/cars/${ecId}`)
+    }
+  }, [car?.encar_id, id])
+
   const { data: rates } = useQuery({ queryKey: ['exchangeRate'], queryFn: fetchExchangeRate })
   const { data: fees } = useQuery({ queryKey: ['feeSettings'], queryFn: fetchFeeSettings })
   // CC + canonical price come from the active data source (Carapis) — no
