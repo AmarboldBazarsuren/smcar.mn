@@ -3,7 +3,9 @@ const { listVehicles, getVehicle, getValuation } = require('../lib/carapis')
 const { getEncarPrice } = require('../lib/encarPrice')
 
 const router = express.Router()
-const CACHE_HEADER = 'public, max-age=300, stale-while-revalidate=86400'
+// 24 цагийн browser+CDN cache. Backend in-memory cache хадгалагдсан мэдээллийг
+// хэрэглэгчийн хооронд хуваалцана; nginx ч мөн дамжуулна.
+const CACHE_HEADER = 'public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800'
 
 // Encar listing_id (8-9 digit) ↔ Carapis UUID resolver. Carapis нь
 // listing_id-аар хайх боломжгүй; жагсаалт буцаах болгонд бүх машинд
@@ -235,9 +237,36 @@ function buildCarapisParams(q) {
 
 // ===== Routes =====
 
-// GET /api/cars — жагсаалт
+// Commercial body types — "Тусгай зориулалт" хэсэгт нийлүүлж харуулна.
+const SPECIAL_BODY_TYPES = ['truck', 'van', 'minivan', 'pickup', 'bus']
+
+// GET /api/cars — жагсаалт. vehicleType=special үед олон body_type-ыг
+// parallel татаж нэгтгэнэ (Carapis нэг л body_type хүлээдэг).
 router.get('/', async (req, res) => {
   try {
+    if (req.query.vehicleType === 'special') {
+      const page = Math.max(1, Number(req.query.page || 1))
+      const limit = Math.min(100, Math.max(1, Number(req.query.limit || 20)))
+      const subQueries = SPECIAL_BODY_TYPES.map((bt) =>
+        listVehicles(buildCarapisParams({ ...req.query, body_type: bt, page: 1, limit: 100, vehicleType: undefined }))
+          .catch(() => ({ results: [] }))
+      )
+      const subResults = await Promise.all(subQueries)
+      const merged = subResults.flatMap((r) => r.results || [])
+      merged.forEach(rememberListing)
+      // Newest first
+      merged.sort((a, b) => (Number(b.year) || 0) - (Number(a.year) || 0) || (Number(a.mileage) || 0) - (Number(b.mileage) || 0))
+      const start = (page - 1) * limit
+      const slice = merged.slice(start, start + limit).map(normalize)
+      res.set('Cache-Control', CACHE_HEADER)
+      return res.json({
+        cars: slice,
+        total: merged.length,
+        page,
+        totalPages: Math.max(1, Math.ceil(merged.length / limit)),
+      })
+    }
+
     const raw = await listVehicles(buildCarapisParams(req.query))
     const results = raw.results || []
     results.forEach(rememberListing)

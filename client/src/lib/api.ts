@@ -18,23 +18,14 @@ const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : '/api',
 })
 
-// Cache-busting build version: Vite stamps this at build time so every
-// fresh deploy invalidates the browser's HTTP cache automatically.
-// Changing it forces a "Cache MISS" on every API URL without the user
-// needing to hard-refresh.
-const BUILD_VERSION = String(import.meta.env.VITE_BUILD_VERSION || Date.now())
-
-// Admin token interceptor + cache-buster version param
+// Admin token interceptor. Cache-busting ?v=BUILD_VERSION-ыг хасав:
+// backend нь 24h Cache-Control буцаадаг бөгөөд хэрэглэгчийн хооронд
+// browser HTTP cache хуваалцагддаг — нэг хэрэглэгч нэг URL татаж авмагц
+// дараагийн хэрэглэгч нь request явуулахгүй cache-ээс үзнэ.
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('adminToken')
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
-  }
-  // Append ?v=BUILD_VERSION to /cars endpoints so the URL changes with
-  // each deploy. Skip endpoints where stable URLs matter (e.g. uploads).
-  const url = String(config.url || '')
-  if (url.startsWith('/cars')) {
-    config.params = { ...(config.params || {}), v: BUILD_VERSION }
   }
   return config
 })
