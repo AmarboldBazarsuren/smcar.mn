@@ -142,8 +142,13 @@ async function findEncarCarId(car) {
     const data = await r.json()
     const hits = Array.isArray(data?.SearchResults) ? data.SearchResults : []
     if (hits.length === 0) return null
+    // Require a brand-name match. If no hit shares our brand we'd
+    // rather show no listing_url than confidently link to the wrong
+    // car. Earlier we fell back to the first hit when the brand
+    // didn't match — that produced misleading "this car on encar.com"
+    // buttons that opened a different model.
     const matchByBrand = hits.find((h) => brandMatches(car.brand, h.Manufacturer))
-    return String((matchByBrand || hits[0]).Id)
+    return matchByBrand ? String(matchByBrand.Id) : null
   } catch (e) {
     console.error('[encar lookup] search fail:', e.message)
     return null
