@@ -188,6 +188,32 @@ function slugifyBrand(s) {
   return lower.replace(/\s+/g, '-')
 }
 
+// Carapis model slug нь lowercase + dash. Frontend нь "Porter 2", "Porter Ii"
+// гэх шиг display нэрүүдийг дамжуулдаг — slug-руу хөрвүүлж тус тус
+// commercial nameplate-уудыг alias-аар нэмье (Porter → porter-2, Bongo →
+// bongo-3 гэх мэт, Carapis-ийн жинхэнэ slug-той тааруулна).
+const MODEL_ALIAS = {
+  porter: 'porter-2',
+  bongo: 'bongo-3',
+  'bongo iii': 'bongo-3',
+  'bongo 3': 'bongo-3',
+  county: 'county',
+  mighty: 'mighty',
+  starex: 'starex',
+  staria: 'staria',
+  solati: 'solati',
+  colorado: 'colorado',
+  master: 'master',
+  truck: 'truck',
+  xcient: 'xcient',
+  universe: 'universe',
+}
+function slugifyModel(s) {
+  const lower = String(s || '').trim().toLowerCase()
+  if (MODEL_ALIAS[lower]) return MODEL_ALIAS[lower]
+  return lower.replace(/\s+/g, '-')
+}
+
 function passthroughBool(v) {
   if (v === undefined || v === '') return undefined
   if (v === true || v === 'true' || v === '1') return 'true'
@@ -199,10 +225,12 @@ function buildCarapisParams(q) {
   const params = {
     page: Math.max(1, Number(q.page || 1)),
     page_size: Math.min(100, Math.max(1, Number(q.limit || 20))),
-    source: q.source || 'encar',
   }
+  // `source` нь default 'encar'. Хоосон string дамжуулсан бол source filter-гүй —
+  // commercial машинуудыг kbchachacha-аас ч авах боломжтой (vehicleType=special).
+  if (q.source !== '') params.source = q.source || 'encar'
   if (q.brand) params.brand = slugifyBrand(q.brand)
-  if (q.model) params.model = q.model
+  if (q.model) params.model = slugifyModel(q.model)
   if (q.color) params.color = String(q.color).toLowerCase()
   if (q.yearFrom) params.min_year = q.yearFrom
   if (q.yearTo) params.max_year = q.yearTo
@@ -238,19 +266,29 @@ function buildCarapisParams(q) {
 // ===== Routes =====
 
 // Commercial body types — "Тусгай зориулалт" хэсэгт нийлүүлж харуулна.
-const SPECIAL_BODY_TYPES = ['truck', 'van', 'minivan', 'pickup', 'bus']
+// bus-ыг хассан учир Carapis-аас bus body_type-д машин байхгүй.
+const SPECIAL_BODY_TYPES = ['truck', 'van', 'minivan', 'pickup']
 
 // GET /api/cars — жагсаалт. vehicleType=special үед олон body_type-ыг
-// parallel татаж нэгтгэнэ (Carapis нэг л body_type хүлээдэг).
+// parallel татаж нэгтгэнэ (Carapis нэг л body_type хүлээдэг). Хэрэв
+// model filter дамжуулагдсан (e.g. Porter chip) — тэр slug-аар тусдаа
+// single query хийнэ (model+body_type combination Carapis-аас 0 буцаадаг).
 router.get('/', async (req, res) => {
   try {
     if (req.query.vehicleType === 'special') {
       const page = Math.max(1, Number(req.query.page || 1))
       const limit = Math.min(100, Math.max(1, Number(req.query.limit || 20)))
-      const subQueries = SPECIAL_BODY_TYPES.map((bt) =>
-        listVehicles(buildCarapisParams({ ...req.query, body_type: bt, page: 1, limit: 100, vehicleType: undefined }))
-          .catch(() => ({ results: [] }))
-      )
+      // Korean commercial машинуудын ихэнх нь зөвхөн kbchachacha source-аас
+      // ирнэ (Porter, Bongo, Mighty гэх мэт). Encar-аас гадуур source-уудыг
+      // тусгай хэсэгт зөвшөөрнө — энэ нэг хэсэгт source filter-ыг хасна.
+      const special = { ...req.query, page: 1, limit: 100, vehicleType: undefined, source: '' }
+      // model тодорхой сонгогдсон бол body_type filter-гүйгээр model-ээр л хайна
+      const subQueries = special.model
+        ? [listVehicles(buildCarapisParams(special)).catch(() => ({ results: [] }))]
+        : SPECIAL_BODY_TYPES.map((bt) =>
+            listVehicles(buildCarapisParams({ ...special, body_type: bt }))
+              .catch(() => ({ results: [] }))
+          )
       const subResults = await Promise.all(subQueries)
       const merged = subResults.flatMap((r) => r.results || [])
       merged.forEach(rememberListing)

@@ -46,7 +46,9 @@ export default function CarList() {
   if (isVehicleTypeFilter) apiFilters.vehicleType = vehicleType
 
   // Used only for the model chip list in the toolbar.
-  const SPECIAL_MODELS = ['Porter', 'Bongo', 'County', 'Mighty', 'Starex', 'Staria', 'Solati', 'Colorado', 'Master', 'Truck', 'Xcient', 'Universe']
+  // Carapis-аас тодорхой машинтай commercial nameplate-ууд. "Truck", "Xcient",
+  // "Universe" — Carapis-аас байхгүй учир chip-аас хасав.
+  const SPECIAL_MODELS = ['Porter', 'Bongo', 'County', 'Mighty', 'Starex', 'Staria', 'Solati', 'Colorado', 'Master']
 
   // Backend нь vehicleType=special-ийг өөрөө таниад commercial body types
   // (truck/van/minivan/pickup/bus)-аар нийлүүлж буцаана.
