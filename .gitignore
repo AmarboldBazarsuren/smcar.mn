@@ -12,3 +12,4 @@ image copy*.png
 server/image.png
 server/image copy*.png
 client/image.png
+.claude/
