@@ -115,6 +115,10 @@ function buildCarapisParams(q) {
     if (field) {
       const sign = String(q.sortOrder || 'desc') === 'asc' ? '' : '-'
       params.ordering = sign + field
+      // Carapis-ийн DRF ordering нь NULL-ыг хамгийн их гэж үздэг учир -year
+      // үед year=null машинууд эхэндээ гарна. Хэрвээ filter дамжуулаагүй
+      // нөхцөлд default min_year=1990 нэмж энэ муухай эффектийг хасна.
+      if (field === 'year' && sign === '-' && !params.min_year) params.min_year = 1990
     }
   }
   return params
