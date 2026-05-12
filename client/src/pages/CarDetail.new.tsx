@@ -490,12 +490,15 @@ function calcPrice(
   } else if (originalPriceKrw && originalPriceKrw > 0) {
     priceKrw = originalPriceKrw
     manwon = Math.round(priceKrw / 10000)
+  } else if (currency === 'USD' && rates) {
+    // Carapis нь price_usd-аар буцаадаг. MNT-руу хөрвүүлээд тэндээс KRW гарга.
+    priceKrw = Math.round((price * rates.usdToMnt) / rates.wonToMnt)
+    manwon = Math.round(priceKrw / 10000)
   } else if (currency === 'EUR' && rates) {
-    priceKrw = Math.round(price * rates.euroToMnt / rates.wonToMnt)
+    priceKrw = Math.round((price * rates.euroToMnt) / rates.wonToMnt)
     manwon = Math.round(priceKrw / 10000)
   } else {
-    // Both legacy apicars.info and our new Encar proxy return prices
-    // in 万원 (10,000-KRW units), so the raw `price` is manwon.
+    // Хуучин KRW: raw `price` нь 万원 (10,000-KRW units).
     manwon = Math.round(price)
     priceKrw = manwon * 10000
   }

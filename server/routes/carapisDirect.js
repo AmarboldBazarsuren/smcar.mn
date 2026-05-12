@@ -11,8 +11,6 @@ function titleCase(s) {
   return String(s).split(/[\s-]+/).map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ')
 }
 
-// Carapis fuel_type-ийг frontend label руу хөрвүүлэх.
-// Frontend нь "Gasoline", "Diesel", "Electric", "Hybrid", "LPG" хүлээж байна.
 const FUEL_MAP = {
   gasoline: 'Gasoline',
   diesel: 'Diesel',
@@ -39,8 +37,17 @@ function buildTitle(v) {
   return v.year ? `${base} (${v.year})` : base
 }
 
+// Carapis photos нь шинээр {url, thumb_url, is_main, photo_type, position, ...}
+// object[] хэлбэртэй ирдэг болсон. Хуучин string[] хэлбэрийг ч дэмжинэ.
+function photoUrls(photos) {
+  if (!Array.isArray(photos)) return []
+  return photos
+    .map((p) => (typeof p === 'string' ? p : p && p.url))
+    .filter(Boolean)
+}
+
 function normalize(v) {
-  const photos = Array.isArray(v.photos) ? v.photos : []
+  const photos = photoUrls(v.photos)
   return {
     id: v.id,
     title: buildTitle(v),
@@ -52,7 +59,7 @@ function normalize(v) {
     mileage: Number(v.mileage) || 0,
     fuelType: fuelLabel(v.fuel_type),
     transmission: transmissionLabel(v.transmission),
-    location: 'South Korea',
+    location: v.region || 'South Korea',
     image: photos[0] || '',
     images: photos,
     type: '',
@@ -63,7 +70,54 @@ function normalize(v) {
     vin: v.vin || '',
     description: v.description || '',
     trim: v.trim || '',
+    // Шинэ Carapis field-үүд (2026-05-13 update)
+    displacement: Number(v.engine_cc) || 0,
+    vehicle_no: v.vehicle_no || '',
+    original_msrp: v.original_msrp ? Number(v.original_msrp) : null,
+    drive_type: v.drive_type || '',
+    seat_count: v.seat_count || null,
+    has_accident: !!v.has_accident,
+    has_recall: !!v.has_recall,
+    has_simple_repair: !!v.has_simple_repair,
+    seller_type: v.seller_type || '',
+    is_undervalued: !!v.is_undervalued,
+    valuation_score: v.valuation_score == null ? null : Number(v.valuation_score),
+    is_new_vehicle: !!v.is_new_vehicle,
   }
+}
+
+// Frontend-аас ирсэн query-г Carapis param-руу зураглах.
+// Хийгдсэн filter-ууд (Денис 2026-05-13 fix):
+//   brand, min_year, max_year, min_price, max_price (USD),
+//   fuel_type, body_type, transmission, max_mileage, search, ordering,
+//   source (default 'encar' учир бид зөвхөн Encar listing-ийг үзүүлдэг)
+function buildCarapisParams(q) {
+  const params = {
+    page: Math.max(1, Number(q.page || 1)),
+    page_size: Math.min(100, Math.max(1, Number(q.limit || 20))),
+    source: q.source || 'encar',
+  }
+  if (q.brand) params.brand = String(q.brand).toLowerCase()
+  if (q.yearFrom) params.min_year = q.yearFrom
+  if (q.yearTo) params.max_year = q.yearTo
+  if (q.priceFrom) params.min_price = q.priceFrom
+  if (q.priceTo) params.max_price = q.priceTo
+  if (q.fuelType) params.fuel_type = String(q.fuelType).toLowerCase()
+  if (q.transmission) params.transmission = String(q.transmission).toLowerCase()
+  if (q.body_type) params.body_type = String(q.body_type).toLowerCase()
+  if (q.maxMileage) params.max_mileage = q.maxMileage
+  if (q.search) params.search = q.search
+  // ordering: frontend нь sortBy=year|price|mileage + sortOrder=asc|desc
+  // Carapis нь Django REST style "-field" буюу "field" дэмжинэ.
+  if (q.sortBy) {
+    const FIELD = { year: 'year', price: 'price_usd', mileage: 'mileage', scraped_at: 'first_seen_at' }
+    const field = FIELD[String(q.sortBy)]
+    if (field) {
+      const sign = String(q.sortOrder || 'desc') === 'asc' ? '' : '-'
+      params.ordering = sign + field
+    }
+  }
+  return params
 }
 
 // ===== Routes =====
@@ -71,22 +125,12 @@ function normalize(v) {
 // GET /api/cars — жагсаалт
 router.get('/', async (req, res) => {
   try {
-    const page = Math.max(1, Number(req.query.page || 1))
-    const limit = Math.min(100, Math.max(1, Number(req.query.limit || 20)))
-    // Carapis API дээр одоохондоо зөвхөн page, page_size, ordering, search
-    // дэмжигдэж байна. Бусад frontend filter (brand, year, fuel...) нь Carapis-аас
-    // нөлөөгүй — Денис filter syntax буцааж өгөх хүртэл no-op.
-    const raw = await listVehicles({
-      page,
-      page_size: limit,
-      search: req.query.search || undefined,
-      ordering: req.query.ordering || undefined,
-    })
+    const raw = await listVehicles(buildCarapisParams(req.query))
     res.set('Cache-Control', CACHE_HEADER)
     res.json({
       cars: (raw.results || []).map(normalize),
       total: raw.count || 0,
-      page: raw.page || page,
+      page: raw.page || 1,
       totalPages: raw.pages || 1,
     })
   } catch (err) {
@@ -95,10 +139,10 @@ router.get('/', async (req, res) => {
   }
 })
 
-// GET /api/cars/stats — нийт машины тоо
+// GET /api/cars/stats — нийт машины тоо (Encar listing)
 router.get('/stats', async (_req, res) => {
   try {
-    const raw = await listVehicles({ page_size: 1 })
+    const raw = await listVehicles({ page_size: 1, source: 'encar' })
     res.set('Cache-Control', CACHE_HEADER)
     res.json({
       totalCars: raw.count || 0,
@@ -110,7 +154,7 @@ router.get('/stats', async (_req, res) => {
   }
 })
 
-// GET /api/cars/:id — нэг машины detail
+// GET /api/cars/:id — detail
 router.get('/:id', async (req, res) => {
   try {
     const raw = await getVehicle(req.params.id)
@@ -132,7 +176,6 @@ router.get('/:id/full', async (req, res) => {
     try {
       valuation = await getValuation(req.params.id)
     } catch (e) {
-      // valuation бэлэн биш бол detail-ыг буцаа
       console.warn('valuation fail:', e.message)
     }
     res.set('Cache-Control', CACHE_HEADER)
@@ -144,9 +187,7 @@ router.get('/:id/full', async (req, res) => {
   }
 })
 
-// POST /api/cars/pricing-breakdown — placeholder.
-// Frontend нь үнэ + татварыг өөрөө client-side бодож байна (CarDetail.new.tsx),
-// энэ endpoint нь хуучин API surface-ыг хадгалахын тулд л үлдсэн.
+// POST /api/cars/pricing-breakdown — placeholder (frontend бодолтоо хийдэг)
 router.post('/pricing-breakdown', (req, res) => {
   const price = Number(req.body?.originalPrice) || 0
   res.json({
