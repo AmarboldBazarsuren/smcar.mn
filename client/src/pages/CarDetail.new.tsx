@@ -132,7 +132,6 @@ export default function CarDetailNew() {
               </p>
 
               <div className="flex flex-wrap items-center gap-3 text-[13px] text-gray-500 mt-3">
-                {car.scraped_at && <span>Шинэчлэгдсэн: {timeAgoMn(car.scraped_at)}</span>}
                 <span className="ml-auto inline-flex items-center gap-1.5 bg-green-100 text-green-700 px-2.5 py-1 rounded-full text-[12px] font-semibold">
                   <span className="w-1.5 h-1.5 rounded-full bg-green-500" /> Идэвхтэй
                 </span>
@@ -264,9 +263,9 @@ export default function CarDetailNew() {
                 </a>
               </div>
 
-              {/* listing_url comes from the backend's Encar enrichment.
-                  When the match misses (~5-15% of listings) we hide the
-                  button rather than guess at a search URL. */}
+              {/* listing_url comes either from Carapis directly (non-Encar
+                  sources expose it) or from the Encar enrichment. We
+                  derive the platform name from the host for the label. */}
               {car.listing_url && (
               <a
                 href={car.listing_url}
@@ -279,7 +278,7 @@ export default function CarDetailNew() {
                   <polyline points="15 3 21 3 21 9" />
                   <line x1="10" y1="14" x2="21" y2="3" />
                 </svg>
-                encar.com дээр харах
+                {car.listing_url.includes('kbchachacha') ? 'kbchachacha.com дээр харах' : 'encar.com дээр харах'}
               </a>
               )}
 
@@ -430,23 +429,6 @@ function FullImagePreview({ imgs, index, onClose, onPrev, onNext, visible }: {
   )
 }
 
-// Build a deep-ish link into encar.com's keyword search. We don't have
-// the exact listing_id (Carapis hides it on free tier) but the brand +
-// model + year combo narrows the result list down to a handful of cars
-// the user can pick from visually.
-function timeAgoMn(iso?: string): string {
-  if (!iso) return 'саяхан'
-  const d = new Date(iso)
-  const sec = Math.floor((Date.now() - d.getTime()) / 1000)
-  if (sec < 60) return 'дөнгөж сая'
-  const min = Math.floor(sec / 60)
-  if (min < 60) return `${min} минутын өмнө`
-  const hr = Math.floor(min / 60)
-  if (hr < 24) return `${hr} цагийн өмнө`
-  const day = Math.floor(hr / 24)
-  if (day < 30) return `${day} өдрийн өмнө`
-  return d.toLocaleDateString('mn-MN')
-}
 
 /* ===== Price calculation (ported from legacy CarDetail) ===== */
 

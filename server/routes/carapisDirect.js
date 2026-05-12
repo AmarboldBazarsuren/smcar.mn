@@ -278,12 +278,19 @@ function normalizeList(v) {
   const brand = titleCase(v.brand?.name || '')
   const model = titleCase(v.model?.name || '')
   const displayName = v.display_name ? titleCase(v.display_name.replace(/\(\d+\)/, '').trim()) + (v.year ? ` (${v.year})` : '') : `${brand} ${model}`.trim()
-  // Prefer a cached Encar carId for clean numeric URLs; the UUID is
-  // still the canonical Carapis id and gets returned separately.
-  const cachedCarId = getCachedEncarCarId(v.id)
+  // listing_id may be set when public catalog responds (kbchachacha
+  // and other non-Encar sources expose it freely). But for Encar
+  // listings on Starter the field is masked, so we fall back to a
+  // cached Encar carId we've resolved before, then to the UUID.
+  // We do NOT treat listing_id from non-Encar sources as an Encar
+  // carId — it belongs to a different platform entirely.
+  const sourceCode = v.source?.code || 'encar'
+  const cachedCarId = sourceCode === 'encar' ? getCachedEncarCarId(v.id) : null
+  const sourceListingId = sourceCode === 'encar' ? (v.listing_id || null) : null
   return {
     id: v.id,
-    encar_id: v.listing_id || cachedCarId || v.id,
+    encar_id: sourceListingId || cachedCarId || v.id,
+    source: sourceCode,
     title: displayName,
     brand,
     model,
@@ -344,6 +351,13 @@ function normalizeDetail(v) {
   const brand = titleCase(v.brand?.name || '')
   const model = titleCase(v.model?.name || '')
   const displayName = v.display_name ? titleCase(v.display_name.replace(/\(\d+\)/, '').trim()) + (v.year ? ` (${v.year})` : '') : `${brand} ${model}`.trim()
+  // Same as normalizeList: only forward listing_id as encar_id when
+  // the source is actually Encar. KBChaChaCha etc. expose their own
+  // platform-specific listing_id which would otherwise be served as
+  // a (broken) Encar carId.
+  const sourceCode = v.source?.code || 'encar'
+  const detailListingId = sourceCode === 'encar' ? (v.listing_id || null) : null
+  const sourceListingUrl = sourceCode !== 'encar' ? (v.listing_url || null) : null
   // Carapis sometimes returns an absurdly low `price` for near-new listings
   // (e.g. ₩2.88M for a 2026 Kia Morning with 6 km). When that happens
   // `original_msrp` carries the real factory price. Fall back to MSRP only
@@ -355,7 +369,9 @@ function normalizeDetail(v) {
   const effectivePrice = (mileage <= 1000 && msrp > 0 && rawPrice > 0 && rawPrice < msrp * 0.3) ? msrp : rawPrice
   return {
     id: v.id,
-    encar_id: v.listing_id || v.id,
+    encar_id: detailListingId || v.id,
+    source: sourceCode,
+    listing_url: sourceListingUrl || '',
     title: displayName,
     brand,
     model,
@@ -439,6 +455,11 @@ function buildOptionsFromApicars(apicarsData, lang) {
 async function enrichDetail(base) {
   // base = the Carapis-normalized car object from normalizeDetail
   if (!base?.id) return base
+  // Skip Encar enrichment for non-Encar sources (kbchachacha etc.).
+  // We'd never find a match on api.encar.com for those listings, and
+  // any "first hit" would link to a different car. listing_url for
+  // those was already set in normalizeDetail from the public catalog.
+  if (base.source && base.source !== 'encar') return base
   let encarCarId = null
   let detail = null
   let options = null
