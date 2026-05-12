@@ -230,8 +230,24 @@ async function fetchCarapis(url) {
   const headers = { accept: 'application/json' }
   if (process.env.CARAPIS_API_KEY) headers.authorization = `Bearer ${process.env.CARAPIS_API_KEY}`
   const r = await fetch(url, { headers, signal: AbortSignal.timeout(15000) })
-  if (!r.ok) throw new Error(`carapis ${r.status}`)
-  return r.json()
+  if (r.ok) return r.json()
+  // 429 on /catalog_private means we've burnt through the Starter
+  // per-minute budget. /catalog_public has its own quota — fall back
+  // there so the site keeps working. We lose description and valuation
+  // but base data is intact.
+  if (r.status === 429 && url.includes('/catalog_private/')) {
+    // List URL: ...catalog_private/vehicles/?<query>     → ...catalog_public/vehicles/?<query>
+    // Detail URL: ...catalog_private/vehicles/<uuid>/   → ...catalog_public/vehicles/detail/<uuid>/
+    const isList = url.includes('/vehicles/?') || url.endsWith('/vehicles/')
+    const publicUrl = isList
+      ? url.replace('/catalog_private/vehicles/', '/catalog_public/vehicles/')
+      : url.replace('/catalog_private/vehicles/', '/catalog_public/vehicles/detail/')
+    try {
+      const r2 = await fetch(publicUrl, { headers: { accept: 'application/json' }, signal: AbortSignal.timeout(15000) })
+      if (r2.ok) return r2.json()
+    } catch {}
+  }
+  throw new Error(`carapis ${r.status}`)
 }
 
 async function cachedGet(url) {
