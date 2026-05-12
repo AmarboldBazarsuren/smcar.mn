@@ -18,6 +18,9 @@ export interface Car {
   color: string
   encar_id: string
   original_price_krw?: number
+  listing_url?: string
+  vin?: string
+  is_rent_succession?: boolean
 }
 
 // Үнийн задаргаа

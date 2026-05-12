@@ -9,7 +9,6 @@ import {
 } from '../lib/api'
 import { formatNumber } from '../lib/utils'
 import ReservationModal from '../components/cars/ReservationModal'
-import { buildPreciseEncarUrl, findFirstEncarCarId, encarDetailUrl } from '../lib/encarLookup'
 import type { ExchangeRate, FeeSettings } from '../types'
 
 const TRANSPORT_OPTIONS = [1200, 1400, 1600, 1800, 2500]
@@ -25,7 +24,6 @@ export default function CarDetailNew() {
   const [selectedImg, setSelectedImg] = useState(-1)
   const [showModal, setShowModal] = useState(false)
   const [transportFeeUsd, setTransportFeeUsd] = useState(1200)
-  const [encarCarId, setEncarCarId] = useState<string | null>(null)
 
   const { data: car, isLoading } = useQuery<any>({
     queryKey: ['car', id],
@@ -33,17 +31,6 @@ export default function CarDetailNew() {
     enabled: !!id,
   })
 
-  // Resolve the first matching Encar listing in the background so the
-  // 'encar.com дээр харах' button opens the detail page directly.
-  useEffect(() => {
-    if (!car) return
-    let cancelled = false
-    setEncarCarId(null)
-    findFirstEncarCarId(car).then((eid) => {
-      if (!cancelled) setEncarCarId(eid)
-    })
-    return () => { cancelled = true }
-  }, [car])
   const { data: rates } = useQuery({ queryKey: ['exchangeRate'], queryFn: fetchExchangeRate })
   const { data: fees } = useQuery({ queryKey: ['feeSettings'], queryFn: fetchFeeSettings })
   // CC + canonical price come from the active data source (Carapis) — no
@@ -277,11 +264,12 @@ export default function CarDetailNew() {
                 </a>
               </div>
 
-              {/* Once the background lookup resolves a carId we point at
-                  the exact Encar detail page. Until then (or if the
-                  lookup fails) we fall back to the filtered search list. */}
+              {/* listing_url comes from the backend's Encar enrichment.
+                  When the match misses (~5-15% of listings) we hide the
+                  button rather than guess at a search URL. */}
+              {car.listing_url && (
               <a
-                href={encarCarId ? encarDetailUrl(encarCarId) : buildPreciseEncarUrl(car)}
+                href={car.listing_url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2 w-full bg-red-600 border-2 border-red-600 text-white hover:bg-red-500 py-3 rounded-2xl text-[14px] font-semibold transition"
@@ -293,6 +281,7 @@ export default function CarDetailNew() {
                 </svg>
                 encar.com дээр харах
               </a>
+              )}
 
               <div className="bg-red-50 rounded-2xl p-4 text-[13px] text-red-700 leading-relaxed">
                 <p className="font-semibold mb-1">Мэдээлэл</p>

@@ -11,6 +11,7 @@ const express = require('express')
 const fs = require('fs')
 const path = require('path')
 const { absoluteUrlToProxyUrl } = require('./photoProxy')
+const { fetchEncarForCar, fetchEncarOptions } = require('../lib/encarLookup')
 
 const router = express.Router()
 
@@ -369,6 +370,115 @@ function normalizeDetail(v) {
   }
 }
 
+// ===== Enrichment with Encar live data =====
+// Carapis snapshot data has known gaps (no VIN, no listing_url, garbage
+// prices on RENT_SUCCESSION listings, watermarked photos). Now that
+// api.encar.com is reachable from the VPS again, we fetch the real
+// Encar detail and merge it on top. Mapping cache is forever; detail
+// cache is 7 days. Encar match misses (~5-15%) get cached as null so
+// we don't retry.
+
+// Encar photo paths look like "/carpicture08/pic4178/41780848_001.jpg"
+// — prepend ci.encar.com host and route through our photoProxy so the
+// browser never sees encar.com directly.
+function encarPhotoProxyUrl(photoPath) {
+  if (!photoPath) return ''
+  const stripped = `ci.encar.com${photoPath}`
+  return absoluteUrlToProxyUrl(`https://${stripped}`)
+}
+
+// apicars.info option categories → our internal group keys.
+const OPT_CAT_TO_GROUP = {
+  '01': 'exterior', // Exterior / Interior
+  '02': 'safety',
+  '03': 'comfort',  // Convenience / Multimedia
+  '04': 'seats',
+}
+const GROUP_TITLES = {
+  exterior: { en: 'Exterior & Lighting', mn: 'Гадна хийц ба гэрэлтүүлэг' },
+  safety: { en: 'Safety & Driver Assist', mn: 'Аюулгүй байдал ба жолоодлогын туслах систем' },
+  comfort: { en: 'Comfort & Multimedia', mn: 'Тав тух ба мультимедиа' },
+  seats: { en: 'Seats & Interior', mn: 'Суудал ба салон' },
+}
+
+function buildOptionsFromApicars(apicarsData, lang) {
+  if (!apicarsData?.categories?.length) return { groups: [] }
+  const groups = []
+  for (const cat of apicarsData.categories) {
+    const groupKey = OPT_CAT_TO_GROUP[cat.category?.key] || 'other'
+    const title = GROUP_TITLES[groupKey]?.[lang] || cat.category?.value || ''
+    const items = (cat.options || []).map((o, i) => ({
+      code: o.optionCd || String(i),
+      // We don't have a Mongolian translation of option names yet. The
+      // English label is the universal display for now; future work
+      // could pre-translate the 62 known option names.
+      label: o.optionName || o.originalName || '',
+    }))
+    if (items.length) groups.push({ key: groupKey, title, items })
+  }
+  return { groups }
+}
+
+async function enrichDetail(base) {
+  // base = the Carapis-normalized car object from normalizeDetail
+  if (!base?.id) return base
+  let encarCarId = null
+  let detail = null
+  let options = null
+  try {
+    const lookup = await fetchEncarForCar(base)
+    encarCarId = lookup.carId
+    detail = lookup.detail
+  } catch (e) { console.error('[enrich] encar fetch:', e.message) }
+  if (encarCarId) {
+    try { options = await fetchEncarOptions(encarCarId) } catch (e) { console.error('[enrich] options:', e.message) }
+  }
+
+  const enriched = { ...base }
+
+  if (encarCarId) {
+    enriched.encar_id = encarCarId
+    enriched.listing_url = `https://fem.encar.com/cars/detail/${encarCarId}`
+  }
+
+  if (detail) {
+    // VIN — Encar sometimes exposes it; keep Carapis's value otherwise.
+    if (detail.vin) enriched.vin = String(detail.vin)
+    // Photos — Encar's CDN photos are watermark-free.
+    const photos = Array.isArray(detail.photos) ? detail.photos : []
+    const photoUrls = photos
+      .filter((p) => p?.type !== 'THUMBNAIL' || photos.length < 5) // skip duplicate thumbs when we have a full set
+      .map((p) => encarPhotoProxyUrl(p.path))
+      .filter(Boolean)
+    if (photoUrls.length) {
+      enriched.images = photoUrls
+      enriched.image = photoUrls[0]
+    }
+    // Real price. Encar's advertisement.price is in 만원. For
+    // RENT_SUCCESSION the advertised number is a tiny advance fee and
+    // category.originPrice (MSRP) is the right thing to show.
+    const adType = detail.advertisement?.advertisementType
+    const advPrice = Number(detail.advertisement?.price) || 0
+    const originPrice = Number(detail.category?.originPrice) || 0
+    let chosenManwon = advPrice
+    if (adType === 'RENT_SUCCESSION' && originPrice > 0) chosenManwon = originPrice
+    if (chosenManwon > 0) {
+      enriched.price = chosenManwon
+      enriched.original_price_krw = chosenManwon * 10000
+    }
+    enriched.is_rent_succession = adType === 'RENT_SUCCESSION'
+    // Dealer info (no contact details exposed beyond what Carapis had).
+    if (detail.contact?.address) enriched.location_mn = detail.contact.address
+  }
+
+  if (options) {
+    enriched.options = buildOptionsFromApicars(options, 'en')
+    enriched.options_mn = buildOptionsFromApicars(options, 'mn')
+  }
+
+  return enriched
+}
+
 const CACHE_HEADER = 'public, max-age=172800, stale-while-revalidate=604800'
 
 // Body types we consider "Тусгай ангилал" (commercial / utility).
@@ -477,9 +587,12 @@ router.get('/:id', async (req, res) => {
 router.get('/:id/full', async (req, res) => {
   try {
     const raw = await cachedGet(`${CARAPIS_BASE}/vehicles${DETAIL_PATH}/${req.params.id}/`)
+    const base = normalizeDetail(raw)
+    const enriched = await enrichDetail(base)
     res.set('Cache-Control', CACHE_HEADER)
-    res.json(normalizeDetail(raw))
+    res.json(enriched)
   } catch (err) {
+    console.error('carapis detail/full error:', err.message)
     res.status(502).json({ error: err.message })
   }
 })
