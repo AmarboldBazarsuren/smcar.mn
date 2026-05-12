@@ -29,6 +29,17 @@ const FETCH_HEADERS = {
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
 }
 
+// Carapis serves watermarked vs clean photos from the SAME URL — the
+// difference is whether the request carries a Starter+ Bearer token.
+// Send the key when fetching api.carapis.com photos so we get the clean
+// version. Other hosts get a plain UA only.
+function headersForUpstream(url) {
+  if (url.includes('api.carapis.com') && process.env.CARAPIS_API_KEY) {
+    return { ...FETCH_HEADERS, authorization: `Bearer ${process.env.CARAPIS_API_KEY}` }
+  }
+  return FETCH_HEADERS
+}
+
 function decodePath(b64) {
   try {
     const std = b64.replace(/-/g, '+').replace(/_/g, '/')
@@ -76,7 +87,7 @@ router.get('/:b64.jpg', async (req, res) => {
   } catch {}
 
   try {
-    const upstream = await fetch(upstreamUrl, { headers: FETCH_HEADERS })
+    const upstream = await fetch(upstreamUrl, { headers: headersForUpstream(upstreamUrl) })
     if (!upstream.ok) return res.status(upstream.status).end()
     const buf = Buffer.from(await upstream.arrayBuffer())
     fs.writeFile(diskPath, buf, () => {})
