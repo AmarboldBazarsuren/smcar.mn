@@ -12,19 +12,19 @@ function authHeaders() {
   return h
 }
 
-async function rawFetch(url) {
-  const r = await fetch(url, { headers: authHeaders(), signal: AbortSignal.timeout(15000) })
+async function rawFetch(url, timeoutMs = 15000) {
+  const r = await fetch(url, { headers: authHeaders(), signal: AbortSignal.timeout(timeoutMs) })
   if (!r.ok) throw new Error(`carapis ${r.status} ${url}`)
   return r.json()
 }
 
-async function cachedGet(url) {
+async function cachedGet(url, timeoutMs = 15000) {
   const hit = cache.get(url)
   const now = Date.now()
   if (hit && now - hit.time < CACHE_TTL) return hit.data
   if (hit && now - hit.time < STALE_TTL && !inflight.has(url)) {
     // stale: serve cached, revalidate in background
-    const p = rawFetch(url)
+    const p = rawFetch(url, timeoutMs)
       .then((d) => { cache.set(url, { data: d, time: Date.now() }); return d })
       .catch((e) => { console.error('carapis revalidate fail:', e.message); return hit.data })
       .finally(() => inflight.delete(url))
@@ -58,7 +58,11 @@ async function getVehicle(id) {
 }
 
 async function getValuation(id) {
-  return cachedGet(buildUrl(`/catalog_analytics/public/vehicles/${id}/`))
+  // Carapis-ийн LLM analysis нь анх удаа машин дээр 30+ секунд cold-start
+  // болдог. Хэрэглэгчид detail хурдан үзүүлэхийн тулд 3 секундийн timeout
+  // — давсан тохиолдолд valuation null буцаана, detail хариунд саад
+  // болохгүй. Хэдхэн машин нь cache-д орсны дараа аль хэдийн хурдан.
+  return cachedGet(buildUrl(`/catalog_analytics/public/vehicles/${id}/`), 3000)
 }
 
 module.exports = { listVehicles, getVehicle, getValuation }

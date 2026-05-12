@@ -19,7 +19,7 @@ export default function Cars() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Машинууд</h1>
-          <p className="text-lg text-gray-500 mt-1">apicars.info-аас татсан машинууд</p>
+          <p className="text-lg text-gray-500 mt-1">Carapis-аас татсан машинууд</p>
         </div>
       </div>
 

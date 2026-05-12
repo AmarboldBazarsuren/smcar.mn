@@ -141,10 +141,19 @@ export default function CarDetailNew() {
             <SpecGrid car={car} cc={cc} />
 
             <div className="flex flex-wrap gap-2">
-              {car.diagnosis && <Tag tone="green">✓ Үзлэг хийгдсэн</Tag>}
-              {car.pre_verified && <Tag tone="blue">✓ Урьдчилан баталгаажсан</Tag>}
-              {car.extend_warranty && <Tag tone="purple">✓ Сунгасан баталгаа</Tag>}
+              {car.has_accident === false && <Tag tone="green">✓ Осолгүй</Tag>}
+              {car.has_accident === true && <Tag tone="red">⚠ Осолын түүхтэй</Tag>}
+              {car.has_simple_repair && <Tag tone="amber">⚙ Энгийн засвартай</Tag>}
+              {car.has_recall && <Tag tone="amber">⚠ Эргүүлэн дуудалттай</Tag>}
+              {car.is_undervalued && <Tag tone="blue">💎 Зах зээлээс хямд</Tag>}
             </div>
+
+            {car.original_msrp && (
+              <div className="bg-gray-50 border border-gray-200 rounded-2xl p-5">
+                <p className="text-[12px] uppercase tracking-wider text-gray-500 mb-1">Үйлдвэрийн жагсаалтын үнэ (MSRP)</p>
+                <p className="text-[18px] font-semibold text-gray-800">{formatNumber(car.original_msrp)}₩</p>
+              </div>
+            )}
 
             {car.vin && (
               <div className="bg-gray-50 border border-gray-200 rounded-2xl p-5">
@@ -278,7 +287,7 @@ export default function CarDetailNew() {
                   <polyline points="15 3 21 3 21 9" />
                   <line x1="10" y1="14" x2="21" y2="3" />
                 </svg>
-                {car.listing_url.includes('kbchachacha') ? 'kbchachacha.com дээр харах' : 'encar.com дээр харах'}
+                encar.com дээр харах
               </a>
               )}
 
@@ -369,7 +378,9 @@ function SpecGrid({ car, cc }: { car: any; cc: number | null }) {
     (car.body_type_mn || car.body_type) && { icon: '🚗', label: 'Кузов ангилал', value: car.body_type_mn || car.body_type },
     (car.color_mn || car.color) && { icon: '🎨', label: 'Өнгө', value: car.color_mn || car.color },
     car.seat_count && { icon: '💺', label: 'Суудлын тоо', value: car.seat_count },
+    car.drive_type && { icon: '🚙', label: 'Хөтлөгч', value: String(car.drive_type).toUpperCase() },
     (car.trim || car.grade) && { icon: '🏷', label: 'Хувилбар', value: car.trim || car.grade },
+    car.vehicle_no && { icon: '🔢', label: 'Улсын дугаар', value: car.vehicle_no },
     (car.location_mn || car.location) && { icon: '📍', label: 'Байршил', value: car.location_mn || car.location },
     dealerLabel && { icon: '👤', label: 'Худалдагч', value: dealerLabel },
     statusLabel && { icon: '✅', label: 'Борлуулалтын төлөв', value: statusLabel, tone: 'green' as const },

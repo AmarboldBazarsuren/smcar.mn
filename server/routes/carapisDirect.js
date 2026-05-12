@@ -94,7 +94,7 @@ function normalize(v) {
     vin: v.vin || '',
     description: v.description || '',
     trim: v.trim || '',
-    // Шинэ Carapis field-үүд (2026-05-13 update)
+    // Шинэ Carapis field-үүд (2026-05-13 update). Frontend convention-аар нэрлэе.
     displacement: Number(v.engine_cc) || 0,
     vehicle_no: v.vehicle_no || '',
     original_msrp: v.original_msrp ? Number(v.original_msrp) : null,
@@ -103,11 +103,19 @@ function normalize(v) {
     has_accident: !!v.has_accident,
     has_recall: !!v.has_recall,
     has_simple_repair: !!v.has_simple_repair,
-    seller_type: v.seller_type || '',
+    dealer_type: dealerLabel(v.seller_type), // SpecGrid `car.dealer_type` хайдаг
     is_undervalued: !!v.is_undervalued,
     valuation_score: v.valuation_score == null ? null : Number(v.valuation_score),
     is_new_vehicle: !!v.is_new_vehicle,
+    advertisement_status: v.is_available ? 'ADVERTISE' : '',
   }
+}
+
+function dealerLabel(s) {
+  const v = String(s || '').toLowerCase()
+  if (v === 'private' || v === 'personal') return 'PERSONAL'
+  if (v === 'dealer' || v === 'company') return 'DEALER'
+  return ''
 }
 
 // Frontend-аас ирсэн query-г Carapis param-руу зураглах.
