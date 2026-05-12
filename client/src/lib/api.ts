@@ -225,7 +225,7 @@ export async function fetchStorageInfo(): Promise<{ fileCount: number; totalSize
   return data
 }
 
-// ============ ЗУРАГ PROXY ============
+// ============ ЗУРАГ URL ============
 
 const BASE = import.meta.env.VITE_API_URL || ''
 
@@ -233,11 +233,8 @@ export function getImageUrl(url: string): string {
   if (!url) return ''
   // Local uploads (manual cars)
   if (url.startsWith('/uploads')) return `${BASE}${url}`
-  // Our own opaque photo proxy URLs (/api/p/<b64>.jpg) — prefix base only.
-  if (url.startsWith('/api/p/')) return `${BASE}${url}`
-  // Already absolute (legacy apicars URLs) — route through CORS proxy.
-  if (url.startsWith('http')) {
-    return `${BASE}/api/image-proxy?url=${encodeURIComponent(url)}`
-  }
+  // Carapis болон бусад absolute URL — шууд буцаа.
+  // Carapis photos нь public access-тэй, watermark-гүй учир proxy шаардлагагүй.
+  if (url.startsWith('http')) return url
   return url
 }

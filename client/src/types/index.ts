@@ -6,7 +6,7 @@ export interface Car {
   model: string
   year: number
   price: number
-  currency: 'EUR' | 'KRW'
+  currency: 'EUR' | 'KRW' | 'USD'
   mileage: number
   fuelType: string
   transmission: string

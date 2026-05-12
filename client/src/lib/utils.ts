@@ -3,12 +3,14 @@
 
 export function toMnt(
   price: number,
-  currency: 'EUR' | 'KRW' | string,
-  rates: { euroToMnt: number; wonToMnt: number }
+  currency: 'EUR' | 'KRW' | 'USD' | string,
+  rates: { euroToMnt: number; wonToMnt: number; usdToMnt: number }
 ): string {
   let mnt: number
   if (currency === 'EUR') {
     mnt = Math.round(price * rates.euroToMnt)
+  } else if (currency === 'USD') {
+    mnt = Math.round(price * rates.usdToMnt)
   } else {
     // KRW — price нь 만원 нэгж, ×10000 хийж бүтэн ₩ болгоно
     mnt = Math.round(price * 10000 * rates.wonToMnt)
