@@ -11,7 +11,7 @@ const express = require('express')
 const fs = require('fs')
 const path = require('path')
 const { absoluteUrlToProxyUrl } = require('./photoProxy')
-const { fetchEncarForCar, fetchEncarOptions, getCachedEncarCarId, findUuidByEncarCarId } = require('../lib/encarLookup')
+const { resolveEncarCarId, fetchEncarDetail, fetchEncarOptions, getCachedEncarCarId, findUuidByEncarCarId } = require('../lib/encarLookup')
 
 // Carapis IDs are UUIDs ("d1b31a20-1e6d-…"); Encar carIds are pure
 // digits ("41992910"). Use the shape to decide which lookup to run.
@@ -464,12 +464,18 @@ async function enrichDetail(base) {
   let detail = null
   let options = null
   try {
-    const lookup = await fetchEncarForCar(base)
-    encarCarId = lookup.carId
-    detail = lookup.detail
-  } catch (e) { console.error('[enrich] encar fetch:', e.message) }
+    encarCarId = await resolveEncarCarId(base)
+  } catch (e) { console.error('[enrich] resolveEncarCarId:', e.message) }
+  // Once we know the carId, fire the detail + options fetches in
+  // parallel — they don't depend on each other. Cuts the cold-path
+  // detail page latency roughly in half (was ~3s serial, now ~1.5s).
   if (encarCarId) {
-    try { options = await fetchEncarOptions(encarCarId) } catch (e) { console.error('[enrich] options:', e.message) }
+    const [detailRes, optionsRes] = await Promise.allSettled([
+      fetchEncarDetail(encarCarId),
+      fetchEncarOptions(encarCarId),
+    ])
+    if (detailRes.status === 'fulfilled') detail = detailRes.value
+    if (optionsRes.status === 'fulfilled') options = optionsRes.value
   }
 
   const enriched = { ...base }

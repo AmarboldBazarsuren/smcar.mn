@@ -234,20 +234,26 @@ async function fetchEncarOptions(carId) {
   if (!carId) return null
   const hit = OPTIONS_CACHE.get(carId)
   if (hit && Date.now() - hit.time < OPTIONS_TTL) return hit.data
-  try {
-    const r = await fetch(`https://apicars.info/api/encar-options/vehicle/${carId}`, {
-      signal: AbortSignal.timeout(12000),
-    })
-    if (!r.ok) return null
-    const json = await r.json()
-    if (!json?.success) return null
-    OPTIONS_CACHE.set(carId, { data: json.data, time: Date.now() })
-    if (OPTIONS_CACHE.size > 5000) OPTIONS_CACHE.delete(OPTIONS_CACHE.keys().next().value)
-    return json.data
-  } catch (e) {
-    console.error('[encar options] fetch fail:', e.message)
-    return null
+  // apicars.info occasionally returns 404 for an active listing on
+  // the first call and 200 on a retry — try twice before giving up.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const r = await fetch(`https://apicars.info/api/encar-options/vehicle/${carId}`, {
+        signal: AbortSignal.timeout(8000),
+      })
+      if (r.ok) {
+        const json = await r.json()
+        if (json?.success && json.data) {
+          OPTIONS_CACHE.set(carId, { data: json.data, time: Date.now() })
+          if (OPTIONS_CACHE.size > 5000) OPTIONS_CACHE.delete(OPTIONS_CACHE.keys().next().value)
+          return json.data
+        }
+      }
+    } catch (e) {
+      if (attempt === 1) console.error('[encar options] fetch fail:', e.message)
+    }
   }
+  return null
 }
 
 module.exports = {
