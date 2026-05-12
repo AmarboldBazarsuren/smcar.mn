@@ -30,16 +30,14 @@ export default function CarList() {
 
   const { data: rates } = useQuery({ queryKey: ['exchangeRate'], queryFn: fetchExchangeRate })
 
-  // MNT (сая) → 만원 хөрвүүлж API руу илгээх
+  // MNT (сая) → USD хөрвүүлж API руу илгээх — Carapis нь min_price/max_price-г USD-аар хүлээдэг.
   const apiFilters = { ...filters }
-  if (rates && rates.wonToMnt > 0) {
-    // priceFrom/priceTo нь сая ₮ нэгжтэй → 만원 руу хөрвүүлнэ
-    // сая₮ → ₮ → ₩ → 만원: value * 1,000,000 / wonToMnt / 10000
+  if (rates && rates.usdToMnt > 0) {
     if (filters.priceFrom) {
-      apiFilters.priceFrom = Math.floor(filters.priceFrom * 1000000 / rates.wonToMnt / 10000)
+      apiFilters.priceFrom = Math.floor(filters.priceFrom * 1000000 / rates.usdToMnt)
     }
     if (filters.priceTo) {
-      apiFilters.priceTo = Math.ceil(filters.priceTo * 1000000 / rates.wonToMnt / 10000)
+      apiFilters.priceTo = Math.ceil(filters.priceTo * 1000000 / rates.usdToMnt)
     }
   }
 

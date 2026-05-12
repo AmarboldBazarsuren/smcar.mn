@@ -374,6 +374,14 @@ const CACHE_HEADER = 'public, max-age=172800, stale-while-revalidate=604800'
 // Body types we consider "Тусгай ангилал" (commercial / utility).
 const SPECIAL_BODY_TYPES = ['truck', 'van', 'minivan', 'pickup', 'bus']
 
+// Frontend sortBy field name → Carapis ordering field name.
+// Carapis bug (2026-05-12): `-` (desc) prefix only works correctly on
+// first_seen_at; on year/mileage/price the `-` sort puts NULL-valued
+// rows first. Forward `desc` only for first_seen_at and fall back to
+// ascending for the others so the result is at least usable.
+const ORDER_FIELD = { scraped_at: 'first_seen_at', year: 'year', mileage: 'mileage' }
+const DESC_OK = new Set(['first_seen_at'])
+
 function buildListUrl(query, opts = {}) {
   // strip cache-buster
   delete query.v
@@ -386,12 +394,21 @@ function buildListUrl(query, opts = {}) {
   if (query.model) u.searchParams.set('model', String(query.model).toLowerCase().replace(/\s+/g, '-'))
   if (query.yearFrom) u.searchParams.set('min_year', query.yearFrom)
   if (query.yearTo) u.searchParams.set('max_year', query.yearTo)
-  if (query.priceFrom) u.searchParams.set('min_price', Math.round(Number(query.priceFrom) * 10000))
-  if (query.priceTo) u.searchParams.set('max_price', Math.round(Number(query.priceTo) * 10000))
+  // min_price / max_price are USD per Carapis docs — frontend already converts MNT → USD.
+  if (query.priceFrom) u.searchParams.set('min_price', Math.round(Number(query.priceFrom)))
+  if (query.priceTo) u.searchParams.set('max_price', Math.round(Number(query.priceTo)))
   if (query.fuelType) u.searchParams.set('fuel_type', String(query.fuelType).toLowerCase())
   if (query.transmission) u.searchParams.set('transmission', String(query.transmission).toLowerCase())
   if (query.maxMileage) u.searchParams.set('max_mileage', query.maxMileage)
   if (opts.bodyType) u.searchParams.set('body_type', opts.bodyType)
+  // ordering: Carapis accepts `field` (asc) or `-field` (desc), but `-`
+  // is buggy on most fields — see DESC_OK above.
+  const orderField = ORDER_FIELD[String(query.sortBy || '')]
+  if (orderField) {
+    const wantsDesc = String(query.sortOrder || 'desc') !== 'asc'
+    const useDesc = wantsDesc && DESC_OK.has(orderField)
+    u.searchParams.set('ordering', useDesc ? `-${orderField}` : orderField)
+  }
   return u.toString()
 }
 
