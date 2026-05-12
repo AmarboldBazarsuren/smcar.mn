@@ -378,15 +378,6 @@ function normalizeDetail(v) {
 // cache is 7 days. Encar match misses (~5-15%) get cached as null so
 // we don't retry.
 
-// Encar photo paths look like "/carpicture08/pic4178/41780848_001.jpg"
-// — prepend ci.encar.com host and route through our photoProxy so the
-// browser never sees encar.com directly.
-function encarPhotoProxyUrl(photoPath) {
-  if (!photoPath) return ''
-  const stripped = `ci.encar.com${photoPath}`
-  return absoluteUrlToProxyUrl(`https://${stripped}`)
-}
-
 // apicars.info option categories → our internal group keys.
 const OPT_CAT_TO_GROUP = {
   '01': 'exterior', // Exterior / Interior
@@ -444,16 +435,10 @@ async function enrichDetail(base) {
   if (detail) {
     // VIN — Encar sometimes exposes it; keep Carapis's value otherwise.
     if (detail.vin) enriched.vin = String(detail.vin)
-    // Photos — Encar's CDN photos are watermark-free.
-    const photos = Array.isArray(detail.photos) ? detail.photos : []
-    const photoUrls = photos
-      .filter((p) => p?.type !== 'THUMBNAIL' || photos.length < 5) // skip duplicate thumbs when we have a full set
-      .map((p) => encarPhotoProxyUrl(p.path))
-      .filter(Boolean)
-    if (photoUrls.length) {
-      enriched.images = photoUrls
-      enriched.image = photoUrls[0]
-    }
+    // Photos: leave Carapis's images alone. Encar matches occasionally
+    // resolve to a similar-looking listing, in which case overwriting
+    // photos shows the wrong car. Carapis photos always correspond to
+    // the listing the user is actually viewing (watermark and all).
     // Real price. Encar's advertisement.price is in 만원. For
     // RENT_SUCCESSION the advertised number is a tiny advance fee and
     // category.originPrice (MSRP) is the right thing to show.
@@ -467,8 +452,9 @@ async function enrichDetail(base) {
       enriched.original_price_krw = chosenManwon * 10000
     }
     enriched.is_rent_succession = adType === 'RENT_SUCCESSION'
-    // Dealer info (no contact details exposed beyond what Carapis had).
-    if (detail.contact?.address) enriched.location_mn = detail.contact.address
+    // Don't overwrite location with Encar's Korean street address —
+    // Carapis already maps the city to "БНСУ, Тэжон" etc. which is
+    // what the rest of the UI expects.
   }
 
   if (options) {
