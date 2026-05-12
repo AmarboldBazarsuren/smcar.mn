@@ -32,7 +32,7 @@ async function cachedGet(url, timeoutMs = 15000) {
     return hit.data
   }
   if (inflight.has(url)) return inflight.get(url)
-  const p = rawFetch(url)
+  const p = rawFetch(url, timeoutMs)
     .then((d) => { cache.set(url, { data: d, time: Date.now() }); return d })
     .catch((e) => { if (hit) { console.error('upstream fail, expired cache:', e.message); return hit.data } throw e })
     .finally(() => inflight.delete(url))
