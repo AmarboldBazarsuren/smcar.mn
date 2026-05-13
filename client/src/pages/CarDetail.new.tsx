@@ -3,7 +3,6 @@ import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
   fetchCarFull,
-  fetchCarValuation,
   fetchExchangeRate,
   fetchFeeSettings,
   getImageUrl,
@@ -30,16 +29,6 @@ export default function CarDetailNew() {
     queryKey: ['car', id],
     queryFn: () => fetchCarFull(id!),
     enabled: !!id,
-  })
-
-  // AI valuation tail-load (Carapis LLM cold-start 30+ секунд).
-  // Detail хурдан ирэх ёстой, valuation сүүлдээ.
-  const { data: valuation } = useQuery({
-    queryKey: ['carValuation', id],
-    queryFn: () => fetchCarValuation(id!).catch(() => null),
-    enabled: !!id,
-    staleTime: 5 * 60 * 1000,
-    retry: false,
   })
 
   const { data: rates } = useQuery({ queryKey: ['exchangeRate'], queryFn: fetchExchangeRate })
@@ -170,13 +159,6 @@ export default function CarDetailNew() {
                 <p className="text-[15px] font-mono text-gray-800">{car.vin}</p>
               </div>
             )}
-
-            {/* AI valuation block — async tail load */}
-            {valuation && valuation.has_analysis && (
-              <ValuationBlock valuation={valuation} priceUsd={car.price} />
-            )}
-
-
 
             {optionsGroups.length > 0 && (
               <div>
@@ -415,84 +397,6 @@ function SpecGrid({ car, cc }: { car: any; cc: number | null }) {
           </div>
         ))}
       </div>
-    </div>
-  )
-}
-
-function ValuationBlock({ valuation, priceUsd }: { valuation: any; priceUsd: number }) {
-  const status = valuation.price_status || ''
-  const statusLabel = status === 'undervalued' ? 'Зах зээлээс хямд' : status === 'overvalued' ? 'Зах зээлээс үнэтэй' : status === 'fair' ? 'Зах зээлийн дунд' : status
-  const statusTone = status === 'undervalued' ? 'text-green-700 bg-green-50 border-green-200' : status === 'overvalued' ? 'text-red-700 bg-red-50 border-red-200' : 'text-gray-700 bg-gray-50 border-gray-200'
-  const pct = valuation.percentile_rank
-  const est = valuation.estimated_price
-  const low = valuation.price_low
-  const high = valuation.price_high
-  const conf = valuation.confidence
-  const llm = valuation.llm_analysis || {}
-  const diff = est && priceUsd ? Math.round(((est - priceUsd) / est) * 100) : null
-  return (
-    <div className={`border rounded-2xl p-5 space-y-4 ${statusTone}`}>
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div>
-          <p className="text-[12px] uppercase tracking-wider opacity-70 mb-1">AI үнэлгээ</p>
-          <p className="text-[18px] font-bold">{statusLabel || '—'}</p>
-        </div>
-        {typeof pct === 'number' && (
-          <div className="text-right">
-            <p className="text-[12px] opacity-70">Үнэлгээний хувь</p>
-            <p className="text-[20px] font-extrabold">{pct}%</p>
-          </div>
-        )}
-      </div>
-      {(est || low || high) && (
-        <div className="grid grid-cols-3 gap-3 text-center bg-white/50 rounded-xl p-3">
-          {low ? (
-            <div>
-              <p className="text-[11px] opacity-70 mb-0.5">Доод хязгаар</p>
-              <p className="text-[14px] font-semibold">${formatNumber(low)}</p>
-            </div>
-          ) : null}
-          {est ? (
-            <div>
-              <p className="text-[11px] opacity-70 mb-0.5">Тооцоолсон үнэ</p>
-              <p className="text-[14px] font-extrabold">${formatNumber(est)}</p>
-            </div>
-          ) : null}
-          {high ? (
-            <div>
-              <p className="text-[11px] opacity-70 mb-0.5">Дээд хязгаар</p>
-              <p className="text-[14px] font-semibold">${formatNumber(high)}</p>
-            </div>
-          ) : null}
-        </div>
-      )}
-      {diff != null && (
-        <p className="text-[13px] opacity-80">
-          Энэ машин зах зээлийн тооцоолсон үнээс <span className="font-bold">{Math.abs(diff)}% {diff > 0 ? 'хямд' : 'үнэтэй'}</span> байна
-          {typeof conf === 'number' ? ` (итгэлийн оноо: ${conf}%)` : ''}.
-        </p>
-      )}
-      {llm.summary && (
-        <div className="bg-white/60 rounded-xl p-3 text-[13px] leading-relaxed">
-          <p>{llm.summary}</p>
-        </div>
-      )}
-      {Array.isArray(llm.highlights) && llm.highlights.length > 0 && (
-        <div>
-          <p className="text-[12px] uppercase tracking-wider opacity-70 mb-1.5">Давуу тал</p>
-          <ul className="space-y-1 text-[13px]">
-            {llm.highlights.map((h: string, i: number) => <li key={i}>✓ {h}</li>)}
-          </ul>
-        </div>
-      )}
-      {Array.isArray(llm.risks) && llm.risks.length > 0 && (
-        <div>
-          <p className="text-[12px] uppercase tracking-wider opacity-70 mb-1.5">Эрсдэл</p>
-          <ul className="space-y-1 text-[13px]">
-            {llm.risks.map((r: string, i: number) => <li key={i}>⚠ {r}</li>)}
-          </ul>
-        </div>
-      )}
     </div>
   )
 }

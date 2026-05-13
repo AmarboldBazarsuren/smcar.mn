@@ -1,6 +1,5 @@
 const express = require('express')
-const { listVehicles, getVehicle, getValuation } = require('../lib/carapis')
-const { getEncarPrice } = require('../lib/encarPrice')
+const { listVehicles, getVehicle } = require('../lib/carapis')
 
 const router = express.Router()
 // 24 цагийн browser+CDN cache. Backend in-memory cache хадгалагдсан мэдээллийг
@@ -110,6 +109,14 @@ function normalize(v) {
   const photoList = normalizePhotos(v.photos)
   const urls = photoList.map((p) => p.url)
   const thumbs = photoList.map((p) => p.thumb_url)
+  // Carapis 2026-05-14-аас хойш price_original (KRW) талбарыг өгдөг болсон —
+  // өмнө нь Encar mobile API-ыг тусдаа дуудаж KRW үнийг гаргадаг байсан хак
+  // одоо хэрэггүй. price_original нь сүүлийн зар үнэ (KRW),
+  // original_msrp нь үйлдвэрийн анхны үнэ (хадгалахгүй — frontend ашигладаггүй).
+  const priceKrw =
+    v.price_original_currency === 'KRW' && Number(v.price_original)
+      ? Math.round(Number(v.price_original))
+      : 0
   return {
     id: v.id,
     title: buildTitle(v),
@@ -120,6 +127,7 @@ function normalize(v) {
     year: v.year || 0,
     price: Number(v.price_usd) || 0,
     currency: 'USD',
+    price_krw: priceKrw,
     mileage: Number(v.mileage) || 0,
     fuelType: fuelLabel(v.fuel_type),
     transmission: transmissionLabel(v.transmission),
@@ -336,29 +344,15 @@ router.get('/stats', async (_req, res) => {
   }
 })
 
-// Encar-аас priceKrw татаж нэг машины normalize хариунд нэмж буцаа.
-// Carapis-ийн price_usd нь Encar 만원 утгыг "USD" гэж buруу label хийдэг
-// machines-тэй учир жинхэнэ KRW үнэ хэрэгтэй. Encar амжилтгүй бол
-// fallback — Carapis price хэвээр.
-function applyEncarPrice(base, encar) {
-  if (!encar) return base
-  const out = { ...base, price_krw: encar.priceKrw }
-  if (encar.originPriceKrw) out.origin_price_krw = encar.originPriceKrw
-  if (encar.oneLineText) out.encar_tagline = encar.oneLineText
-  return out
-}
-
-// GET /api/cars/:id — detail (id нь UUID эсвэл Encar listing_id) + Encar price
+// GET /api/cars/:id — detail (id нь UUID эсвэл Encar listing_id)
 router.get('/:id', async (req, res) => {
   try {
     const uuid = resolveCarId(req.params.id)
     if (!uuid) return res.status(404).json({ error: 'unknown carId' })
     const raw = await getVehicle(uuid)
     rememberListing(raw)
-    const base = normalize(raw)
-    const encar = await getEncarPrice(base.encar_id).catch(() => null)
     res.set('Cache-Control', CACHE_HEADER)
-    res.json(applyEncarPrice(base, encar))
+    res.json(normalize(raw))
   } catch (err) {
     if (/404/.test(err.message)) return res.status(404).json({ error: 'unknown carId' })
     console.error('carapis detail error:', err.message)
@@ -367,39 +361,17 @@ router.get('/:id', async (req, res) => {
 })
 
 // GET /api/cars/:id/full — back-compat alias of detail
-// Valuation-ыг хасч хэрэглэгчид хариу хурдан өгнө. AI valuation-ыг
-// frontend нь /api/cars/:id/valuation-аар async/lazy дуудна.
 router.get('/:id/full', async (req, res) => {
   try {
     const uuid = resolveCarId(req.params.id)
     if (!uuid) return res.status(404).json({ error: 'unknown carId' })
     const raw = await getVehicle(uuid)
     rememberListing(raw)
-    const base = normalize(raw)
-    const encar = await getEncarPrice(base.encar_id).catch(() => null)
     res.set('Cache-Control', CACHE_HEADER)
-    res.json({ ...applyEncarPrice(base, encar), valuation: null })
+    res.json(normalize(raw))
   } catch (err) {
     if (/404/.test(err.message)) return res.status(404).json({ error: 'unknown carId' })
     console.error('carapis detail/full error:', err.message)
-    res.status(502).json({ error: err.message })
-  }
-})
-
-// GET /api/cars/:id/valuation — AI valuation (separate slow endpoint).
-// Анх удаа машин дээр Carapis LLM 30+ секунд cold-start болдог; frontend
-// нь үүнийг tail-load хийж detail хариунд хүлэлцэхгүй.
-router.get('/:id/valuation', async (req, res) => {
-  try {
-    const uuid = resolveCarId(req.params.id)
-    if (!uuid) return res.status(404).json({ error: 'unknown carId' })
-    const val = await getValuation(uuid).catch((e) => {
-      if (!/timeout/i.test(e.message)) console.warn('valuation fail:', e.message)
-      return null
-    })
-    res.set('Cache-Control', CACHE_HEADER)
-    res.json(val || { has_analysis: false })
-  } catch (err) {
     res.status(502).json({ error: err.message })
   }
 })

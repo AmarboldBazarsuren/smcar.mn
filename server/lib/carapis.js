@@ -89,11 +89,4 @@ async function getVehicle(id) {
   return cachedGet(buildUrl(`/catalog_api/vehicles/${id}/`))
 }
 
-async function getValuation(id) {
-  // LLM cold-start 30+ секунд хүртэл байж магадгүй. Valuation нь тусдаа
-  // endpoint болсон тул frontend нь tail load хийдэг — 25s timeout өгөөд
-  // Carapis-ын LLM-ийг warm болох цаг өгнө. Хүрсэний дараа cache hit.
-  return cachedGet(buildUrl(`/catalog_analytics/public/vehicles/${id}/`), 25000)
-}
-
-module.exports = { listVehicles, getVehicle, getValuation }
+module.exports = { listVehicles, getVehicle }

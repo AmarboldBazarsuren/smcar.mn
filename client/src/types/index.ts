@@ -48,37 +48,6 @@ export interface Car {
   first_seen_at?: string | null
   last_seen_at?: string | null
   status_changed_at?: string | null
-  valuation?: CarValuation | null
-}
-
-// AI valuation (Carapis /catalog_analytics/public/vehicles/{id}/)
-export interface CarValuation {
-  has_analysis: boolean
-  price_status?: string
-  is_undervalued?: boolean
-  percentile_rank?: number
-  estimated_price?: number
-  price_low?: number
-  price_high?: number
-  confidence?: number
-  actual_price?: number
-  price_difference?: number
-  price_difference_pct?: number
-  market_delta_pct?: number
-  comparable_count?: number
-  cohort_min_price?: number
-  cohort_max_price?: number
-  cohort_median_price?: number
-  breakdown?: { base_price?: string; year_impact?: string; mileage_impact?: string; options_impact?: string }
-  llm_analysis?: {
-    summary?: string
-    verdict?: string
-    highlights?: string[]
-    risks?: string[]
-    publish_score?: number
-    publish_reason?: string
-    lang?: string
-  }
 }
 
 // Үнийн задаргаа
