@@ -231,6 +231,9 @@ export default function CarDetailNew() {
                     </div>
 
                     <FeeRow label="Онцгой албан татвар" amountMnt={priceInfo.specialTaxMnt} />
+                    <p className="text-[11px] text-gray-500 -mt-2 leading-snug">
+                      Porter болон тусгай ангилалын машинд онцгой албан татвар хамаарахгүй.
+                    </p>
                     <FeeRow label="Гаалийн татвар (15.5%)" amountMnt={priceInfo.customsDutyMnt} />
 
                     <div className="border-t border-gray-200 pt-3 mt-3">
