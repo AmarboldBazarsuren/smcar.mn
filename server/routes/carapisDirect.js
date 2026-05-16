@@ -1,5 +1,6 @@
 const express = require('express')
 const { listVehicles, getVehicle } = require('../lib/carapis')
+const { fetchEncarPhotos } = require('../lib/encarPhotos')
 
 const router = express.Router()
 // 24 цагийн browser+CDN cache. Backend in-memory cache хадгалагдсан мэдээллийг
@@ -358,15 +359,42 @@ router.get('/stats', async (_req, res) => {
   }
 })
 
+// Detail-ийг Carapis-аас авах, Encar-аас listing_id-аар бүх зургийг
+// (~20) нэмж buga overlay-гүй болгох. Carapis-ийн listing_id яг тухайн
+// Encar машины дугаар учир буруу зураг гарах эрсдэлгүй.
+async function getDetailWithEncarPhotos(uuid) {
+  const raw = await getVehicle(uuid)
+  rememberListing(raw)
+  const normalized = normalize(raw)
+  const listingId = raw.listing_id
+  if (listingId && raw.source_code === 'encar') {
+    const encarUrls = await fetchEncarPhotos(listingId)
+    if (encarUrls.length > 0) {
+      // Encar-аас ирсэн зургуудаар бүрэн солих — watermark-гүй, ихэвчлэн
+      // илүү олон. Carapis-ийн жагсаалт truncate-тэй (5-26).
+      normalized.image = encarUrls[0]
+      normalized.images = encarUrls
+      normalized.thumbnails = encarUrls
+      normalized.photos = encarUrls.map((url, i) => ({
+        url,
+        thumb_url: url,
+        is_main: i === 0,
+        position: i,
+        photo_type: '',
+      }))
+    }
+  }
+  return normalized
+}
+
 // GET /api/cars/:id — detail (id нь UUID эсвэл Encar listing_id)
 router.get('/:id', async (req, res) => {
   try {
     const uuid = resolveCarId(req.params.id)
     if (!uuid) return res.status(404).json({ error: 'unknown carId' })
-    const raw = await getVehicle(uuid)
-    rememberListing(raw)
+    const data = await getDetailWithEncarPhotos(uuid)
     res.set('Cache-Control', CACHE_HEADER)
-    res.json(normalize(raw))
+    res.json(data)
   } catch (err) {
     if (/404/.test(err.message)) return res.status(404).json({ error: 'unknown carId' })
     console.error('carapis detail error:', err.message)
@@ -379,10 +407,9 @@ router.get('/:id/full', async (req, res) => {
   try {
     const uuid = resolveCarId(req.params.id)
     if (!uuid) return res.status(404).json({ error: 'unknown carId' })
-    const raw = await getVehicle(uuid)
-    rememberListing(raw)
+    const data = await getDetailWithEncarPhotos(uuid)
     res.set('Cache-Control', CACHE_HEADER)
-    res.json(normalize(raw))
+    res.json(data)
   } catch (err) {
     if (/404/.test(err.message)) return res.status(404).json({ error: 'unknown carId' })
     console.error('carapis detail/full error:', err.message)
