@@ -368,16 +368,17 @@ async function getDetailWithEncarPhotos(uuid) {
   const normalized = normalize(raw)
   const listingId = raw.listing_id
   if (listingId && raw.source_code === 'encar') {
-    const encarUrls = await fetchEncarPhotos(listingId)
-    if (encarUrls.length > 0) {
+    const encarPics = await fetchEncarPhotos(listingId)
+    if (encarPics.length > 0) {
       // Encar-аас ирсэн зургуудаар бүрэн солих — watermark-гүй, ихэвчлэн
-      // илүү олон. Carapis-ийн жагсаалт truncate-тэй (5-26).
-      normalized.image = encarUrls[0]
-      normalized.images = encarUrls
-      normalized.thumbnails = encarUrls
-      normalized.photos = encarUrls.map((url, i) => ({
-        url,
-        thumb_url: url,
+      // илүү олон. Carapis-ийн жагсаалт truncate-тэй (5-26). `images` дотор
+      // HD-г (lightbox), `thumbnails` дотор жижиг хувилбарыг (mosaic) хадгална.
+      normalized.image = encarPics[0].thumb_url
+      normalized.images = encarPics.map((p) => p.url)
+      normalized.thumbnails = encarPics.map((p) => p.thumb_url)
+      normalized.photos = encarPics.map((p, i) => ({
+        url: p.url,
+        thumb_url: p.thumb_url,
         is_main: i === 0,
         position: i,
         photo_type: '',

@@ -1,5 +1,9 @@
 const ENCAR_CDN = 'https://ci.encar.com'
 const ENCAR_API = 'https://api.encar.com/v1/readside/vehicle'
+// Encar нь impolicy=widthRate&rw=… дамжуулахад жижиг 640×360 thumbnail-ийн
+// оронд бүтэн 2200×1238 эх зургийг буцаадаг (rw утга нэгэн адил). Param-гүй
+// URL бол 28KB thumbnail; param-тай нь ~1.7MB бүтэн чанар.
+const HD_SUFFIX = '?impolicy=widthRate&rw=1280'
 
 // 24 цагийн in-memory cache. Detail хуудас Carapis-ийн 24h cache-тэй ижил
 // хугацаагаар хадгална. listingId → {time, photos[]}.
@@ -25,7 +29,10 @@ async function rawFetch(listingId) {
   const sorted = list
     .filter((p) => p && p.path)
     .sort((a, b) => String(a.code || '').localeCompare(String(b.code || '')))
-  return sorted.map((p) => ENCAR_CDN + p.path)
+  return sorted.map((p) => ({
+    url: ENCAR_CDN + p.path + HD_SUFFIX,
+    thumb_url: ENCAR_CDN + p.path,
+  }))
 }
 
 async function fetchEncarPhotos(listingId) {

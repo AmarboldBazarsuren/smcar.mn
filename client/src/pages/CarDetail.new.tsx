@@ -37,22 +37,26 @@ export default function CarDetailNew() {
   // longer fetched from a separate Encar helper.
   const cc = car?.displacement ?? null
 
+  // `images` нь HD (lightbox-д), `thumbnails` нь жижиг (mosaic-д). Backend нь
+  // хоёуланг өгдөг — Encar нь импөлисигийн param-аас хамаараад өөр хэмжээтэй
+  // зураг буцаадаг (param-гүй → 28KB, param-тай → 1.7MB).
   const imgs: string[] = car?.images?.length ? car.images : car?.image ? [car.image] : []
+  const thumbs: string[] = car?.thumbnails?.length ? car.thumbnails : imgs
   const prevImg = useCallback(() => setSelectedImg((p) => (p > 0 ? p - 1 : imgs.length - 1)), [imgs.length])
   const nextImg = useCallback(() => setSelectedImg((p) => (p < imgs.length - 1 ? p + 1 : 0)), [imgs.length])
 
-  // Preload all photos in the background so the lightbox advances instantly.
-  // Browser keeps them in its HTTP cache for the disk-cached lifetime.
+  // Lightbox-д үзэгдэх HD зургуудыг background-аар preload — товчлуур дарвал
+  // даруй гарна. Жижиг thumb-ууд mosaic-д <img loading="lazy"> хэлбэрээр өөрөө
+  // татагдана.
   useEffect(() => {
     if (!imgs.length) return
     const preloads: HTMLImageElement[] = []
     imgs.forEach((src, idx) => {
-      // Stagger to avoid hammering the proxy all at once
       setTimeout(() => {
         const img = new Image()
         img.src = getImageUrl(src)
         preloads.push(img)
-      }, idx * 120)
+      }, idx * 250)
     })
     return () => { preloads.length = 0 }
   }, [imgs])
@@ -124,7 +128,7 @@ export default function CarDetailNew() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* ===== LEFT: Photo grid + details ===== */}
           <div className="lg:col-span-8 space-y-6">
-            <PhotoMosaic imgs={imgs} onImageClick={(i) => setSelectedImg(i)} />
+            <PhotoMosaic imgs={thumbs} onImageClick={(i) => setSelectedImg(i)} />
 
             {imgs.length > 5 && (
               <button
