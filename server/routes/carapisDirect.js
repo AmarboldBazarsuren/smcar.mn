@@ -79,18 +79,32 @@ function buildTitle(v) {
   return v.year ? `${base} (${v.year})` : base
 }
 
+// Carapis photo URL-ууд "/media/..." гэсэн relative path. Absolute болгож
+// frontend-руу буцаана — frontend нь getImageUrl() дотор absolute http URL-
+// ийг шууд буцаадаг.
+const CARAPIS_MEDIA_HOST = 'https://api.carapis.com'
+function absUrl(u) {
+  if (!u) return ''
+  if (/^https?:\/\//i.test(u)) return u
+  if (u.startsWith('/')) return CARAPIS_MEDIA_HOST + u
+  return u
+}
+
 // Carapis photos нь object array: {url, thumb_url, is_main, photo_type,
-// position, width, height}. Хуучин string[] хэлбэрийг ч дэмжинэ. Position-
-// аар sort + is_main-ыг эхэндээ оруулна.
-function normalizePhotos(photos) {
-  if (!Array.isArray(photos)) return []
+// position, width, height}. Хуучин string[] хэлбэрийг ч дэмжинэ. List
+// endpoint дээр `thumb` (нэг object) л ирдэг — тэр тохиолдолд массив болгож
+// орлуулна. Position-аар sort + is_main-ыг эхэндээ оруулна.
+function normalizePhotos(v) {
+  let photos = []
+  if (Array.isArray(v.photos)) photos = v.photos
+  else if (v.thumb && typeof v.thumb === 'object') photos = [v.thumb]
   const items = photos
     .map((p) => {
-      if (typeof p === 'string') return { url: p, thumb_url: p, is_main: false, position: 0, photo_type: '' }
+      if (typeof p === 'string') return { url: absUrl(p), thumb_url: absUrl(p), is_main: false, position: 0, photo_type: '' }
       if (!p || !p.url) return null
       return {
-        url: p.url,
-        thumb_url: p.thumb_url || p.url,
+        url: absUrl(p.url),
+        thumb_url: absUrl(p.thumb_url || p.url),
         is_main: !!p.is_main,
         position: Number(p.position) || 0,
         photo_type: p.photo_type || '',
@@ -106,7 +120,7 @@ function normalizePhotos(photos) {
 }
 
 function normalize(v) {
-  const photoList = normalizePhotos(v.photos)
+  const photoList = normalizePhotos(v)
   const urls = photoList.map((p) => p.url)
   const thumbs = photoList.map((p) => p.thumb_url)
   // Carapis 2026-05-14-аас хойш price_original (KRW) талбарыг өгдөг болсон —
