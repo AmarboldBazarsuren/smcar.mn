@@ -126,6 +126,20 @@ export default function CarDetailNew() {
           <div className="lg:col-span-8 space-y-6">
             <PhotoMosaic imgs={imgs} onImageClick={(i) => setSelectedImg(i)} />
 
+            {imgs.length > 5 && (
+              <button
+                onClick={() => setSelectedImg(0)}
+                className="-mt-3 inline-flex items-center gap-2 self-start px-5 py-2.5 rounded-full bg-red-600 hover:bg-red-500 text-white text-[14px] font-semibold transition shadow-md shadow-red-900/20"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                  <circle cx="9" cy="9" r="2" />
+                  <path d="M21 15l-5-5L5 21" />
+                </svg>
+                Бүх {imgs.length} зургийг үзэх
+              </button>
+            )}
+
             {/* Title block */}
             <div>
               <h1 className="text-[28px] md:text-[34px] font-extrabold leading-tight">
