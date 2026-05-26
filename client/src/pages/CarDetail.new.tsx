@@ -293,21 +293,6 @@ export default function CarDetailNew() {
               {/* listing_url comes either from Carapis directly (non-Encar
                   sources expose it) or from the Encar enrichment. We
                   derive the platform name from the host for the label. */}
-              {car.listing_url && (
-              <a
-                href={car.listing_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 w-full bg-red-600 border-2 border-red-600 text-white hover:bg-red-500 py-3 rounded-2xl text-[14px] font-semibold transition"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                  <polyline points="15 3 21 3 21 9" />
-                  <line x1="10" y1="14" x2="21" y2="3" />
-                </svg>
-                encar.com дээр харах
-              </a>
-              )}
 
               <div className="bg-red-50 rounded-2xl p-4 text-[13px] text-red-700 leading-relaxed">
                 <p className="font-semibold mb-1">Мэдээлэл</p>
