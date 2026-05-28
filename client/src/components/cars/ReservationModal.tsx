@@ -1,3 +1,5 @@
+import { carDetailPathFromId } from '../../lib/carRoutes'
+
 interface Props {
   carId: string
   carTitle?: string
@@ -7,7 +9,7 @@ interface Props {
 const FB_PAGE = 'https://www.facebook.com/profile.php?id=61560313482250'
 
 export default function ReservationModal({ carId, carTitle, onClose }: Props) {
-  const carUrl = `${window.location.origin}/cars/${carId}`
+  const carUrl = `${window.location.origin}${carDetailPathFromId(carId)}`
   const message = `Сайн байна уу! Дараах машинд сонирхож байна:\n${carTitle || ''}\n${carUrl}`
   const encodedMessage = encodeURIComponent(message)
 

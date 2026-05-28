@@ -9,6 +9,7 @@ import {
 } from '../lib/api'
 import { formatNumber } from '../lib/utils'
 import ReservationModal from '../components/cars/ReservationModal'
+import { carDetailPublicId } from '../lib/carRoutes'
 import type { ExchangeRate, FeeSettings } from '../types'
 
 const TRANSPORT_OPTIONS = [1200, 1400, 1600, 1800, 2500]
@@ -323,7 +324,7 @@ export default function CarDetailNew() {
 
       {showModal && (
         <ReservationModal
-          carId={String(car.id || car.encar_id)}
+          carId={carDetailPublicId(car)}
           carTitle={car.title}
           onClose={() => setShowModal(false)}
         />

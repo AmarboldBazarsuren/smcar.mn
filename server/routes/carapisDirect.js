@@ -1,4 +1,6 @@
 const express = require('express')
+const fs = require('fs')
+const path = require('path')
 const { listVehicles, getVehicle } = require('../lib/carapis')
 const { fetchEncarPhotos } = require('../lib/encarPhotos')
 
@@ -14,11 +16,57 @@ const CACHE_HEADER = 'public, max-age=86400, s-maxage=86400, stale-while-revalid
 const listingToUuid = new Map()
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const LISTING_RE = /^\d{6,}$/
+const LISTING_MAP_FILE = path.join(__dirname, '..', '.cache', 'listing-to-uuid.json')
+const LEGACY_UUID_TO_LISTING = path.join(__dirname, '..', '.cache', 'carapis-to-encar.json')
+let listingMapDirty = false
+
+function extractEncarListingId(v) {
+  if (!v) return null
+  if (v.listing_id) return String(v.listing_id)
+  const url = String(v.listing_url || v.original_url || '')
+  const m =
+    url.match(/encar\.com\/cars\/detail\/(\d+)/i) ||
+    url.match(/[?&]carid=(\d+)/i)
+  return m ? m[1] : null
+}
+
+function loadListingMaps() {
+  try {
+    const data = JSON.parse(fs.readFileSync(LISTING_MAP_FILE, 'utf8'))
+    for (const [lid, uuid] of Object.entries(data)) {
+      if (lid && uuid) listingToUuid.set(String(lid), String(uuid))
+    }
+    console.log(`[listing map] loaded ${listingToUuid.size} entries`)
+  } catch {}
+  try {
+    const rev = JSON.parse(fs.readFileSync(LEGACY_UUID_TO_LISTING, 'utf8'))
+    for (const [uuid, lid] of Object.entries(rev)) {
+      if (lid && uuid) listingToUuid.set(String(lid), String(uuid))
+    }
+  } catch {}
+}
+loadListingMaps()
+
+function flushListingMap() {
+  if (!listingMapDirty || listingToUuid.size === 0) return
+  try {
+    fs.mkdirSync(path.dirname(LISTING_MAP_FILE), { recursive: true })
+    fs.writeFileSync(LISTING_MAP_FILE, JSON.stringify(Object.fromEntries(listingToUuid)))
+    listingMapDirty = false
+  } catch (e) {
+    console.warn('[listing map] write fail:', e.message)
+  }
+}
+setInterval(flushListingMap, 30_000).unref()
 
 function rememberListing(v) {
   if (!v) return
-  const lid = v.listing_id
-  if (lid && v.id) listingToUuid.set(String(lid), v.id)
+  const lid = extractEncarListingId(v)
+  if (lid && v.id) {
+    const prev = listingToUuid.get(lid)
+    if (prev !== v.id) listingMapDirty = true
+    listingToUuid.set(String(lid), v.id)
+  }
 }
 
 function resolveCarId(raw) {
@@ -26,6 +74,24 @@ function resolveCarId(raw) {
   if (UUID_RE.test(raw)) return raw
   if (LISTING_RE.test(raw)) return listingToUuid.get(raw) || null
   return null
+}
+
+async function resolveCarIdAsync(raw) {
+  const sync = resolveCarId(raw)
+  if (sync) return sync
+  if (!LISTING_RE.test(raw)) return null
+  try {
+    const searched = await listVehicles({ search: raw, source: 'encar', page_size: 50 })
+    for (const v of searched.results || []) {
+      rememberListing(v)
+      const lid = extractEncarListingId(v)
+      if (lid === raw || String(v.listing_id) === raw) return v.id
+    }
+    flushListingMap()
+  } catch (e) {
+    console.warn('[listing map] search resolve fail:', e.message)
+  }
+  return listingToUuid.get(raw) || null
 }
 
 // ===== Normalisation =====
@@ -156,7 +222,7 @@ function normalize(v) {
     type: '',
     body_type: v.body_type || '',
     color: v.color || '',
-    encar_id: v.listing_id || v.id,
+    encar_id: extractEncarListingId(v) || v.id,
     listing_url: v.listing_url || '',
     vin: v.vin || '',
     description: v.description || '',
@@ -366,7 +432,7 @@ async function getDetailWithEncarPhotos(uuid) {
   const raw = await getVehicle(uuid)
   rememberListing(raw)
   const normalized = normalize(raw)
-  const listingId = raw.listing_id
+  const listingId = extractEncarListingId(raw)
   if (listingId && raw.source_code === 'encar') {
     const encarPics = await fetchEncarPhotos(listingId)
     if (encarPics.length > 0) {
@@ -391,7 +457,7 @@ async function getDetailWithEncarPhotos(uuid) {
 // GET /api/cars/:id — detail (id нь UUID эсвэл Encar listing_id)
 router.get('/:id', async (req, res) => {
   try {
-    const uuid = resolveCarId(req.params.id)
+    const uuid = await resolveCarIdAsync(req.params.id)
     if (!uuid) return res.status(404).json({ error: 'unknown carId' })
     const data = await getDetailWithEncarPhotos(uuid)
     res.set('Cache-Control', CACHE_HEADER)
@@ -406,7 +472,7 @@ router.get('/:id', async (req, res) => {
 // GET /api/cars/:id/full — back-compat alias of detail
 router.get('/:id/full', async (req, res) => {
   try {
-    const uuid = resolveCarId(req.params.id)
+    const uuid = await resolveCarIdAsync(req.params.id)
     if (!uuid) return res.status(404).json({ error: 'unknown carId' })
     const data = await getDetailWithEncarPhotos(uuid)
     res.set('Cache-Control', CACHE_HEADER)

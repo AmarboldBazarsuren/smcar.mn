@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import ErrorBoundary from './components/ErrorBoundary'
 import ScrollToTop from './components/ScrollToTop'
+import CarDetailCanonicalRedirect from './components/cars/CarDetailCanonicalRedirect'
 import Home from './pages/Home'
 import About from './pages/About'
 import CarList from './pages/CarList'
@@ -77,11 +78,23 @@ function App() {
             }
           />
           <Route
-            path="/cars/:id"
+            path="/cars/detail/:id"
             element={
               <>
                 <Header />
                 <CarDetail />
+                <Footer />
+              </>
+            }
+          />
+          <Route
+            path="/cars/:id"
+            element={
+              <>
+                <Header />
+                <CarDetailCanonicalRedirect>
+                  <CarDetail />
+                </CarDetailCanonicalRedirect>
                 <Footer />
               </>
             }

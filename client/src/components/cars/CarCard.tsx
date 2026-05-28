@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import type { Car, ExchangeRate } from '../../types'
 import { toMnt, formatNumber, fuelLabel } from '../../lib/utils'
 import { getImageUrl } from '../../lib/api'
+import { carDetailPath } from '../../lib/carRoutes'
 
 interface CarCardProps {
   car: Car
@@ -11,7 +12,7 @@ interface CarCardProps {
 export default function CarCard({ car, rates }: CarCardProps) {
   return (
     <Link
-      to={`/cars/${car.encar_id || car.id}`}
+      to={carDetailPath(car)}
       className="group bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-200"
     >
       {/* Image */}
