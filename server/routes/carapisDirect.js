@@ -27,7 +27,16 @@ function extractEncarListingId(v) {
   const m =
     url.match(/encar\.com\/cars\/detail\/(\d+)/i) ||
     url.match(/[?&]carid=(\d+)/i)
-  return m ? m[1] : null
+  if (m) return m[1]
+  // Carapis list response-д listing_id байхгүй, гэхдээ thumb/photos-ийн
+  // original_url нь Encar CDN URL байдаг: ci.encar.com/.../LISTING_ID_001.jpg
+  const photoUrl = String(
+    v.thumb?.original_url ||
+    (Array.isArray(v.photos) && v.photos[0]?.original_url) ||
+    ''
+  )
+  const pm = photoUrl.match(/\/(\d{7,9})_\d+\.jpg/)
+  return pm ? pm[1] : null
 }
 
 function loadListingMaps() {
