@@ -73,7 +73,7 @@ export default function ReservationModal({ carId, carTitle, onClose }: Props) {
 
           {/* Phone */}
           <a
-            href="tel:+97677220707"
+            href="tel:+821056576492"
             className="flex items-center gap-3 w-full p-4 rounded-xl border border-gray-200 hover:border-gray-400 hover:bg-gray-50 transition group"
           >
             <div className="w-10 h-10 rounded-full bg-green-600 flex items-center justify-center shrink-0">
@@ -82,7 +82,7 @@ export default function ReservationModal({ carId, carTitle, onClose }: Props) {
               </svg>
             </div>
             <div>
-              <p className="text-[20px] font-semibold text-dark group-hover:text-gray-700 transition">+976 7722-0707</p>
+              <p className="text-[20px] font-semibold text-dark group-hover:text-gray-700 transition">🇰🇷 010-5657-6492</p>
               <p className="text-[14px] text-gray-400">Утсаар холбогдох</p>
             </div>
           </a>

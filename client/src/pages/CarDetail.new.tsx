@@ -279,16 +279,16 @@ export default function CarDetailNew() {
 
               <div className="grid grid-cols-2 gap-2">
                 <a
-                  href="tel:+97677220707"
+                  href="tel:+821056576492"
                   className="flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-800 py-3 rounded-2xl text-[14px] font-semibold hover:bg-gray-50 transition"
                 >
-                  🇲🇳 7722-0707
+                  🇰🇷 010-5657-6492
                 </a>
                 <a
                   href="tel:+97672105633"
                   className="flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-800 py-3 rounded-2xl text-[14px] font-semibold hover:bg-gray-50 transition"
                 >
-                  🇰🇷 7210-5633
+                  🇲🇳 7210-5633
                 </a>
               </div>
 
