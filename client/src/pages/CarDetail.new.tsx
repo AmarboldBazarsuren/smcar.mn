@@ -300,7 +300,7 @@ export default function CarDetailNew() {
                     setTimeout(() => setCopied(false), 2000)
                   })
                 }}
-                className="w-full flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-600 py-3 rounded-2xl text-[14px] font-semibold hover:bg-gray-50 transition"
+                className="w-full flex items-center justify-center gap-2 bg-white border border-red-200 text-red-600 py-3 rounded-2xl text-[14px] font-semibold hover:bg-red-50 transition"
               >
                 {copied ? (
                   <>
