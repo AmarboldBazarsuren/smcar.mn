@@ -1,5 +1,6 @@
 const express = require('express')
 const { searchVehicles, getVehicle } = require('../lib/encar')
+const { translateModel, learn: learnModel } = require('../lib/encarModelDict')
 const ExchangeRate = require('../models/ExchangeRate')
 const {
   BRAND_EN_TO_KO,
@@ -175,7 +176,9 @@ function yearFromYm(ym, formYear) {
 function normalizeList(v) {
   const id = String(v.Id)
   const brand = BRAND_KO_TO_EN[v.Manufacturer] || v.Manufacturer || ''
-  const model = v.Model || ''
+  // Солонгос загвар нэрийг толиор англи болгоно; мэдэгдэхгүй бол солонгосоор
+  // үлдээнэ (detail үзэхэд аяндаа суралцана).
+  const model = translateModel(v.Manufacturer, v.Model) || v.Model || ''
   const year = yearFromYm(v.Year, v.FormYear)
   const priceMan = Number(v.Price) || 0
   const photos = listPhotos(v)
@@ -219,6 +222,8 @@ function normalizeDetail(d, id) {
   const spec = d.spec || {}
   const ad = d.advertisement || {}
   const contact = d.contact || {}
+  // Жагсаалтын толийг энэ detail-аас аяндаа баяжуулна (нэмэлт request-гүй).
+  learnModel(cat.manufacturerName, cat.modelName, cat.modelGroupEnglishName)
   // Жагсаалттай нийцүүлэхийн тулд эхлээд цэвэр map (KG Mobility, Mercedes-Benz)
   // ашиглана; Encar-ийн manufacturerEnglishName заримдаа доогуур зураастай
   // муухай байдаг (жишээ "KG_Mobility_Ssangyong").
