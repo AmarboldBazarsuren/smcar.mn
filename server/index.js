@@ -9,6 +9,7 @@ const settingsRouter = require('./routes/settings')
 const exchangeRateRouter = require('./routes/exchangeRate')
 const uploadRouter = require('./routes/upload')
 const carapisDirectRouter = require('./routes/carapisDirect')
+const encarDirectRouter = require('./routes/encarDirect')
 const maintenanceRouter = require('./routes/maintenance')
 const reservationsProxyRouter = require('./routes/reservationsProxy')
 const authProxyRouter = require('./routes/authProxy')
@@ -42,12 +43,18 @@ app.use('/api/upload', uploadRouter)
 // MAINTENANCE_MODE=true hides every car (returns empty list / 503 detail)
 // without requiring any frontend redeploy.
 const maintenance = (process.env.MAINTENANCE_MODE || '').toLowerCase() === 'true'
+// CARS_SOURCE=encar (default) → api.encar.com шууд, бүх ~220k зар.
+// CARS_SOURCE=carapis → хуучин Carapis backend (fallback хэвээр үлдээв).
+const carsSource = (process.env.CARS_SOURCE || 'encar').toLowerCase()
 if (maintenance) {
   console.log('[cars] MAINTENANCE_MODE — serving empty lists')
   app.use('/api/cars', maintenanceRouter)
-} else {
+} else if (carsSource === 'carapis') {
   console.log('[cars] source = Carapis')
   app.use('/api/cars', carapisDirectRouter)
+} else {
+  console.log('[cars] source = Encar (api.encar.com)')
+  app.use('/api/cars', encarDirectRouter)
 }
 app.use('/api/reservations', reservationsProxyRouter)
 app.use('/api/auth', authProxyRouter)
