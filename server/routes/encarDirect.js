@@ -219,7 +219,10 @@ function normalizeDetail(d, id) {
   const spec = d.spec || {}
   const ad = d.advertisement || {}
   const contact = d.contact || {}
-  const brand = cat.manufacturerEnglishName || BRAND_KO_TO_EN[cat.manufacturerName] || cat.manufacturerName || ''
+  // Жагсаалттай нийцүүлэхийн тулд эхлээд цэвэр map (KG Mobility, Mercedes-Benz)
+  // ашиглана; Encar-ийн manufacturerEnglishName заримдаа доогуур зураастай
+  // муухай байдаг (жишээ "KG_Mobility_Ssangyong").
+  const brand = BRAND_KO_TO_EN[cat.manufacturerName] || cat.manufacturerEnglishName || cat.manufacturerName || ''
   const model = cat.modelGroupEnglishName || cat.modelName || ''
   const trim = cat.gradeEnglishName || cat.gradeName || ''
   const year = yearFromYm(cat.yearMonth, cat.formYear)
