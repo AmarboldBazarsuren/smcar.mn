@@ -5,6 +5,10 @@ const path = require('path')
 // (count + 만원 үнэ + thumbnail) буцаана. /v1/readside/vehicle/{id} нь нэг
 // машины бүрэн мэдээлэл (англи нэр, MSRP, бүх зураг).
 const SEARCH_BASE = 'https://api.encar.com/search/car/list/premium'
+// Ачааны/тусгай ангилал (Porter, Bongo, Mighty гэх мэт) нь зорчигчийн машинаас
+// тусдаа индекстэй — /search/truck/list/general. Хариу нь car list-тэй ИЖИЛ shape
+// (Id, Manufacturer, Model, Year, Price, Photos…) тул normalizeList дахин ашиглана.
+const TRUCK_SEARCH_BASE = 'https://api.encar.com/search/truck/list/general'
 const DETAIL_BASE = 'https://api.encar.com/v1/readside/vehicle'
 const DETAIL_INCLUDE =
   'ADVERTISEMENT,CATEGORY,CONDITION,CONTACT,MANAGE,OPTIONS,PHOTOS,SPEC,PARTNERSHIP,CENTER,VIEW'
@@ -94,12 +98,21 @@ function buildSearchUrl({ q, sort = 'ModifiedDate', offset = 0, count = 20 }) {
   return `${SEARCH_BASE}?count=true&q=${q}&sr=${encodeURIComponent(sr)}`
 }
 
+function buildTruckSearchUrl({ q, sort = 'ModifiedDate', offset = 0, count = 20 }) {
+  const sr = `|${sort}|${offset}|${count}`
+  return `${TRUCK_SEARCH_BASE}?count=true&q=${q}&sr=${encodeURIComponent(sr)}`
+}
+
 async function searchVehicles(opts) {
   return cachedGet(buildSearchUrl(opts))
+}
+
+async function searchTrucks(opts) {
+  return cachedGet(buildTruckSearchUrl(opts))
 }
 
 async function getVehicle(id) {
   return cachedGet(`${DETAIL_BASE}/${encodeURIComponent(id)}?include=${DETAIL_INCLUDE}`)
 }
 
-module.exports = { searchVehicles, getVehicle, buildSearchUrl }
+module.exports = { searchVehicles, searchTrucks, getVehicle, buildSearchUrl, buildTruckSearchUrl }

@@ -1,5 +1,5 @@
 const express = require('express')
-const { searchVehicles, getVehicle } = require('../lib/encar')
+const { searchVehicles, searchTrucks, getVehicle } = require('../lib/encar')
 const { translateModel, learn: learnModel } = require('../lib/encarModelDict')
 const ExchangeRate = require('../models/ExchangeRate')
 const {
@@ -120,6 +120,88 @@ function buildQuery(q, rates) {
   return group('And', kids)
 }
 
+// ===== Тусгай ангилал (ачааны машин) =====
+// Truck API нь зорчигчийн машинаас тусдаа facet-той: CarType wrapper БАЙХГҮЙ
+// (Manufacturer-ийг шууд leaf болгоно), Kia нь "기아(아시아)", model нэрс нь
+// солонгосоор олон хувилбартай (포터 Ⅱ/포터, 봉고Ⅲ/더 뉴 봉고Ⅲ…) тул Or-group
+// ашиглана. Year/Price/Mileage range нь car API-тай ИЖИЛ форматтай.
+const TRUCK_BRAND_EN_TO_KO = {
+  hyundai: '현대',
+  kia: '기아(아시아)',
+  'tata daewoo': '타타대우',
+  'tata-daewoo': '타타대우',
+  daewoo: '타타대우',
+}
+const TRUCK_BRAND_KO_TO_EN = {
+  현대: 'Hyundai',
+  '기아(아시아)': 'Kia',
+  타타대우: 'Tata Daewoo',
+}
+// Frontend chip (англи) → Encar-ийн солонгос Model утгуудын жагсаалт (Or-group).
+const TRUCK_MODEL_EN_TO_KO = {
+  porter: ['포터 Ⅱ', '포터'],
+  bongo: ['봉고Ⅲ', '더 뉴 봉고Ⅲ', '봉고프론티어'],
+  mighty: ['올 뉴 마이티', 'e마이티', '마이티 큐티', '마이티'],
+  'mega truck': ['메가트럭'],
+  megatruck: ['메가트럭'],
+  xcient: ['엑시언트'],
+}
+// Encar солонгос Model → англи дэлгэцийн нэр (жагсаалтад харуулна).
+const TRUCK_MODEL_KO_TO_EN = {
+  '포터 Ⅱ': 'Porter II',
+  포터: 'Porter',
+  봉고Ⅲ: 'Bongo III',
+  '더 뉴 봉고Ⅲ': 'Bongo III',
+  봉고프론티어: 'Bongo Frontier',
+  메가트럭: 'Mega Truck',
+  마이티: 'Mighty',
+  '올 뉴 마이티': 'Mighty',
+  e마이티: 'e-Mighty',
+  '마이티 큐티': 'Mighty QT',
+  뉴파워트럭: 'New Power Truck',
+  엑시언트: 'Xcient',
+  '프리마 중형트럭': 'Prima',
+  '노부스 중형트럭': 'Novus',
+}
+
+// Or-group: (Or.Model.v1_.Model.v2). Утгуудыг тус бүр leaf болгоно.
+const orGroup = (key, values) => group('Or', values.map((v) => leaf(key, v)))
+
+function buildTruckQuery(q, rates) {
+  const kids = [rawLeaf('Hidden', 'N')]
+
+  const brandKo = q.brand
+    ? TRUCK_BRAND_EN_TO_KO[String(q.brand).trim().toLowerCase()] || null
+    : null
+  if (brandKo) kids.push(leaf('Manufacturer', brandKo))
+
+  if (q.model) {
+    const variants = TRUCK_MODEL_EN_TO_KO[String(q.model).trim().toLowerCase()]
+    if (variants && variants.length) {
+      kids.push(variants.length === 1 ? leaf('Model', variants[0]) : orGroup('Model', variants))
+    } else {
+      // Тодорхойлоогүй бол ирсэн утгыг шууд (солонгос) Model гэж үзнэ.
+      kids.push(leaf('Model', String(q.model).trim()))
+    }
+  }
+
+  const yr = yearRange(q.yearFrom, q.yearTo)
+  if (yr) kids.push(rawLeaf('Year', yr))
+
+  const minMan = usdToManwon(q.priceFrom, rates)
+  const maxMan = usdToManwon(q.priceTo, rates)
+  const pr = numRange(minMan, maxMan)
+  if (pr) kids.push(rawLeaf('Price', pr))
+
+  const ml = numRange(
+    q.minMileage ? Number(q.minMileage) : null,
+    q.maxMileage ? Number(q.maxMileage) : null
+  )
+  if (ml) kids.push(rawLeaf('Mileage', ml))
+
+  return group('And', kids)
+}
+
 // Encar-ийн хүлээн зөвшөөрдөг sort token-ууд. Year нь зөвхөн буурах эрэмбэтэй
 // (YearAsc/YearDesc буруу нэр), тиймээс хоёр чиглэлд "Year"-ийг ашиглана.
 const SORT_MAP = {
@@ -173,12 +255,16 @@ function yearFromYm(ym, formYear) {
   return f >= 1900 ? f : 0
 }
 
-function normalizeList(v) {
+function normalizeList(v, truck = false) {
   const id = String(v.Id)
-  const brand = BRAND_KO_TO_EN[v.Manufacturer] || v.Manufacturer || ''
+  const brand = truck
+    ? TRUCK_BRAND_KO_TO_EN[v.Manufacturer] || BRAND_KO_TO_EN[v.Manufacturer] || v.Manufacturer || ''
+    : BRAND_KO_TO_EN[v.Manufacturer] || v.Manufacturer || ''
   // Солонгос загвар нэрийг толиор англи болгоно; мэдэгдэхгүй бол солонгосоор
-  // үлдээнэ (detail үзэхэд аяндаа суралцана).
-  const model = translateModel(v.Manufacturer, v.Model) || v.Model || ''
+  // үлдээнэ (detail үзэхэд аяндаа суралцана). Ачааны машинд тусдаа толь.
+  const model = truck
+    ? TRUCK_MODEL_KO_TO_EN[v.Model] || v.Model || ''
+    : translateModel(v.Manufacturer, v.Model) || v.Model || ''
   const year = yearFromYm(v.Year, v.FormYear)
   const priceMan = Number(v.Price) || 0
   const photos = listPhotos(v)
@@ -206,8 +292,8 @@ function normalizeList(v) {
     images: urls,
     thumbnails: thumbs,
     photos: photos.map((p, i) => ({ url: p.url, thumb_url: p.thumb_url, is_main: i === 0, position: i, photo_type: '' })),
-    type: '',
-    body_type: '',
+    type: truck ? 'special' : '',
+    body_type: truck ? 'Truck' : '',
     color: '',
     encar_id: id,
     listing_url: `http://www.encar.com/dc/dc_cardetailview.do?carid=${id}`,
@@ -227,8 +313,14 @@ function normalizeDetail(d, id) {
   // Жагсаалттай нийцүүлэхийн тулд эхлээд цэвэр map (KG Mobility, Mercedes-Benz)
   // ашиглана; Encar-ийн manufacturerEnglishName заримдаа доогуур зураастай
   // муухай байдаг (жишээ "KG_Mobility_Ssangyong").
-  const brand = BRAND_KO_TO_EN[cat.manufacturerName] || cat.manufacturerEnglishName || cat.manufacturerName || ''
-  const model = cat.modelGroupEnglishName || cat.modelName || ''
+  const brand =
+    BRAND_KO_TO_EN[cat.manufacturerName] ||
+    TRUCK_BRAND_KO_TO_EN[cat.manufacturerName] ||
+    cat.manufacturerEnglishName ||
+    cat.manufacturerName ||
+    ''
+  // Ачааны машинд modelGroupEnglishName ирдэггүй — тусгай толиор англи болгоно.
+  const model = cat.modelGroupEnglishName || TRUCK_MODEL_KO_TO_EN[cat.modelName] || cat.modelName || ''
   const trim = cat.gradeEnglishName || cat.gradeName || ''
   const year = yearFromYm(cat.yearMonth, cat.formYear)
   const priceMan = Number(ad.price) || 0
@@ -287,14 +379,30 @@ router.get('/', async (req, res) => {
     const page = Math.max(1, Number(req.query.page || 1))
     const limit = Math.min(100, Math.max(1, Number(req.query.limit || 20)))
     const offset = (page - 1) * limit
-    const q = buildQuery(req.query, rates)
     const sort = sortToken(req.query.sortBy, req.query.sortOrder)
+
+    // Тусгай ангилал (ачааны машин: Porter, Bongo, Mighty…) тусдаа truck API-аас.
+    if (req.query.vehicleType === 'special') {
+      const q = buildTruckQuery(req.query, rates)
+      const raw = await searchTrucks({ q, sort, offset, count: limit })
+      const results = Array.isArray(raw.SearchResults) ? raw.SearchResults : []
+      const total = Number(raw.Count) || 0
+      res.set('Cache-Control', CACHE_HEADER)
+      return res.json({
+        cars: results.map((v) => normalizeList(v, true)),
+        total,
+        page,
+        totalPages: Math.max(1, Math.ceil(total / limit)),
+      })
+    }
+
+    const q = buildQuery(req.query, rates)
     const raw = await searchVehicles({ q, sort, offset, count: limit })
     const results = Array.isArray(raw.SearchResults) ? raw.SearchResults : []
     const total = Number(raw.Count) || 0
     res.set('Cache-Control', CACHE_HEADER)
     res.json({
-      cars: results.map(normalizeList),
+      cars: results.map((v) => normalizeList(v)),
       total,
       page,
       totalPages: Math.max(1, Math.ceil(total / limit)),
@@ -358,4 +466,4 @@ router.post('/pricing-breakdown', (req, res) => {
 
 module.exports = router
 // Тестэд зориулж цэвэр функцуудыг экспортолно.
-module.exports._internal = { buildQuery, sortToken, normalizeList, normalizeDetail, usdToManwon }
+module.exports._internal = { buildQuery, buildTruckQuery, sortToken, normalizeList, normalizeDetail, usdToManwon }

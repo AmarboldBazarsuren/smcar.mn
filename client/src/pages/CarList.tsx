@@ -46,12 +46,12 @@ export default function CarList() {
   if (isVehicleTypeFilter) apiFilters.vehicleType = vehicleType
 
   // Used only for the model chip list in the toolbar.
-  // Carapis-аас тодорхой машинтай commercial nameplate-ууд. "Truck", "Xcient",
-  // "Universe" — Carapis-аас байхгүй учир chip-аас хасав.
-  const SPECIAL_MODELS = ['Porter', 'Bongo', 'County', 'Mighty', 'Starex', 'Staria', 'Solati', 'Colorado', 'Master']
+  // Encar-ийн ачааны (truck) API-д жинхэнэ байгаа nameplate-ууд. Backend нь
+  // эдгээр англи нэрсийг солонгос Model хувилбаруудруу (Or-group) хөрвүүлдэг.
+  const SPECIAL_MODELS = ['Porter', 'Bongo', 'Mighty', 'Mega Truck', 'Xcient']
 
-  // Backend нь vehicleType=special-ийг өөрөө таниад commercial body types
-  // (truck/van/minivan/pickup/bus)-аар нийлүүлж буцаана.
+  // Backend нь vehicleType=special-ийг өөрөө таниад Encar-ийн truck индексээс
+  // (Porter, Bongo, Mighty гэх мэт) буцаана.
   const { data, isLoading } = useQuery({
     queryKey: ['cars', apiFilters],
     queryFn: () => fetchCars(apiFilters),
