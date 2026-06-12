@@ -1,5 +1,5 @@
 const express = require('express')
-const { searchVehicles, searchTrucks, getVehicle } = require('../lib/encar')
+const { searchVehicles, searchTrucks, fetchNav, getVehicle } = require('../lib/encar')
 const { translateModel, learn: learnModel } = require('../lib/encarModelDict')
 const ExchangeRate = require('../models/ExchangeRate')
 const {
@@ -58,13 +58,67 @@ const leaf = (k, v) => `${k}.${encodeQueryValue(v)}.`
 const rawLeaf = (k, v) => `${k}.${v}.` // range, CarType зэрэг ASCII-safe бүтцийн утга
 const group = (op, kids) => `(${op}.` + kids.join('_.') + ')'
 
-function categoryGroup(brandKo, modelName) {
+function categoryGroup(brandKo, modelName, modelGroupKo) {
   const carType = rawLeaf('CarType', 'A')
+  // ModelGroup нь Encar-ийн загвар групп (жишээ Lexus "GS", Hyundai "그랜저") —
+  // нэг группын бүх дэд хувилбарыг бүрэн хамруулна. Frontend нь группын англи
+  // нэрийг (modelGroupEnglishName) илгээдэг тул эхлээд солонгос ModelGroup утга
+  // руу хөрвүүлсэн байх ёстой (resolveModelGroupKo).
+  if (modelGroupKo) {
+    const inner = group('C', [leaf('Manufacturer', brandKo), leaf('ModelGroup', modelGroupKo)])
+    return group('C', [carType, inner])
+  }
+  // Fallback: шууд солонгос Model нэр (тест/гар оролт) ирвэл хуучнаар шүүнэ.
   if (modelName) {
     const inner = group('C', [leaf('Manufacturer', brandKo), leaf('Model', modelName)])
     return group('C', [carType, inner])
   }
   return group('C', [carType, leaf('Manufacturer', brandKo)])
+}
+
+// ===== Англи загвар групп → солонгос ModelGroup утга (Encar facet-аас) =====
+// Encar-ийн iNav мод нь Manufacturer-ийг сонгоход ModelGroup салбар бүрийг
+// солонгос Value + Metadata.EngName-тэйгээр буцаана. Брэнд бүрээр map-ийг
+// барьж кэшлэнэ (доод түвшний fetchNav өөрөө 24h кэштэй).
+const modelGroupCache = new Map() // brandKo -> { time, map: Map(engLower -> koreanValue) }
+const MODEL_GROUP_TTL = 6 * 60 * 60 * 1000
+
+function findModelGroupNode(nodes) {
+  let found = null
+  ;(function rec(n) {
+    if (!n || found) return
+    if (Array.isArray(n)) return n.forEach(rec)
+    if (typeof n === 'object') {
+      if (n.Name === 'ModelGroup') { found = n; return }
+      for (const k of Object.keys(n)) rec(n[k])
+    }
+  })(nodes)
+  return found
+}
+
+async function resolveModelGroupKo(brandKo, engName) {
+  if (!brandKo || !engName) return null
+  const eng = String(engName).trim().toLowerCase()
+  let entry = modelGroupCache.get(brandKo)
+  if (!entry || Date.now() - entry.time > MODEL_GROUP_TTL) {
+    const map = new Map()
+    try {
+      const q = `(And.Hidden.N._.(C.CarType.A._.Manufacturer.${encodeQueryValue(brandKo)}.))`
+      const nav = await fetchNav(q)
+      const node = findModelGroupNode(nav && nav.iNav && nav.iNav.Nodes)
+      if (node && Array.isArray(node.Facets)) {
+        for (const f of node.Facets) {
+          const en = f && f.Metadata && Array.isArray(f.Metadata.EngName) ? f.Metadata.EngName[0] : null
+          if (en && f.Value) map.set(String(en).trim().toLowerCase(), f.Value)
+        }
+      }
+    } catch (e) {
+      console.warn('[model group] nav resolve fail:', e.message)
+    }
+    entry = { time: Date.now(), map }
+    modelGroupCache.set(brandKo, entry)
+  }
+  return entry.map.get(eng) || null
 }
 
 function yearRange(from, to) {
@@ -86,7 +140,9 @@ function buildQuery(q, rates) {
   const brandKo = q.brand ? BRAND_EN_TO_KO[String(q.brand).trim().toLowerCase()] || null : null
   // model-ийг Encar-ийн харуулсан нэрээр (жагсаалтаас ирсэн) шууд дамжуулна.
   const modelName = q.model ? String(q.model).trim() : null
-  if (brandKo) kids.push(categoryGroup(brandKo, modelName))
+  // __modelGroupKo нь route handler дотор resolveModelGroupKo-оор урьдчилан
+  // шийдвэрлэгдсэн солонгос ModelGroup утга (buildQuery sync хэвээр үлдэнэ).
+  if (brandKo) kids.push(categoryGroup(brandKo, modelName, q.__modelGroupKo || null))
 
   const yr = yearRange(q.yearFrom, q.yearTo)
   if (yr) kids.push(rawLeaf('Year', yr))
@@ -396,6 +452,14 @@ router.get('/', async (req, res) => {
       })
     }
 
+    // Загвар группын англи нэрийг (frontend-ээс ирсэн) Encar-ийн солонгос
+    // ModelGroup утга руу хөрвүүлж, бүрэн группээр шүүнэ.
+    if (req.query.brand && req.query.model) {
+      const brandKo = BRAND_EN_TO_KO[String(req.query.brand).trim().toLowerCase()]
+      const groupKo = await resolveModelGroupKo(brandKo, req.query.model)
+      if (groupKo) req.query.__modelGroupKo = groupKo
+    }
+
     const q = buildQuery(req.query, rates)
     const raw = await searchVehicles({ q, sort, offset, count: limit })
     const results = Array.isArray(raw.SearchResults) ? raw.SearchResults : []
@@ -466,4 +530,4 @@ router.post('/pricing-breakdown', (req, res) => {
 
 module.exports = router
 // Тестэд зориулж цэвэр функцуудыг экспортолно.
-module.exports._internal = { buildQuery, buildTruckQuery, sortToken, normalizeList, normalizeDetail, usdToManwon }
+module.exports._internal = { buildQuery, buildTruckQuery, sortToken, normalizeList, normalizeDetail, usdToManwon, resolveModelGroupKo }

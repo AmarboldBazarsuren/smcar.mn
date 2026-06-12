@@ -9,6 +9,10 @@ const SEARCH_BASE = 'https://api.encar.com/search/car/list/premium'
 // тусдаа индекстэй — /search/truck/list/general. Хариу нь car list-тэй ИЖИЛ shape
 // (Id, Manufacturer, Model, Year, Price, Photos…) тул normalizeList дахин ашиглана.
 const TRUCK_SEARCH_BASE = 'https://api.encar.com/search/truck/list/general'
+// Facet (iNav) tree — Manufacturer-ийг сонгоход ModelGroup салбаруудыг
+// солонгос Value + Metadata.EngName (англи нэр)-тэйгээр буцаана. Англи загвар
+// группыг солонгос ModelGroup утга руу хөрвүүлэхэд ашиглана.
+const NAV_BASE = 'https://api.encar.com/search/car/list/general'
 const DETAIL_BASE = 'https://api.encar.com/v1/readside/vehicle'
 const DETAIL_INCLUDE =
   'ADVERTISEMENT,CATEGORY,CONDITION,CONTACT,MANAGE,OPTIONS,PHOTOS,SPEC,PARTNERSHIP,CENTER,VIEW'
@@ -103,6 +107,12 @@ function buildTruckSearchUrl({ q, sort = 'ModifiedDate', offset = 0, count = 20 
   return `${TRUCK_SEARCH_BASE}?count=true&q=${q}&sr=${encodeURIComponent(sr)}`
 }
 
+// inav=|Metadata|Sort → хариунд iNav facet мод (Metadata.EngName-тэй) орж ирнэ.
+function buildNavUrl({ q }) {
+  const sr = `|ModifiedDate|0|1`
+  return `${NAV_BASE}?count=true&q=${q}&inav=${encodeURIComponent('|Metadata|Sort')}&sr=${encodeURIComponent(sr)}`
+}
+
 async function searchVehicles(opts) {
   return cachedGet(buildSearchUrl(opts))
 }
@@ -111,8 +121,12 @@ async function searchTrucks(opts) {
   return cachedGet(buildTruckSearchUrl(opts))
 }
 
+async function fetchNav(q) {
+  return cachedGet(buildNavUrl({ q }))
+}
+
 async function getVehicle(id) {
   return cachedGet(`${DETAIL_BASE}/${encodeURIComponent(id)}?include=${DETAIL_INCLUDE}`)
 }
 
-module.exports = { searchVehicles, searchTrucks, getVehicle, buildSearchUrl, buildTruckSearchUrl }
+module.exports = { searchVehicles, searchTrucks, fetchNav, getVehicle, buildSearchUrl, buildTruckSearchUrl }
