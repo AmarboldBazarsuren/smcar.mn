@@ -452,15 +452,18 @@ router.get('/', async (req, res) => {
       })
     }
 
+    // Express 5-д req.query нь getter — хандах болгонд дахин parse хийдэг тул
+    // түүн рүү бичсэн утга хадгалагдахгүй. Нэг удаа хувилж аваад дээр нь ажиллана.
+    const query = { ...req.query }
     // Загвар группын англи нэрийг (frontend-ээс ирсэн) Encar-ийн солонгос
     // ModelGroup утга руу хөрвүүлж, бүрэн группээр шүүнэ.
-    if (req.query.brand && req.query.model) {
-      const brandKo = BRAND_EN_TO_KO[String(req.query.brand).trim().toLowerCase()]
-      const groupKo = await resolveModelGroupKo(brandKo, req.query.model)
-      if (groupKo) req.query.__modelGroupKo = groupKo
+    if (query.brand && query.model) {
+      const brandKo = BRAND_EN_TO_KO[String(query.brand).trim().toLowerCase()]
+      const groupKo = await resolveModelGroupKo(brandKo, query.model)
+      if (groupKo) query.__modelGroupKo = groupKo
     }
 
-    const q = buildQuery(req.query, rates)
+    const q = buildQuery(query, rates)
     const raw = await searchVehicles({ q, sort, offset, count: limit })
     const results = Array.isArray(raw.SearchResults) ? raw.SearchResults : []
     const total = Number(raw.Count) || 0
